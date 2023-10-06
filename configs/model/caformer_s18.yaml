@@ -1,6 +1,0 @@
-# @package _global_.model
-defaults:
-  - base_model
-
-model_name: caformer_s18
-drop_path_rate: 0.15

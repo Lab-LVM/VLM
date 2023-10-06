@@ -5,12 +5,17 @@ defaults:
   - info: info
   - model: base_model
 
-name: ${model.model_name}
+name: ${dataset.name}_${model.model_name}
+
+n_shot: [ 0,1,2 ]
+checkpoint:
+cache: True
+
 wandb: True
-gpu: 0,1,2,3
+gpu: 0
 
 accelerator: cuda
-strategy: ddp # deepspeed_stage_2
+strategy: auto # deepspeed_stage_2
 precision: 16-mixed
 
 world_size: 1

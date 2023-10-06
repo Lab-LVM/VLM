@@ -1,7 +1,7 @@
 no_aug: False
 
-mean:
-std:
+mean: [ 0.48145466, 0.4578275, 0.40821073 ]
+std: [ 0.26862954, 0.26130258, 0.27577711 ]
 
 scale: [ 0.08, 1.0 ]
 ratio: [ 0.75, 1.33 ]
@@ -9,7 +9,7 @@ hflip: 0.5
 vflip: 0
 color_jitter: 0.0
 auto_aug:
-crop_pct: 0.875
+crop_pct: 1.0
 
 epoch_repeats: 0
 aug_repeats: 0

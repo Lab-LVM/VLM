@@ -1,10 +1,11 @@
-import timm
 import torch
 from termcolor import colored
 from timm.loss import BinaryCrossEntropy, SoftTargetCrossEntropy, LabelSmoothingCrossEntropy
 from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler_v2, scheduler_kwargs
 from torch import nn
+
+from src.utils.registry import create_model
 
 
 class ObjectFactory:
@@ -17,21 +18,34 @@ class ObjectFactory:
         self.model = cfg.model
         self.fabric = fabric
 
+        self.device = fabric.device
+        self.checkpoint = cfg.checkpoint
+
     def create_model(self):
-        with self.fabric.sharded_model():
-            model = timm.create_model(
-                **self.model,
-                in_chans=self.dataset.in_channels,
-                num_classes=self.dataset.num_classes,
-            )
-            if self.train.channels_last:
-                model = model.to(memory_format=torch.channels_last)
+        out_dict = create_model(
+            **self.model,
+            in_chans=self.dataset.in_channels,
+            num_classes=self.dataset.num_classes,
+        )
+        model = out_dict['model']
+        self.load_checkpoint(model)
+        model.to(self.device)
 
-        if self.model.scriptable:
-            assert not self.train.sync_bn, 'Cannot use SyncBatchNorm with torchscripted model'
-            model = torch.jit.script(model)
+        if self.train.channels_last:
+            model = model.to(memory_format=torch.channels_last)
 
-        return model
+        if self.cfg.distributed and self.train.sync_bn:
+            self.train.dist_bn = ''
+            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+
+        return model, out_dict['tokenizer']
+
+    def load_checkpoint(self, model):
+        if self.checkpoint is not None:
+            import os
+            import hydra
+            model.load_state_dict(
+                torch.load(os.path.join(hydra.utils.get_original_cwd(), self.checkpoint))['state_dict'])
 
     def create_optimizer_and_scheduler(self, model, iter_per_epoch):
         self.cfg.train.iter_per_epoch = iter_per_epoch

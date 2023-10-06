@@ -13,7 +13,7 @@ log_interval: 50
 
 criteria_metric: Top1
 criteria_decreasing: False
-eval_metrics: [ Top1, Top5, F1Score, Specificity, Recall, Precision, AUROC ] #, ConfusionMatrix ]
+eval_metrics: [ Top1 ] #, Top5 ]
 
 criterion: crossentropy
 bce_loss: False
