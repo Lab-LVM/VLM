@@ -1,0 +1,16 @@
+defaults:
+  - augmentation: base_augmentation
+
+name: all
+root: /data/vlm
+task: multiclass
+
+in_channels: 3
+num_classes:
+train_size: [ 3,224,224 ]
+eval_size: [ 3,224,224 ]
+
+train: train
+valid: val
+test: test
+class_map:

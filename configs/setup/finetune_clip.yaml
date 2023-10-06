@@ -1,0 +1,34 @@
+defaults:
+  - override /train/optimizer: lbfgs
+  - override /dataset: imagenet
+
+gpu: 7
+name: ${model.model_name}
+
+hydra:
+  run:
+    dir: finetune/${name}_linear_prob_${now:%Y%m%d-%H%M%S}/
+
+train:
+  epochs: 5
+  batch_size: 4096
+  num_workers: 32
+
+  lr_scheduler:
+    sched:
+
+  optimizer:
+    lr: 1
+    max_iter: 5
+    history_size: 10
+    line_search_fn: strong_wolfe
+
+model:
+  model_name: CLIP
+  freeze: True
+  finetuned: True
+
+dataset:
+  augmentation:
+    no_aug: True
+    train_interpolation: bicubic

@@ -1,0 +1,11 @@
+defaults:
+  - base_dataset
+  - _self_
+
+name: oxfordiiitpet
+
+num_classes: 37
+
+train: trainval
+valid: test
+test: test

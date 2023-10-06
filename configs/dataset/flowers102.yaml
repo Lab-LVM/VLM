@@ -1,0 +1,11 @@
+defaults:
+  - base_dataset
+  - _self_
+
+name: flowers102
+
+num_classes: 102
+
+train: train
+valid: val
+test: test

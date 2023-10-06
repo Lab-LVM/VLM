@@ -1,0 +1,11 @@
+defaults:
+  - base_dataset
+  - _self_
+
+name: food101
+
+num_classes: 101
+
+train: train
+valid: test
+test: test
