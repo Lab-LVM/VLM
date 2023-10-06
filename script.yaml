@@ -1,0 +1,8 @@
+session_name: baseline
+windows:
+  - window_name: window
+    layout: tiled
+    panes:
+      - python main.py +setup=resnet50_a2 gpu=0,1
+      - python main.py +setup=deit gpu=2,3
+      - python main.py +setup=caformer gpu=4,5,6,7 model=caformer_s18
