@@ -6,6 +6,7 @@ from timm.scheduler import create_scheduler_v2, scheduler_kwargs
 from torch import nn
 
 from src.utils.registry import create_model
+from src.utils.utils import filter_grad
 
 
 class ObjectFactory:
@@ -52,18 +53,27 @@ class ObjectFactory:
         self.train.iter_per_epoch = iter_per_epoch
         self.check_total_batch_size()
 
-        optimizer = create_optimizer_v2(model, **optimizer_kwargs(cfg=self.optim))
+        if self.optim.opt == 'lbfgs':
+            self.optim.__delattr__('opt')
+            self.optim.__delattr__('grad_accumulation')
+            optimizer = torch.optim.LBFGS(filter_grad(model), **self.optim)
+        else:
+            optimizer = create_optimizer_v2(filter_grad(model), **optimizer_kwargs(cfg=self.optim))
 
-        updates_per_epoch = \
-            (iter_per_epoch + self.optim.grad_accumulation - 1) // self.optim.grad_accumulation
+        if self.scheduler.sched is not None:
+            updates_per_epoch = \
+                (iter_per_epoch + self.optim.grad_accumulation - 1) // self.optim.grad_accumulation
 
-        scheduler, num_epochs = create_scheduler_v2(
-            optimizer,
-            **scheduler_kwargs(self.scheduler),
-            updates_per_epoch=updates_per_epoch,
-        )
+            scheduler, num_epochs = create_scheduler_v2(
+                optimizer,
+                **scheduler_kwargs(self.scheduler),
+                updates_per_epoch=updates_per_epoch,
+            )
+        else:
+            scheduler = None
+            num_epochs = self.train.epochs
 
-        if self.optim.clip_grad is not None:
+        if self.optim.get('clip_grad', None) is not None:
             self.fabric.clip_gradients(model, optimizer, self.optim.clip_grad)
         return optimizer, scheduler, num_epochs
 

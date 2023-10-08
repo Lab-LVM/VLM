@@ -1,3 +1,5 @@
+# @package _global_
+
 defaults:
   - override /train/optimizer: adamw
   - override /dataset: imagenet
@@ -13,12 +15,13 @@ hydra:
 train:
   epochs: 20
   batch_size: 256
+  total_batch: 256
   num_workers: 4
 
-  lr_scheduler:
+  scheduler:
     sched: cosine
     warmup_epochs: 0
-    patience_epochs: 0
+    cooldown_epochs: 0
 
   optimizer:
     lr: 1e-3

@@ -24,9 +24,9 @@ def seed_everything(seed, local_rank=0, workers=0):
 
 def setup_cuda(gpu):
     if isinstance(gpu, int):
-        gpu = f'{gpu}'
-    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-    os.environ['CUDA_VISIBLE_DEVICES'] = gpu
+        gpu = [gpu]
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(str(e) for e in gpu)
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.benchmark = True
     # torch.backends.cudnn.deterministic = True # If deterministic = True, training time will be increased.

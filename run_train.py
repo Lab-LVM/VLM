@@ -6,6 +6,7 @@ from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data
 from src.utils import resume
 from src.utils.registry import create_train_engine
+from src.models import *
 
 
 @hydra.main(config_path="configs", config_name="config", version_base="1.3")

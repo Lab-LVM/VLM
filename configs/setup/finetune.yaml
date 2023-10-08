@@ -1,3 +1,5 @@
+# @package _global_
+
 defaults:
   - override /train/optimizer: adamw
   - override /dataset: imagenet
@@ -15,7 +17,7 @@ train:
   total_batch: 1024
   num_workers: 8
 
-  lr_scheduler:
+  scheduler:
     warmup_epochs: 5
     warmup_lr: 1e-6
     min_lr: 1e-5
@@ -34,12 +36,12 @@ model:
 dataset:
   augmentation:
     mixup: 0.8
-    cumix: 1.0
+    cutmix: 1.0
     crop_pct: 0.9
-    aa: rand-m9-mstd0.5-inc1
+    auto_aug: rand-m9-mstd0.5-inc1
     train_interpolation: bicubic
     aug_repeats: 0
-    reprob: 0.25
-    remode: pixel
+    re_prob: 0.25
+    re_mode: pixel
     smoothing: 0.1
     color_jitter: 0.3
