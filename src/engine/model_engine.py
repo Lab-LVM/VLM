@@ -15,12 +15,19 @@ class ModelEngine(ABC):
         self.feature_engine = feature_engine
         self.metric = Accuracy('multiclass', num_classes=feature_engine.num_class).to(feature_engine.device)
 
-    @abstractmethod
-    def task(self, *args, **kwargs):
-        pass
+    def task(self, task_name, **kwargs):
+        try:
+            return self.__getattribute__(task_name)(**kwargs)
+        except NotImplementedError:
+            self.warning(f'Available tasks are {self.available_task}')
 
     def warning(self, text):
         print(f'{colored(f"Warning:[{self.__class__.__name__}]", "red")} {text}')
+
+    @property
+    @abstractmethod
+    def available_task(self):
+        return ['downstream_task']
 
     @property
     def _output(self):
@@ -33,8 +40,6 @@ class CLIPEngine(ModelEngine):
         feature_engine = CLIPClassificationFeatureEngine(cfg, fabric, model, tokenizer, train_dataset, val_dataset)
         super().__init__(feature_engine)
 
-        self.available_task = ['classification_zeroshot', 'classification_linear_prob']
-
     def __call__(self, *args, **kwargs):
         output = dict()
         for task_name in self.available_task:
@@ -46,15 +51,8 @@ class CLIPEngine(ModelEngine):
 
         return output
 
-    def task(self, task_name):
-        if 'classification' in task_name:
-            if 'zeroshot' in task_name:
-                return self.classification_zeroshot()
-            else:
-                self.warning(f'{task_name} is not implemented.')
-                return self.classification_linear_prob()
-        else:
-            return self.warning(f'{task_name} is not implemented.')
+    def available_task(self):
+        return ['classification_zeroshot']
 
     def classification_zeroshot(self):
         self.feature_engine.sampling(0)
@@ -68,9 +66,6 @@ class CLIPEngine(ModelEngine):
         self.metric.update(logits, qry_labels)
         self.metric.prefix = 'clip_zeroshot'
         return self._output
-
-    def classification_linear_prob(self):
-        return {}
 
 
 @register_engine
@@ -87,7 +82,7 @@ class TipEngine(ModelEngine):
             for n_shot in n_shots:
                 if n_shot == 0:
                     continue
-                metric = self.task(task_name, n_shot)
+                metric = self.task(task_name, n_shot=n_shot)
                 output.update(metric)
 
                 torch.cuda.empty_cache()
@@ -95,11 +90,8 @@ class TipEngine(ModelEngine):
 
         return output
 
-    def task(self, task_name, n_shot):
-        try:
-            return self.__getattribute__(task_name)(n_shot)
-        except NotImplementedError:
-            self.warning(f'Available tasks are {self.available_task}')
+    def available_task(self):
+        return ['classification_fewshot', 'classification_fewshot_search_hp']
 
     def classification_fewshot(self, n_shot):
         self.feature_engine.sampling(n_shot)
