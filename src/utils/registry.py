@@ -20,10 +20,10 @@ def register_model(fn):
     return fn
 
 
-def create_model(model_name, pretrained, finetuned, **kwargs):
+def create_model(model_name, **kwargs):
     fn = _MODEL_REGISTRY.get(model_name, None)
     if fn:
-        return fn(pretrained=pretrained, finetuned=finetuned, **kwargs)
+        return fn(**kwargs)
     else:
         raise NotImplementedError(f'{model_name} model is not implemented.')
 

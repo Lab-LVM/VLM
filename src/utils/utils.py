@@ -34,3 +34,14 @@ def to_list(item):
 
 def filter_grad(model):
     return filter(lambda p: p.requires_grad, model.parameters())
+
+
+class EmptyScheduler:
+    def step(self, *args, **kwargs):
+        pass
+
+    def step_update(self, *args, **kwargs):
+        pass
+
+    def state_dict(self, *args, **kwargs):
+        return None

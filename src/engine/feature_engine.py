@@ -48,13 +48,10 @@ class ClassificationFeatureEngine(FeatureEngine):
         for class_name in tqdm(self.train_dataset.class_name, desc='Build Text Classifier'):
             class_name = class_name.replace('_', ' ')
             text = [t.format(class_name) for t in self.train_dataset.prompt]
-            text_input = self.tokenizer(text, padding=True, return_tensors="pt")
-
-            for k in text_input.keys():
-                text_input[k] = text_input[k].to(self.device)
+            text_input = self.tokenizer(text).to(self.device)
 
             with self.fabric.autocast():
-                text_feature = self.model.get_text_features(**text_input)
+                text_feature = self.model.encode_text(text_input)
 
             text_feature /= text_feature.norm(dim=-1, keepdim=True)
             text_feature = text_feature.mean(dim=0)
@@ -86,7 +83,7 @@ class ClassificationFeatureEngine(FeatureEngine):
             x = x.to(memory_format=torch.channels_last)
 
             with self.fabric.autocast():
-                image_features = self.model.get_image_features(pixel_values=x)
+                image_features = self.model.encode_image(x)
 
             features.append(image_features.detach().cpu())
             labels.append(y.detach().cpu())
@@ -114,7 +111,7 @@ class ClassificationFeatureEngine(FeatureEngine):
             x, y = map(lambda x: x.to(self.device), data)
             x = x.to(memory_format=torch.channels_last)
             with self.fabric.autocast():
-                image_features = self.model.get_image_features(pixel_values=x)
+                image_features = self.model.encode_image(x)
 
             features.append(image_features.detach().cpu())
             labels.append(y.detach().cpu())
@@ -168,9 +165,6 @@ class ClassificationFeatureEngine(FeatureEngine):
 class CLIPClassificationFeatureEngine(ClassificationFeatureEngine):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-    def build_linear_classifier(self):
-        pass
 
 
 class TIPClassificationFeatureEngine(ClassificationFeatureEngine):

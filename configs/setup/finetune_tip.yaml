@@ -6,7 +6,7 @@ defaults:
 
 gpu: 7
 name: ${model.model_name}
-n_shot: 1
+n_shot: 16
 
 hydra:
   run:
@@ -14,8 +14,8 @@ hydra:
 
 train:
   epochs: 20
-  batch_size: 256
-  total_batch: 256
+  batch_size: 2048
+  total_batch: 2048
   num_workers: 4
 
   scheduler:
@@ -29,7 +29,7 @@ train:
 model:
   model_name: Tip
   freeze: True
-  finetuned: True
+  finetune: True
 
 dataset:
   augmentation:

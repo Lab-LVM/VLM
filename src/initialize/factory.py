@@ -1,3 +1,5 @@
+from copy import copy
+
 import torch
 from termcolor import colored
 from timm.loss import BinaryCrossEntropy, SoftTargetCrossEntropy, LabelSmoothingCrossEntropy
@@ -6,7 +8,7 @@ from timm.scheduler import create_scheduler_v2, scheduler_kwargs
 from torch import nn
 
 from src.utils.registry import create_model
-from src.utils.utils import filter_grad
+from src.utils.utils import filter_grad, EmptyScheduler
 
 
 class ObjectFactory:
@@ -23,12 +25,13 @@ class ObjectFactory:
         self.checkpoint = cfg.checkpoint
 
     def create_model(self):
-        out_dict = create_model(
+        tokenizer = create_model(self.model.tokenizer)
+
+        model = create_model(
             **self.model,
             in_chans=self.dataset.in_channels,
             num_classes=self.dataset.num_classes,
         )
-        model = out_dict['model']
         self.load_checkpoint(model)
         model.to(self.device)
 
@@ -39,7 +42,7 @@ class ObjectFactory:
             self.train.dist_bn = ''
             model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
-        return model, out_dict['tokenizer']
+        return model, tokenizer
 
     def load_checkpoint(self, model):
         if self.checkpoint is not None:
@@ -54,9 +57,10 @@ class ObjectFactory:
         self.check_total_batch_size()
 
         if self.optim.opt == 'lbfgs':
-            self.optim.__delattr__('opt')
-            self.optim.__delattr__('grad_accumulation')
-            optimizer = torch.optim.LBFGS(filter_grad(model), **self.optim)
+            lbfgs_kwargs = copy(self.optim)
+            lbfgs_kwargs.__delattr__('opt')
+            lbfgs_kwargs.__delattr__('grad_accumulation')
+            optimizer = torch.optim.LBFGS(filter_grad(model), **lbfgs_kwargs)
         else:
             optimizer = create_optimizer_v2(filter_grad(model), **optimizer_kwargs(cfg=self.optim))
 
@@ -70,7 +74,7 @@ class ObjectFactory:
                 updates_per_epoch=updates_per_epoch,
             )
         else:
-            scheduler = None
+            scheduler = EmptyScheduler()
             num_epochs = self.train.epochs
 
         if self.optim.get('clip_grad', None) is not None:

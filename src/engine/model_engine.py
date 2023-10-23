@@ -79,7 +79,7 @@ class TipEngine(ModelEngine):
         feature_engine = TIPClassificationFeatureEngine(cfg, fabric, model, tokenizer, train_dataset, val_dataset)
         super().__init__(feature_engine)
 
-        self.available_task = ['classification_fewshot', 'classification_fewshot_finetune']
+        self.available_task = ['classification_fewshot', 'classification_fewshot_search_hp']
 
     def __call__(self, n_shots, *args, **kwargs):
         output = dict()
@@ -96,27 +96,22 @@ class TipEngine(ModelEngine):
         return output
 
     def task(self, task_name, n_shot):
-        if 'classification' in task_name:
-            if 'finetune' in task_name:
-                self.warning(f'{task_name} is not implemented.')
-                return self.classification_fewshot_finetune(n_shot)
-            else:
-                return self.classification_fewshot(n_shot)
-        else:
-            return self.warning(f'{task_name} is not implemented.')
+        try:
+            return self.__getattribute__(task_name)(n_shot)
+        except NotImplementedError:
+            self.warning(f'Available tasks are {self.available_task}')
 
-    def classification_fewshot(self, n_shot, beta=1, alpha=1.17):
+    def classification_fewshot(self, n_shot):
         self.feature_engine.sampling(n_shot)
         self.metric.reset()
+
+        beta = 3.79
+        alpha = 0.97
 
         text_classifier = self.feature_engine.build_text_classifier()
         qry_features, qry_labels = self.feature_engine.build_query_set()
         sup_features, sup_labels = self.feature_engine.build_support_set()
         sup_labels = one_hot(sup_labels)
-
-        # beta, alpha = self.search_hp(text_classifier, qry_features, qry_labels, sup_features, sup_labels)
-        beta = 3.79
-        alpha = 0.97
 
         logits = 100. * qry_features @ text_classifier.mT
 
@@ -128,8 +123,17 @@ class TipEngine(ModelEngine):
         self.metric.prefix = f'tip_fewshot{n_shot}'
         return self._output
 
-    def classification_fewshot_finetune(self, n_shot):
-        return {}
+    def classification_fewshot_search_hp(self, n_shot):
+        self.feature_engine.sampling(n_shot)
+
+        text_classifier = self.feature_engine.build_text_classifier()
+        qry_features, qry_labels = self.feature_engine.build_query_set()
+        sup_features, sup_labels = self.feature_engine.build_support_set()
+        sup_labels = one_hot(sup_labels)
+
+        best_accuracy, beta, alpha = self.search_hp(text_classifier, qry_features, qry_labels, sup_features, sup_labels)
+
+        return {f'tip_fewshot{n_shot}_finetune': best_accuracy}
 
     def search_hp(self, text_classifier, qry_features, qry_labels, sup_features, sup_labels):
         search_scale = (7, 3)
@@ -150,17 +154,12 @@ class TipEngine(ModelEngine):
 
                 affinity = qry_features @ sup_features.mT
                 cache_logits = ((-1) * (beta - beta * affinity)).exp() @ sup_labels.half()
-
                 tip_logits = logits + cache_logits * alpha
                 self.metric.update(tip_logits, qry_labels)
                 acc = self.metric.compute().item()
                 if acc > best_acc:
-                    print(
-                        "New best setting, beta: {:.2f}, alpha: {:.2f}; accuracy: {:.2f}".format(beta, alpha, acc))
                     best_acc = acc
                     best_beta = beta
                     best_alpha = alpha
 
-        print("\nAfter searching, the best accuarcy: {:.2f}.\n".format(best_acc))
-
-        return best_beta, best_alpha
+        return best_acc, best_beta, best_alpha

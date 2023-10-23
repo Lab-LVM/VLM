@@ -4,6 +4,8 @@ defaults:
   - override /train/optimizer: lbfgs
   - override /dataset: imagenet
 
+precision: 32-true
+
 gpu: 7
 name: ${model.model_name}
 
@@ -13,8 +15,8 @@ hydra:
 
 train:
   epochs: 5
-  batch_size: 4096
-  total_batch: 4096
+  batch_size: 2048
+  total_batch: 2048
   num_workers: 32
 
   scheduler:
@@ -29,7 +31,7 @@ train:
 model:
   model_name: CLIP
   freeze: True
-  finetuned: True
+  finetune: True
 
 dataset:
   augmentation:

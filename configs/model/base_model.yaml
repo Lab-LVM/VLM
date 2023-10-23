@@ -1,4 +1,5 @@
 model_name: CLIP
-pretrained: True
 freeze: True
-finetuned: False
+finetune: False
+
+tokenizer: CLIP_tokenizer

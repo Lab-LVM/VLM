@@ -3,6 +3,7 @@ from time import time
 
 import torch
 import torchmetrics
+from torch.nn.functional import one_hot
 from torchmetrics import MeanMetric
 
 from src.data import create_dataset
@@ -228,7 +229,7 @@ class CLIPFineTuneEngine(FineTuneEngine):
             x, y = map(lambda x: x.to(self.device), data)
             x = x.to(memory_format=torch.channels_last)
             with torch.no_grad():
-                image_features = self.model.get_image_features(pixel_values=x)
+                image_features = self.model.encode_image(x)
                 image_features /= image_features.norm(dim=-1, keepdim=True)
 
             def closure():
@@ -265,7 +266,7 @@ class CLIPFineTuneEngine(FineTuneEngine):
             x, y = map(lambda x: x.to(self.device), data)
             x = x.to(memory_format=torch.channels_last)
 
-            image_features = self.model.get_image_features(pixel_values=x)
+            image_features = self.model.encode_image(x)
             image_features /= image_features.norm(dim=-1, keepdim=True)
             prob = self.model.adapter(image_features)
             loss = self.val_criterion(prob, y)
@@ -278,7 +279,6 @@ class CLIPFineTuneEngine(FineTuneEngine):
 
     def _model_train(self):
         self.model.eval()
-        self.model.adapter.train()
 
     def _model_eval(self):
         self.model.eval()
@@ -288,15 +288,17 @@ class CLIPFineTuneEngine(FineTuneEngine):
 class TipFineTuneEngine(FineTuneEngine):
     def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs, **kwargs):
         super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
+        print("[!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!] Not implement yet exactly")
 
         cache_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=cfg.n_shot)
-        self.feature_engine = TIPClassificationFeatureEngine(cfg, model, tokenizer, self.device, cache_dataset,
+        self.feature_engine = TIPClassificationFeatureEngine(cfg, fabric, model, tokenizer, cache_dataset,
                                                              self.val_loader.dataset)
 
         self.alpha = kwargs.get('alpha', 1.17)
         self.beta = kwargs.get('beta', 1.0)
         self.sup_features, self.sup_labels = self.feature_engine.build_support_set()
         self.text_classifier = self.feature_engine.build_text_classifier()
+        self.sup_labels = one_hot(self.sup_labels)
 
         self.model.adapter.weight.data = self.sup_features.float()
 
@@ -306,12 +308,13 @@ class TipFineTuneEngine(FineTuneEngine):
 
         with self.fabric.autocast():
             with torch.no_grad():
-                image_features = self.model.get_image_features(pixel_values=x)
+                image_features = self.model.encode_image(x)
                 image_features /= image_features.norm(dim=-1, keepdim=True)
 
             logits = 100. * image_features @ self.text_classifier.mT
 
             affinity = self.model.adapter(image_features)
+
             cache_logits = ((-1) * (self.beta - self.beta * affinity)).exp() @ self.sup_labels.half()
             tip_logits = logits + cache_logits * self.alpha
 
