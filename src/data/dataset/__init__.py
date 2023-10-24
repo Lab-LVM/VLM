@@ -5,7 +5,7 @@ from .eurosat import EuroSAT
 from .fgvc import FGVCAircraft
 from .flowers102 import Flowers102
 from .food101 import Food101
-from .imagenet import ImageNet
+from .imagenet import ImageNet, ImageNetRandaugPrompt
 from .oxfordiiitpet import OxfordIIITPet
 from .stanfordcars import StanfordCars
 from .sun397 import SUN397

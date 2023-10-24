@@ -1,8 +1,8 @@
 import torch
 from transformers import CLIPConfig
 
-from src.models.clip.modeling_clip import CLIPModel
-from src.models.clip.tokenization_clip_fast import CLIPTokenizerFast
+from src.models.clip_huggingface.modeling_clip import CLIPModel
+from src.models.clip_huggingface.tokenization_clip_fast import CLIPTokenizerFast
 
 
 def normalize(features):
@@ -13,7 +13,7 @@ config = CLIPConfig()
 tokenizer = CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32")
 model = CLIPModel(config)
 
-text_input = tokenizer(["a photo of a cat", "a image of a dog"], padding=True, return_tensors="pt")
+text_input = tokenizer(["a photo of a cat", "a image of a dog"], padding='max_length', truncation=True, return_tensors="pt")
 text_feature = model.get_text_features(**text_input)
 print('Tokens: ', text_input)
 print('Inputs:', text_input.keys())

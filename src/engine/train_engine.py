@@ -124,12 +124,6 @@ class FineTuneEngine:
 
         return self._metrics()
 
-    def tokenize(self, text):
-        text_embedding = self.tokenizer(text, padding=True, return_tensors='pt')
-        for k in text_embedding.keys():
-            text_embedding[k] = text_embedding[k].to(self.device)
-        return text_embedding
-
     def _model_train(self):
         self.model.train()
 
@@ -210,6 +204,10 @@ class FineTuneEngine:
         if not prefix:
             return metrics
         return {f"{prefix}{separator}{k}": v for k, v in metrics.items()}
+
+    def _tokenize(self, text):
+        text_embedding = self.tokenizer(text, padding='max_length', truncation=True, return_tensors='pt')['input_ids']
+        return text_embedding
 
 
 @register_train
@@ -328,3 +326,39 @@ class TipFineTuneEngine(FineTuneEngine):
 
     def _model_eval(self):
         self.model.eval()
+
+
+@register_train
+class CLIP_SMAdapterFineTuneEngine(FineTuneEngine):
+    def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs):
+        super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
+        self.best_metric = float('-inf')
+        self.train_loader.dataset.setup_prompt_transform()
+
+    def iterate(self, model, data, criterion):
+        x, y, ra_prompt = data
+
+        x = x.to(self.device).to(memory_format=torch.channels_last)
+        y = y.to(self.device)
+        onehot_y = torch.arange(len(x)).long().to(self.device)
+        ra_prompt = self._tokenize(ra_prompt).to(self.device)
+
+        with self.fabric.autocast():
+            logits_per_image, logits_per_text = model(x, ra_prompt)
+            loss = (criterion(logits_per_image, onehot_y) + criterion(logits_per_text, onehot_y)) / 2
+
+        return loss, logits_per_image, onehot_y
+
+    def __call__(self, *args, **kwargs):
+        for epoch in range(self.start_epoch, self.num_epochs):
+            self.train_loader.sampler.set_epoch(epoch) if self.distributed else None
+
+            train_metrics = self.train(epoch)
+            self._distribute_bn()
+            self.scheduler.step(epoch + 1)
+
+            eval_metrics = {'r_loss': -train_metrics['loss']}
+
+            self._save(epoch, eval_metrics['r_loss'])
+            self._log(train_metrics, eval_metrics, epoch)
+            self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)

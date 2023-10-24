@@ -2,6 +2,7 @@ from .create_loader2 import create_loader_v2
 from .dataset import *
 
 DATASET_DICT = {
+    'imagenetra': ImageNetRandaugPrompt,
     'imagenet': ImageNet,
     'caltech101': Caltech101,
     'eurosat': EuroSAT,

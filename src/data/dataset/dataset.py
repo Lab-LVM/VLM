@@ -102,6 +102,9 @@ class VLMDataset(ABC):
             target = self.target_transform(target)
         return imgs, target
 
+    def __str__(self):
+        return f'{self.__class__.__name__} | # class: {self.n_class} | # root: {self.dataset_path} | prompt: {self.prompt}'
+
     @staticmethod
     def _split_warning(dataset_name, split, state):
         if split is not state:
