@@ -1,4 +1,4 @@
-from src.utils.registry import register_model
+from src.utils.registry import register_feature_engine
 from .modeling_clip import CLIPModel
 from .tokenization_clip_fast import CLIPTokenizerFast
 
@@ -18,7 +18,7 @@ def raise_not_implemented_finetune(model_name):
     raise NotImplementedError(f'{model_name} is not implemented finetune')
 
 
-@register_model
+@register_feature_engine
 def CLIP(pretrained=False, finetuned=False, freeze=False, **kwargs):
     model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
     tokenizer = CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32")
@@ -38,7 +38,7 @@ def CLIP(pretrained=False, finetuned=False, freeze=False, **kwargs):
     return dict(model=model, tokenizer=tokenizer)
 
 
-@register_model
+@register_feature_engine
 def Tip(pretrained=False, finetuned=False, freeze=False, **kwargs):
     model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
     tokenizer = CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32")

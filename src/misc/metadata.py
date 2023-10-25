@@ -77,7 +77,7 @@ def print_meta_data(cfg, model=None, train_loader=None, val_loader=None):
         'Grad Accum': cfg.train.optimizer.get('grad_accumulation', 1),
         'Optimizer': cfg.train.optimizer.get('opt', 'LBFGS'),
         'LR': cfg.train.optimizer.lr,
-        'Weight Decay': cfg.train.optimizer.get('weight_decay', -1),
+        'Weight Decay': cfg.train.optimizer.get('weight_decay', 0),
         'Scheduler': cfg.train.scheduler.sched,
         'Warmup LR': cfg.train.scheduler.warmup_lr,
         'Warmup Epochs': cfg.train.scheduler.warmup_epochs,

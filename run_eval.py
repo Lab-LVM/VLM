@@ -1,20 +1,21 @@
+import gc
 import os
 
+import hydra
 import pandas as pd
 import wandb
 from omegaconf import DictConfig
 
 from src.engine import *
 from src.initialize import setup_fabric, ObjectFactory
-from src.utils.registry import create_engine
-from src.utils.utils import dataset2dict, to_list
 from src.models import *
-
+from src.utils import dataset2dict, to_list
+from src.utils.registry import create_task_engine
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 
-@hydra.main(config_path="configs", config_name="config", version_base="1.3")
+@hydra.main(config_path="configs", config_name="eval_config", version_base="1.3")
 def main(cfg: DictConfig) -> None:
     cfg.wandb = False
     fabric = setup_fabric(cfg)
@@ -29,14 +30,13 @@ def main(cfg: DictConfig) -> None:
         train_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train)
         val_dataset = create_dataset(cfg.dataset, split=cfg.dataset.valid)
 
-        engine = create_engine(cfg, fabric, model, tokenizer, train_dataset, val_dataset)
+        engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, val_dataset)
         metrics = engine(n_shots=to_list(cfg.n_shot))
 
         row = dict(Data=k, **metrics)
         print(f'{row}\n')
         df = pd.concat([df, pd.DataFrame(row, index=[0])])
 
-    print(df)
     df.to_csv('result.csv', index=False)
 
     if cfg.is_master:

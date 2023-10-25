@@ -7,6 +7,7 @@ from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler_v2, scheduler_kwargs
 from torch import nn
 
+from src.utils.loss_function import CLIPLoss, CoCaLoss
 from src.utils.registry import create_model
 from src.utils.utils import filter_grad, EmptyScheduler
 
@@ -49,7 +50,7 @@ class ObjectFactory:
             import os
             import hydra
             model.load_state_dict(
-                torch.load(os.path.join(hydra.utils.get_original_cwd(), self.checkpoint))['state_dict'])
+                self.fabric.load(os.path.join(hydra.utils.get_original_cwd(), self.checkpoint))['state_dict'])
 
     def create_optimizer_and_scheduler(self, model, iter_per_epoch):
         self.cfg.train.iter_per_epoch = iter_per_epoch
@@ -82,7 +83,14 @@ class ObjectFactory:
         return optimizer, scheduler, num_epochs
 
     def create_criterion(self):
-        if self.dataset.augmentation.cutmix > 0 or self.dataset.augmentation.mixup > 0:
+        validate_loss_fn = None
+        if self.train.criterion == 'CLIPLoss':
+            train_loss_fn = validate_loss_fn = CLIPLoss()
+
+        elif self.train.criterion == 'CoCaLoss':
+            train_loss_fn = validate_loss_fn = CoCaLoss(1.0, 1.0)
+
+        elif self.dataset.augmentation.cutmix > 0 or self.dataset.augmentation.mixup > 0:
             # smoothing is handled with mixup target transform which outputs sparse, soft targets
             if self.train.bce_loss:
                 train_loss_fn = BinaryCrossEntropy(target_threshold=self.train.bce_target_thresh)
@@ -98,8 +106,9 @@ class ObjectFactory:
 
         else:
             train_loss_fn = nn.CrossEntropyLoss()
+
         train_loss_fn = train_loss_fn
-        validate_loss_fn = nn.CrossEntropyLoss()
+        validate_loss_fn = validate_loss_fn if validate_loss_fn is not None else nn.CrossEntropyLoss()
 
         self.cfg.train.criterion = train_loss_fn.__class__.__name__
         return train_loss_fn, validate_loss_fn

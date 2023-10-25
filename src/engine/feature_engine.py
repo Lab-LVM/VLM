@@ -48,7 +48,8 @@ class ClassificationFeatureEngine(FeatureEngine):
         for class_name in tqdm(self.train_dataset.class_name, desc='Build Text Classifier'):
             class_name = class_name.replace('_', ' ')
             text = [t.format(class_name) for t in self.train_dataset.prompt]
-            text_input = self.tokenizer(text).to(self.device)
+            text_input = self.tokenizer(text, padding='max_length', truncation=True, return_tensors='pt')[
+                'input_ids'].to(self.device)
 
             with self.fabric.autocast():
                 text_feature = self.model.encode_text(text_input)
@@ -160,13 +161,3 @@ class ClassificationFeatureEngine(FeatureEngine):
     def _save_file(self, obj, file_name):
         if self.cache:
             torch.save(obj, self.cache_path / file_name)
-
-
-class CLIPClassificationFeatureEngine(ClassificationFeatureEngine):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class TIPClassificationFeatureEngine(ClassificationFeatureEngine):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)

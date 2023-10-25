@@ -1,0 +1,37 @@
+# @package _global_
+
+defaults:
+  - override /train/optimizer: adamw
+  - override /dataset: imagenet
+  - override /model: clip_simple_adapter
+
+gpu: 7
+name: ${model.model_name}
+n_shot: 0
+
+train:
+  epochs: 20
+  batch_size: 4096
+  total_batch: 4096
+  num_workers: 4
+
+  scheduler:
+    sched: cosine
+    warmup_epochs: 0
+    cooldown_epochs: 0
+    min_lr: 5e-5
+
+  optimizer:
+    lr: 1e-5
+    weight_decay: 1e-2
+
+model:
+  model_name: CLIP_SimpleAdapter
+  freeze: True
+  finetune: True
+
+dataset:
+  name: imagenetra
+  augmentation:
+    train_interpolation: bicubic
+    prefetcher: False

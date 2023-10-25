@@ -15,7 +15,7 @@ criteria_metric: Top1
 criteria_decreasing: False
 eval_metrics: [ Top1 ] #, Top5 ]
 
-criterion: crossentropy
+criterion: CLIPLoss
 bce_loss: False
 bce_target_thresh:
 

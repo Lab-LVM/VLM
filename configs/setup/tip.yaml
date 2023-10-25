@@ -3,37 +3,33 @@
 defaults:
   - override /train/optimizer: adamw
   - override /dataset: imagenet
+  - override /model: tip
 
 gpu: 7
 name: ${model.model_name}
-n_shot: 16
-
-hydra:
-  run:
-    dir: finetune/${name}_finetune_${now:%Y%m%d-%H%M%S}/
+n_shot: 5
 
 train:
   epochs: 20
-  batch_size: 4096
-  total_batch: 4096
+  batch_size: 2048
+  total_batch: 2048
   num_workers: 4
+  criterion: crossentropy
 
   scheduler:
     sched: cosine
     warmup_epochs: 0
     cooldown_epochs: 0
-    min_lr: 5e-5
 
   optimizer:
     lr: 1e-3
 
 model:
-  model_name: CLIP_SMAdapter
+  model_name: Tip
   freeze: True
   finetune: True
 
 dataset:
-  name: imagenetra
   augmentation:
+    no_aug: True
     train_interpolation: bicubic
-    prefetcher: False

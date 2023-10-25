@@ -24,7 +24,7 @@ def encode_text(self, text):
 
 
 @register_model
-def CLIP_SMAdapter(freeze=False, finetune=False, **kwargs):
+def CLIP_SimpleAdapter(freeze=False, finetune=False, **kwargs):
     model, _ = clip.load("ViT-B/32")
 
     if freeze:

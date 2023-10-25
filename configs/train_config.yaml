@@ -1,0 +1,48 @@
+defaults:
+  - _self_
+  - train: base_train
+  - dataset: imagenet
+  - info: info
+  - model: base_model
+
+name: ${dataset.name}_${model.model_name}
+
+n_shot: 0
+checkpoint: # Not used in train
+cache: True
+
+wandb: True
+gpu: 0
+
+accelerator: cuda
+strategy: auto # deepspeed_stage_2
+precision: 16-mixed
+
+world_size: 1
+is_master: True
+distributed: False
+
+hydra:
+  run:
+    dir: finetune/${name}_${now:%Y%m%d-%H%M%S}/
+  job:
+    chdir: True
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${now:%m-%d}_${now:%H-%M}_${hydra.job.name}_${name}.log
+    root:
+      handlers:
+        - console
+        - file
+    disable_existing_loggers: false
