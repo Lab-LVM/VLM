@@ -30,10 +30,6 @@ def create_dataset(ds_cfg, **kwargs):
     )
     if kwargs.get('split', None):
         ds_kwargs['split'] = kwargs['split']
-
-    if ds_cfg.name in ['imagenet_a', 'imagenet_r', 'imagenet_v2', 'imagenet_sketch'] and ds_cfg.split == 'train':
-        return DATASET_DICT['imagenet'](**ds_kwargs)
-
     return DATASET_DICT[ds_cfg.name](**ds_kwargs)
 
 
