@@ -1,0 +1,11 @@
+defaults:
+  - base_dataset
+  - _self_
+
+name: imagenet_sketch
+
+num_classes: 1000
+
+train: train
+valid: val
+test: test

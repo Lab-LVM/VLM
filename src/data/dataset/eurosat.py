@@ -2,7 +2,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets import EuroSAT as TorchEuroSAT
 from torchvision.transforms import transforms
 
-from src.data.dataset import VLMDataset, EUROSAT_CLASS_NAME
+from . import VLMDataset, EUROSAT_CLASS_NAME
 
 
 class EuroSAT(VLMDataset, Dataset):
@@ -21,14 +21,13 @@ class EuroSAT(VLMDataset, Dataset):
         targets = dataset.targets
         return imgs, targets
 
-    @staticmethod
-    def set_prompt():
-        prompt = [
-            'a centered satellite photo of {}.',
-            'a centered satellite photo of a {}.',
-            'a centered satellite photo of the {}.',
+    @property
+    def prompt(self):
+        return [
+            lambda c: f'a centered satellite photo of {c}.',
+            lambda c: f'a centered satellite photo of a {c}.',
+            lambda c: f'a centered satellite photo of the {c}.',
         ]
-        return prompt
 
 
 if __name__ == '__main__':

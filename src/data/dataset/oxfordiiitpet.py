@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets import OxfordIIITPet as TorchOxfordIIITPet
 from torchvision.transforms import transforms
 
-from src.data.dataset import VLMDataset, OXFORD_IIIT_PETS_CLASS_NAME
+from . import VLMDataset, OXFORD_IIIT_PETS_CLASS_NAME
 
 
 class OxfordIIITPet(VLMDataset, Dataset):
@@ -16,10 +16,11 @@ class OxfordIIITPet(VLMDataset, Dataset):
         class_name_list = OXFORD_IIIT_PETS_CLASS_NAME
         super().__init__(root, dataset._images, dataset._labels, class_name_list, transform, target_transform, n_shot)
 
-    @staticmethod
-    def set_prompt():
-        prompt = ['a photo of a {}, a type of pet.']
-        return prompt
+    @property
+    def prompt(self):
+        return [
+            lambda c: 'a photo of a {c}, a type of pet.'
+        ]
 
     def _data_dict(self):
         train_dataset = TorchOxfordIIITPet(self.root, 'trainval')

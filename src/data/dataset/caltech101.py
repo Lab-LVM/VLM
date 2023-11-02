@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets import Caltech101 as TorchCaltech101
 from torchvision.transforms import transforms
 
-from src.data.dataset import VLMDataset, CALTECH101_CLASS_NAME
+from . import VLMDataset, CALTECH101_CLASS_NAME
 
 
 class Caltech101(VLMDataset, Dataset):
@@ -31,44 +31,44 @@ class Caltech101(VLMDataset, Dataset):
             targets.append(dataset.y[i])
         return imgs, targets
 
-    @staticmethod
-    def set_prompt():
-        prompt = ['a photo of a {}.',
-                  'a painting of a {}.',
-                  'a plastic {}.',
-                  'a sculpture of a {}.',
-                  'a sketch of a {}.',
-                  'a tattoo of a {}.',
-                  'a toy {}.',
-                  'a rendition of a {}.',
-                  'a embroidered {}.',
-                  'a cartoon {}.',
-                  'a {} in a video game.',
-                  'a plushie {}.',
-                  'a origami {}.',
-                  'art of a {}.',
-                  'graffiti of a {}.',
-                  'a drawing of a {}.',
-                  'a doodle of a {}.',
-                  'a photo of the {}.',
-                  'a painting of the {}.',
-                  'the plastic {}.',
-                  'a sculpture of the {}.',
-                  'a sketch of the {}.',
-                  'a tattoo of the {}.',
-                  'the toy {}.',
-                  'a rendition of the {}.',
-                  'the embroidered {}.',
-                  'the cartoon {}.',
-                  'the {} in a video game.',
-                  'the plushie {}.',
-                  'the origami {}.',
-                  'art of the {}.',
-                  'graffiti of the {}.',
-                  'a drawing of the {}.',
-                  'a doodle of the {}.',
-                  ]
-        return prompt
+    @property
+    def prompt(self):
+        return [
+            lambda c: f'a photo of a {c}.',
+            lambda c: f'a painting of a {c}.',
+            lambda c: f'a plastic {c}.',
+            lambda c: f'a sculpture of a {c}.',
+            lambda c: f'a sketch of a {c}.',
+            lambda c: f'a tattoo of a {c}.',
+            lambda c: f'a toy {c}.',
+            lambda c: f'a rendition of a {c}.',
+            lambda c: f'a embroidered {c}.',
+            lambda c: f'a cartoon {c}.',
+            lambda c: f'a {c} in a video game.',
+            lambda c: f'a plushie {c}.',
+            lambda c: f'a origami {c}.',
+            lambda c: f'art of a {c}.',
+            lambda c: f'graffiti of a {c}.',
+            lambda c: f'a drawing of a {c}.',
+            lambda c: f'a doodle of a {c}.',
+            lambda c: f'a photo of the {c}.',
+            lambda c: f'a painting of the {c}.',
+            lambda c: f'the plastic {c}.',
+            lambda c: f'a sculpture of the {c}.',
+            lambda c: f'a sketch of the {c}.',
+            lambda c: f'a tattoo of the {c}.',
+            lambda c: f'the toy {c}.',
+            lambda c: f'a rendition of the {c}.',
+            lambda c: f'the embroidered {c}.',
+            lambda c: f'the cartoon {c}.',
+            lambda c: f'the {c} in a video game.',
+            lambda c: f'the plushie {c}.',
+            lambda c: f'the origami {c}.',
+            lambda c: f'art of the {c}.',
+            lambda c: f'graffiti of the {c}.',
+            lambda c: f'a drawing of the {c}.',
+            lambda c: f'a doodle of the {c}.',
+        ]
 
 
 if __name__ == '__main__':

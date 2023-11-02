@@ -7,6 +7,6 @@ windows:
 #      - python run_eval.py gpu=1 model=tip n_shot='[1,2,5]'
 #      - python run_eval.py gpu=2 model=clip_simple_adapter checkpoint=latest.ckpt n_shot=0
 
-      - python run_train.py gpu=3 +setup=clip
-      - python run_train.py gpu=4 +setup=clip_simple_adapter
-      - python run_train.py gpu=5 +setup=tip
+      - python run_train.py gpu=0 +setup=clip
+      - python run_train.py gpu=1 +setup=clip_simple_adapter
+      - python run_train.py gpu=2 +setup=tip

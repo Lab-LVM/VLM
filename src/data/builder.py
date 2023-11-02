@@ -4,6 +4,10 @@ from .dataset import *
 DATASET_DICT = {
     'imagenetra': ImageNetRandaugPrompt,
     'imagenet': ImageNet,
+    'imagenet_a': ImageNetA,
+    'imagenet_r': ImageNetR,
+    'imagenet_v2': ImageNetV2,
+    'imagenet_sketch': ImageNetSketch,
     'caltech101': Caltech101,
     'eurosat': EuroSAT,
     'fgvc': FGVCAircraft,
@@ -12,6 +16,8 @@ DATASET_DICT = {
     'oxfordiiitpet': OxfordIIITPet,
     'stanfordcars': StanfordCars,
     'sun397': SUN397,
+    'dtd': DescribableTextures,
+    'ucf101': UCF101,
 }
 
 
@@ -24,6 +30,10 @@ def create_dataset(ds_cfg, **kwargs):
     )
     if kwargs.get('split', None):
         ds_kwargs['split'] = kwargs['split']
+
+    if ds_cfg.name in ['imagenet_a', 'imagenet_r', 'imagenet_v2', 'imagenet_sketch'] and ds_cfg.split == 'train':
+        return DATASET_DICT['imagenet'](**ds_kwargs)
+
     return DATASET_DICT[ds_cfg.name](**ds_kwargs)
 
 

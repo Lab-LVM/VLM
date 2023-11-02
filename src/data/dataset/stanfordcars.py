@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets import StanfordCars as TorchStanfordCars
 from torchvision.transforms import transforms
 
-from src.data.dataset import VLMDataset, STANFORDCARS_CLASS_NAME
+from . import VLMDataset, STANFORDCARS_CLASS_NAME
 
 
 class StanfordCars(VLMDataset, Dataset):
@@ -25,19 +25,18 @@ class StanfordCars(VLMDataset, Dataset):
             targets.append(_data[1])
         return imgs, targets
 
-    @staticmethod
-    def set_prompt():
-        prompt = [
-            'a photo of a {}.',
-            'a photo of the {}.',
-            'a photo of my {}.',
-            'i love my {}!',
-            'a photo of my dirty {}.',
-            'a photo of my clean {}.',
-            'a photo of my new {}.',
-            'a photo of my old {}.',
+    @property
+    def prompt(self):
+        return [
+            lambda c: f'a photo of a {c}.',
+            lambda c: f'a photo of the {c}.',
+            lambda c: f'a photo of my {c}.',
+            lambda c: f'i love my {c}!',
+            lambda c: f'a photo of my dirty {c}.',
+            lambda c: f'a photo of my clean {c}.',
+            lambda c: f'a photo of my new {c}.',
+            lambda c: f'a photo of my old {c}.',
         ]
-        return prompt
 
     def _data_dict(self):
         train_dataset = TorchStanfordCars(self.root, 'train')

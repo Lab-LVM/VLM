@@ -4,6 +4,7 @@ from src.utils.registry import register_model
 
 @register_model
 def Tip(freeze=False, finetune=False, **kwargs):
+    assert finetune
     model, _ = clip.load("ViT-B/32")
 
     if freeze:

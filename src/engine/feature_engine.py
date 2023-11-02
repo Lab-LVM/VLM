@@ -47,7 +47,7 @@ class ClassificationFeatureEngine(FeatureEngine):
         self.model.eval()
         for class_name in tqdm(self.train_dataset.class_name, desc='Build Text Classifier'):
             class_name = class_name.replace('_', ' ')
-            text = [t.format(class_name) for t in self.train_dataset.prompt]
+            text = [p(class_name) for p in self.train_dataset.prompt]
             text_input = self.tokenizer(text, padding='max_length', truncation=True, return_tensors='pt')[
                 'input_ids'].to(self.device)
 

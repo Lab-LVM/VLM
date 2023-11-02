@@ -1,4 +1,5 @@
 import gc
+import os
 
 import hydra
 import wandb
@@ -11,6 +12,8 @@ from src.misc import print_meta_data
 from src.models import *
 from src.utils import resume
 from src.utils.registry import create_train_engine
+
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 
 @hydra.main(config_path="configs", config_name="train_config", version_base="1.3")

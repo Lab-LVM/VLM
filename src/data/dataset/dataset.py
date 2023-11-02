@@ -26,17 +26,14 @@ class VLMDataset(ABC):
         self.n_shot = n_shot
 
         self.set_class_name(class_name_list)
-        self.prompt = self.set_prompt()
         self.origin_imgs, self.origin_targets = imgs, targets
         self.sampling(n_shot)
 
-    @staticmethod
-    def set_prompt():
-        """
-        list of prompts
-        """
-        prompt = ["a photo of {}."]
-        return prompt
+    @property
+    def prompt(self):
+        return [
+            lambda c: f'a photo {c}.'
+        ]
 
     def set_class_name(self, class_name_list):
         self.class_name = class_name_list

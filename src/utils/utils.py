@@ -7,6 +7,11 @@ from omegaconf import ListConfig
 
 from ..data import DATASET_DICT
 
+VLZB = ['caltech101', 'eurosat', 'fgvc', 'flowers102', 'food101', 'oxfordiiitpet', 'stanfordcars', 'sun397', 'dtd',
+        'ucf101', 'imagenet']
+
+IMAGENET_DS = ['imagenet', 'imagenet_r', 'imagenet_a', 'imagenet_v2', 'imagenet_sketch']
+
 
 def clean_state_dict(state_dict):
     # 'clean' checkpoint by removing .module prefix from state dict if it exists from parallel training
@@ -18,11 +23,22 @@ def clean_state_dict(state_dict):
 
 
 def dataset2dict(cfg):
+    ds_dict = dict()
     if cfg.name == 'all':
-        ds_dict = dict()
-        for k, v in DATASET_DICT.items():
+        for k, _ in DATASET_DICT.items():
             ds_dict[k] = compose(os.path.join('dataset', k)).dataset
         return ds_dict
+
+    if cfg.name == 'vlzb':  # vision language zeroshot benchmark
+        for k in VLZB:
+            ds_dict[k] = compose(os.path.join('dataset', k)).dataset
+        return ds_dict
+
+    if cfg.name == 'imagenet-ds':  # imagenet distribution shift
+        for k in IMAGENET_DS:
+            ds_dict[k] = compose(os.path.join('dataset', k)).dataset
+        return ds_dict
+
     return {cfg.name: cfg}
 
 

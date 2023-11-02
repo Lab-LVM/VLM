@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets import FGVCAircraft as TorchFGVCAircraft
 from torchvision.transforms import transforms
 
-from src.data.dataset import VLMDataset, FGVC_CLASS_NAME
+from . import VLMDataset, FGVC_CLASS_NAME
 
 
 class FGVCAircraft(VLMDataset, Dataset):
@@ -14,15 +14,15 @@ class FGVCAircraft(VLMDataset, Dataset):
     def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0):
         dataset = TorchFGVCAircraft(root, split)
         class_name_list = FGVC_CLASS_NAME
-        super().__init__(root, dataset._image_files, dataset._labels, class_name_list, transform, target_transform, n_shot)
+        super().__init__(root, dataset._image_files, dataset._labels, class_name_list, transform, target_transform,
+                         n_shot)
 
-    @staticmethod
-    def set_prompt():
-        prompt = [
-            'a photo of a {}, a type of aircraft.',
-            'a photo of the {}, a type of aircraft.',
+    @property
+    def prompt(self):
+        return [
+            lambda c: f'a photo of a {c}, a type of aircraft.',
+            lambda c: f'a photo of the {c}, a type of aircraft.',
         ]
-        return prompt
 
     def _data_dict(self):
         train_dataset = TorchFGVCAircraft(self.root, 'train')

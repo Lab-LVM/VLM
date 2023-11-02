@@ -26,16 +26,17 @@ def main(cfg: DictConfig) -> None:
     df = pd.DataFrame()
 
     for k, v in dataset2dict(cfg.dataset).items():
-        cfg.dataset = v
-        train_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train)
-        val_dataset = create_dataset(cfg.dataset, split=cfg.dataset.valid)
+        for shot in to_list(cfg.n_shot):
+            cfg.dataset = v
+            train_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train)
+            val_dataset = create_dataset(cfg.dataset, split=cfg.dataset.valid)
 
-        engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, val_dataset)
-        metrics = engine(n_shots=to_list(cfg.n_shot))
+            engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, val_dataset)
+            metrics = engine(n_shots=to_list(cfg.n_shot))
 
-        row = dict(Data=k, **metrics)
-        print(f'{row}\n')
-        df = pd.concat([df, pd.DataFrame(row, index=[0])])
+            row = dict(Data=k, shot=shot, **metrics)
+            print(f'{row}\n')
+            df = pd.concat([df, pd.DataFrame(row, index=[0])])
 
     df.to_csv('result.csv', index=False)
 

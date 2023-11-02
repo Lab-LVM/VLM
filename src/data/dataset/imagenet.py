@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets import ImageNet as TorchImagenet
 from torchvision.transforms import transforms
 
-from src.data.dataset import VLMDataset, IMAGENET_CLASS_NAME
+from . import VLMDataset, IMAGENET_CLASS_NAME
 
 
 class ImageNet(VLMDataset, Dataset):
@@ -25,17 +25,17 @@ class ImageNet(VLMDataset, Dataset):
         targets = dataset.targets
         return imgs, targets
 
-    @staticmethod
-    def set_prompt():
-        prompt = ["itap of a {}.",
-                  "a bad photo of the {}.",
-                  "a origami {}.",
-                  "a photo of the large {}.",
-                  "a {} in a video game.",
-                  "art of the {}.",
-                  "a photo of the small {}.",
-                  ]
-        return prompt
+    @property
+    def prompt(self):
+        return [
+            lambda c: f'itap of a {c}.',
+            lambda c: f'a bad photo of the {c}.',
+            lambda c: f'a origami {c}.',
+            lambda c: f'a photo of the large {c}.',
+            lambda c: f'a {c} in a video game.',
+            lambda c: f'art of the {c}.',
+            lambda c: f'a photo of the small {c}.',
+        ]
 
     def _data_dict(self):
         train_dataset = TorchImagenet(os.path.join(self.root, self.dataset_path), 'train')
@@ -101,17 +101,18 @@ class ImageNetRandaugPrompt(ImageNet):
     def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0):
         super().__init__(root, split, transform, target_transform, n_shot)
 
-        self.augmentation_prompt = ["{} itap of a {}.",
-                                    "itap of a {} {}.",
-                                    "a bad {} photo of the {}.",
-                                    "a {} origami {}.",
-                                    "a {} {} in a video game.",
-                                    "{} art of the {}.",
-                                    "art of the {} {}.",
-                                    "a {} photo of the {}.",
-                                    "{} transformed image of {}.",
-                                    "{} transformed photo of the {}.",
-                                    ]
+        self.augmentation_prompt = [
+            lambda augment, name: f'{augment} itap of a {name}.',
+            lambda augment, name: f'itap of a {augment} {name}.',
+            lambda augment, name: f'a bad {augment} photo of the {name}.',
+            lambda augment, name: f'a {augment} origami {name}.',
+            lambda augment, name: f'a {augment} {name} in a video game.',
+            lambda augment, name: f'{augment} art of the {name}.',
+            lambda augment, name: f'art of the {augment} {name}.',
+            lambda augment, name: f'a {augment} photo of the {name}.',
+            lambda augment, name: f'{augment} transformed image of {name}.',
+            lambda augment, name: f'{augment} transformed photo of the {name}.',
+        ]
 
     def setup_prompt_transform(self):
         self.pre_processing = transforms.Compose(self.transform.transforms[:2])
@@ -124,7 +125,7 @@ class ImageNetRandaugPrompt(ImageNet):
         ra_fs += f'{RAND_AUG_TRANSFORMS[ra_tf[0].name]} and '
         ra_fs += f'{RAND_AUG_TRANSFORMS[ra_tf[1].name]}'
 
-        prompt = prompt.format(ra_fs, self.num2str(target))
+        prompt = prompt(ra_fs, self.num2str(target))
         return prompt
 
     def __getitem__(self, idx):
@@ -141,7 +142,7 @@ class ImageNetRandaugPrompt(ImageNet):
 
 
 if __name__ == '__main__':
-    ds = ImageNet('/data/vlm', transform=transforms.ToTensor(), n_shot=0)
+    ds = ImageNet('/data', transform=transforms.ToTensor(), n_shot=0)
     ds.sampling(1)
     print(len(ds))
     data = next(iter(ds))

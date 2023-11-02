@@ -1,0 +1,11 @@
+defaults:
+  - base_dataset
+  - _self_
+
+name: imagenet_r
+
+num_classes: 200
+
+train: train
+valid: val
+test: test

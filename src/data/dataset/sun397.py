@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets import SUN397 as TorchSUN397
 from torchvision.transforms import transforms
 
-from src.data.dataset import VLMDataset, SUN397_CLASS_NAME
+from . import VLMDataset, SUN397_CLASS_NAME
 
 
 class SUN397(VLMDataset, Dataset):
@@ -16,15 +16,15 @@ class SUN397(VLMDataset, Dataset):
         dataset = TorchSUN397(root)
         self.dataset = dataset
         class_name_list = SUN397_CLASS_NAME
-        super().__init__(root, dataset._image_files, dataset._labels, class_name_list, transform, target_transform, n_shot)
+        super().__init__(root, dataset._image_files, dataset._labels, class_name_list, transform, target_transform,
+                         n_shot)
 
-    @staticmethod
-    def set_prompt():
-        prompt = [
-            'a photo of a {}.',
-            'a photo of the {}.',
+    @property
+    def prompt(self):
+        return [
+            lambda c: f'a photo of a {c}.',
+            lambda c: f'a photo of the {c}.',
         ]
-        return prompt
 
     def _data_dict(self):
         data_dict = defaultdict(list)

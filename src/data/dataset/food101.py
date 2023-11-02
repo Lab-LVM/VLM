@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets import Food101 as TorchFood101
 from torchvision.transforms import transforms
 
-from src.data.dataset import VLMDataset, FOOD101_CLASS_NAME
+from . import VLMDataset, FOOD101_CLASS_NAME
 
 
 class Food101(VLMDataset, Dataset):
@@ -14,12 +14,14 @@ class Food101(VLMDataset, Dataset):
     def __init__(self, root, split='test', transform=None, target_transform=None, n_shot=0):
         dataset = TorchFood101(root, split)
         class_name_list = FOOD101_CLASS_NAME
-        super().__init__(root, dataset._image_files, dataset._labels, class_name_list, transform, target_transform, n_shot)
+        super().__init__(root, dataset._image_files, dataset._labels, class_name_list, transform, target_transform,
+                         n_shot)
 
-    @staticmethod
-    def set_prompt():
-        prompt = ['a photo of {}, a type of food.']
-        return prompt
+    @property
+    def prompt(self):
+        return [
+            lambda c: 'a photo of a {c}, a type of food.'
+        ]
 
     def _data_dict(self):
         train_dataset = TorchFood101(self.root, 'train')
