@@ -1,4 +1,6 @@
 model_name: CLIP
+backbone: ViT-B32
+
 freeze: True
 finetune: False
 
