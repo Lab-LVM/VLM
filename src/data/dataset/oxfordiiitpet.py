@@ -19,7 +19,7 @@ class OxfordIIITPet(VLMDataset, Dataset):
     @property
     def prompt(self):
         return [
-            lambda c: 'a photo of a {c}, a type of pet.'
+            lambda c: f'a photo of a {c}, a type of pet.'
         ]
 
     def _data_dict(self):
@@ -31,7 +31,7 @@ class OxfordIIITPet(VLMDataset, Dataset):
 
 
 if __name__ == '__main__':
-    ds = OxfordIIITPet('/data/vlm', transform=transforms.ToTensor(), n_shot=3)
+    ds = OxfordIIITPet('/data', transform=transforms.ToTensor(), n_shot=3)
 
     data = next(iter(ds))
 

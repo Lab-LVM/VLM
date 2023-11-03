@@ -20,7 +20,7 @@ class Food101(VLMDataset, Dataset):
     @property
     def prompt(self):
         return [
-            lambda c: 'a photo of a {c}, a type of food.'
+            lambda c: f'a photo of a {c}, a type of food.'
         ]
 
     def _data_dict(self):

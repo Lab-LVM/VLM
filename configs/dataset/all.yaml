@@ -13,4 +13,3 @@ eval_size: [ 3,224,224 ]
 train: train
 valid: val
 test: test
-class_map:

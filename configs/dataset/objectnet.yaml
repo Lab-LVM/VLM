@@ -2,9 +2,9 @@ defaults:
   - base_dataset
   - _self_
 
-name: imagenet_sketch
+name: objectnet
 
-num_classes: 1000
+num_classes: 113
 
 train:
 valid:

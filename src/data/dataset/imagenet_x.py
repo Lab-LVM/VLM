@@ -1,11 +1,14 @@
+import json
 import os
 from abc import ABC
+from glob import glob
+from pathlib import Path
 
 from torch.utils.data import Dataset
+from torchvision import transforms
 from torchvision.datasets import ImageFolder
-from torchvision.transforms import transforms
 
-from . import VLMDataset, IMAGENET_CLASS_NAME
+from src.data.dataset import VLMDataset, IMAGENET_CLASS_NAME
 
 imagenet_a_class_number = [
     6, 11, 13, 15, 17, 22, 23, 27, 30, 37, 39, 42, 47, 50, 57, 70, 71, 76, 79, 89, 90, 94, 96, 97, 99, 105, 107, 108,
@@ -82,8 +85,64 @@ class ImageNetSketch(ImageNetX):
     dataset_path = 'imageNet-Sketch'
 
 
+class ObjectNet(VLMDataset, Dataset):
+    dataset_path = 'objectnet-1.0'
+    n_class = 113
+
+    def __init__(self, root, split=None, transform=None, target_transform=None, n_shot=0):
+        self._split_warning(self.__class__.__name__, split, None)
+        folder_to_ids = self.get_metadata(root)
+
+        imgs, targets, class_name_list = list(), list(), list()
+        target_number = 0
+        for folder, idxs in folder_to_ids.items():
+            class_img = glob(os.path.join(root, self.dataset_path, 'images', folder, '*'))
+            imgs.extend(class_img)
+            targets.extend([target_number for _ in range(len(class_img))])
+            class_name = ' or '.join([IMAGENET_CLASS_NAME[idx] for idx in idxs])
+            class_name_list.append(class_name)
+            target_number += 1
+
+        super().__init__(root, imgs, targets, class_name_list, transform, target_transform, n_shot)
+
+    def get_metadata(self, root):
+        metadata = Path(os.path.join(root, self.dataset_path, 'mappings'))
+        with open(metadata / 'folder_to_objectnet_label.json', 'r') as f:
+            folder_map = json.load(f)
+            folder_map = {v: k for k, v in folder_map.items()}
+        with open(metadata / 'objectnet_to_imagenet_1k.json', 'r') as f:
+            objectnet_map = json.load(f)
+
+        with open(metadata / 'pytorch_to_imagenet_2012_id.json', 'r') as f:
+            pytorch_map = json.load(f)
+            pytorch_map = {v: k for k, v in pytorch_map.items()}
+
+        with open(metadata / 'imagenet_to_label_2012_v2', 'r') as f:
+            imagenet_map = {v.strip(): str(pytorch_map[i]) for i, v in enumerate(f)}
+
+        folder_to_ids = dict()
+        for objectnet_name, imagenet_names in objectnet_map.items():
+            imagenet_names = imagenet_names.split('; ')
+            imagenet_ids = [int(imagenet_map[imagenet_name]) for imagenet_name in imagenet_names]
+            folder_to_ids[folder_map[objectnet_name]] = imagenet_ids
+
+        return folder_to_ids
+
+    @property
+    def prompt(self):
+        return [
+            lambda c: f'itap of a {c}.',
+            lambda c: f'a bad photo of the {c}.',
+            lambda c: f'a origami {c}.',
+            lambda c: f'a photo of the large {c}.',
+            lambda c: f'a {c} in a video game.',
+            lambda c: f'art of the {c}.',
+            lambda c: f'a photo of the small {c}.',
+        ]
+
+
 if __name__ == '__main__':
-    for d_class in [ImageNetR, ImageNetA, ImageNetV2, ImageNetSketch]:
+    for d_class in [ImageNetR, ImageNetA, ImageNetV2, ImageNetSketch, ObjectNet]:
         print(d_class.__name__)
         ds = d_class('/data', transform=transforms.ToTensor())
         data = next(iter(ds))

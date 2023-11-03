@@ -8,6 +8,7 @@ DATASET_DICT = {
     'imagenet_r': ImageNetR,
     'imagenet_v2': ImageNetV2,
     'imagenet_sketch': ImageNetSketch,
+    'objectnet': ObjectNet,
     'caltech101': Caltech101,
     'eurosat': EuroSAT,
     'fgvc': FGVCAircraft,
@@ -18,6 +19,8 @@ DATASET_DICT = {
     'sun397': SUN397,
     'dtd': DescribableTextures,
     'ucf101': UCF101,
+    'cifar100': CIFAR100,
+    'pcam': PCam,
 }
 
 
@@ -35,7 +38,6 @@ def create_dataset(ds_cfg, **kwargs):
 
 def create_dataloader(cfg, dataset, is_train):
     aug = cfg.dataset.augmentation
-
     loader = create_loader_v2(
         dataset,
         input_size=tuple(cfg.dataset.train_size) if is_train else tuple(cfg.dataset.eval_size),

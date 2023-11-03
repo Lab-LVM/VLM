@@ -1,0 +1,11 @@
+defaults:
+  - base_dataset
+  - _self_
+
+name: pcam
+
+num_classes: 2
+
+train: train
+valid: val
+test: test

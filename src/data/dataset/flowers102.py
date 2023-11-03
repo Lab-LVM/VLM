@@ -20,7 +20,7 @@ class Flowers102(VLMDataset, Dataset):
     @property
     def prompt(self):
         return [
-            lambda c: 'a photo of a {c}, a type of flower.'
+            lambda c: f'a photo of a {c}, a type of flower.'
         ]
 
     def _data_dict(self):

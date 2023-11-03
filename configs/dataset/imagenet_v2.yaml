@@ -6,6 +6,6 @@ name: imagenet_v2
 
 num_classes: 1000
 
-train: train
-valid: val
-test: test
+train:
+valid:
+test:

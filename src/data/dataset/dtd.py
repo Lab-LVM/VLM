@@ -16,7 +16,7 @@ class DescribableTextures(VLMDataset, Dataset):
 
     @staticmethod
     def _imgs_targets(dataset):
-        imgs = [x for x in dataset._image_files]
+        imgs = dataset._image_files
         targets = dataset._labels
         return imgs, targets
 

@@ -1,7 +1,7 @@
 defaults:
   - augmentation: base_augmentation
 
-name:
+name: imagenet_ds
 root: /data
 task: multiclass
 
@@ -13,7 +13,3 @@ eval_size: [ 3,224,224 ]
 train: train
 valid: val
 test: test
-
-augmentation:
-  mixup: 0
-  cutmix: 0

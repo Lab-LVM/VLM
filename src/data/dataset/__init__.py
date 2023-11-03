@@ -6,9 +6,11 @@ from .fgvc import FGVCAircraft
 from .flowers102 import Flowers102
 from .food101 import Food101
 from .imagenet import ImageNet, ImageNetRandaugPrompt
-from .imagenet_x import ImageNetA, ImageNetR, ImageNetSketch, ImageNetV2
+from .imagenet_x import ImageNetA, ImageNetR, ImageNetSketch, ImageNetV2, ObjectNet
 from .oxfordiiitpet import OxfordIIITPet
 from .stanfordcars import StanfordCars
 from .sun397 import SUN397
 from .dtd import DescribableTextures
 from .ucf101 import UCF101
+from .cifar100 import CIFAR100
+from .pcam import PCam

@@ -8,9 +8,9 @@ from omegaconf import ListConfig
 from ..data import DATASET_DICT
 
 VLZB = ['caltech101', 'eurosat', 'fgvc', 'flowers102', 'food101', 'oxfordiiitpet', 'stanfordcars', 'sun397', 'dtd',
-        'ucf101', 'imagenet']
+        'ucf101', 'pcam', 'imagenet', 'cifar100']
 
-IMAGENET_DS = ['imagenet', 'imagenet_r', 'imagenet_a', 'imagenet_v2', 'imagenet_sketch']
+IMAGENET_DS = ['imagenet', 'imagenet_r', 'imagenet_a', 'imagenet_v2', 'imagenet_sketch', 'objectnet']
 
 
 def clean_state_dict(state_dict):
@@ -24,22 +24,21 @@ def clean_state_dict(state_dict):
 
 def dataset2dict(cfg):
     ds_dict = dict()
+
     if cfg.name == 'all':
-        for k, _ in DATASET_DICT.items():
-            ds_dict[k] = compose(os.path.join('dataset', k)).dataset
-        return ds_dict
+        dataset_list = list(DATASET_DICT.keys())
+    elif cfg.name == 'vlzb':
+        dataset_list = VLZB
+    elif cfg.name == 'imagenet_ds':
+        dataset_list = IMAGENET_DS
+    else:
+        return {cfg.name: cfg}
 
-    if cfg.name == 'vlzb':  # vision language zeroshot benchmark
-        for k in VLZB:
-            ds_dict[k] = compose(os.path.join('dataset', k)).dataset
-        return ds_dict
-
-    if cfg.name == 'imagenet_ds':  # imagenet distribution shift
-        for k in IMAGENET_DS:
-            ds_dict[k] = compose(os.path.join('dataset', k)).dataset
-        return ds_dict
-
-    return {cfg.name: cfg}
+    for k in dataset_list:
+        ds_dict[k] = compose(os.path.join('dataset', k)).dataset
+        ds_dict[k]['train_size'] = cfg.train_size
+        ds_dict[k]['eval_size'] = cfg.eval_size
+    return ds_dict
 
 
 def to_list(item):
