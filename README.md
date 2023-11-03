@@ -2,9 +2,13 @@
 
 ## How to run
 
+evaluation
+
 ```bash
-python run_eval.py gpu=[ 0 | [0,1,2,3] ] model=[clip | tip] n_shot=[ 1 | [1,2] ]
+python run_eval.py gpu=[ 0 | [0,1,2,3] ] model=[clip | tip] data=[ all | imagenet_ds | vlzb | dataset_name ] n_shot=[ 1 | [1,2] ]
 ```
+
+train
 
 ```bash
 python run_train.py +setup=[ clip | tip ] gpu=[ 0 | [0,1,2,3] ] n_shot=[ 0 | 1 | 2 ] # only single n_shot supported
