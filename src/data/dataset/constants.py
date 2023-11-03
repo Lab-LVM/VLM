@@ -269,16 +269,16 @@ CALTECH101_CLASS_NAME = [
 ]
 
 EUROSAT_CLASS_NAME = [
+    'annual crop land',
     'forest',
+    'brushland or shrubland or herbaceous vegetation land',
+    'highway or road',
+    'industrial buildings or commercial buildings',
+    'pasture land',
     'permanent crop land',
     'residential buildings or homes or apartments',
     'river',
-    'pasture land',
-    'lake or sea',
-    'brushland or shrubland',
-    'annual crop land',
-    'industrial buildings or commercial buildings',
-    'highway or road',
+    'sea or lake',
 ]
 
 FGVC_CLASS_NAME = [
