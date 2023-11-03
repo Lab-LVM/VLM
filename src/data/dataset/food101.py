@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets import Food101 as TorchFood101
 from torchvision.transforms import transforms
 
-from src.data.dataset import VLMDataset, FOOD101_CLASS_NAME
+from . import VLMDataset, FOOD101_CLASS_NAME
 
 
 class Food101(VLMDataset, Dataset):
