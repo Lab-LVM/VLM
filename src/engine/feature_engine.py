@@ -48,8 +48,7 @@ class ClassificationFeatureEngine(FeatureEngine):
         for class_name in tqdm(self.train_dataset.class_name, desc='Build Text Classifier'):
             class_name = class_name.replace('_', ' ')
             text = [p(class_name) for p in self.train_dataset.prompt]
-            text_input = self.tokenizer(text, padding='max_length', truncation=True, return_tensors='pt')[
-                'input_ids'].to(self.device)
+            text_input = self.tokenizer(text).to(self.device)
 
             with self.fabric.autocast():
                 text_feature = self.model.encode_text(text_input)
@@ -111,6 +110,7 @@ class ClassificationFeatureEngine(FeatureEngine):
         for data in tqdm(loader, total=len(loader), desc=f'Build Query Set'):
             x, y = map(lambda x: x.to(self.device), data)
             x = x.to(memory_format=torch.channels_last)
+
             with self.fabric.autocast():
                 image_features = self.model.encode_image(x)
 

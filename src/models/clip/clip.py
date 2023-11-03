@@ -12,7 +12,6 @@ from tqdm import tqdm
 from src.utils.registry import register_model
 from .model import build_model
 from .simple_tokenizer import SimpleTokenizer as _Tokenizer
-from .tokenizer_fast import CLIPTokenizerFast
 
 try:
     from torchvision.transforms import InterpolationMode
@@ -243,7 +242,7 @@ def tokenize(texts: Union[str, List[str]], context_length: int = 77, truncate: b
 
 @register_model
 def CLIP(**kwargs):
-    model, _ = load("ViT-B/32")
+    model, _ = load('ViT-B/32')
 
     if kwargs.get('freeze', False):
         for name, param in model.named_parameters():
@@ -257,6 +256,4 @@ def CLIP(**kwargs):
 
 @register_model
 def CLIP_tokenizer(**kwargs):
-    tokenizer = CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32")
-    tokenizer.model_input_names = ['input_ids']
-    return tokenizer
+    return tokenize

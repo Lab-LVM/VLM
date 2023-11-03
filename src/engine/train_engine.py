@@ -201,5 +201,5 @@ class TrainEngine:
         return {f"{prefix}{separator}{k}": v for k, v in metrics.items()}
 
     def _tokenize(self, text):
-        text_embedding = self.tokenizer(text, padding='max_length', truncation=True, return_tensors='pt')['input_ids']
+        text_embedding = self.tokenizer(text)
         return text_embedding

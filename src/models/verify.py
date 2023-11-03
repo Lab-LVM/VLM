@@ -6,10 +6,11 @@ def normalize(features):
     return features / features.norm(dim=-1, keepdim=True)
 
 
-model = create_model('Tip')
+model = create_model('CLIP')
 tokenizer = create_model('CLIP_tokenizer')
 
-text_input = tokenizer(["a photo of a cat", "a image of a dog"], padding='max_length', truncation=True, return_tensors='pt')['input_ids']
+text_input = tokenizer(["a photo of a cat", "a image of a dog"])
+print(text_input.shape)
 text_feature = model.encode_text(text_input)
 text_feature = normalize(text_feature)
 
