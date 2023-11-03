@@ -40,4 +40,4 @@ class TaskEngine(ABC):
 
     @property
     def _output(self):
-        return {self.metric.prefix: self.metric.compute().item()}
+        return {self.metric.prefix: f'{self.metric.compute().item() * 100:.3f}'}

@@ -70,23 +70,11 @@ class ImageNetR(ImageNetX):
     n_class = 200
     class_number = imagenet_r_class_number
 
-    @staticmethod
-    def _imgs_targets(dataset):
-        imgs = [x[0] for x in dataset.imgs]
-        targets = [imagenet_r_class_number[t] for t in dataset.targets]
-        return imgs, targets
-
 
 class ImageNetA(ImageNetX):
     dataset_path = 'imageNet-A'
     n_class = 200
     class_number = imagenet_a_class_number
-
-    @staticmethod
-    def _imgs_targets(dataset):
-        imgs = [x[0] for x in dataset.imgs]
-        targets = [imagenet_a_class_number[t] for t in dataset.targets]
-        return imgs, targets
 
 
 class ImageNetSketch(ImageNetX):
@@ -176,12 +164,10 @@ class ObjectNet(VLMDataset, Dataset):
 
 
 if __name__ == '__main__':
-    # for d_class in [ImageNetR, ImageNetA, ImageNetV2, ImageNetSketch, ObjectNet]:
-    #     print(d_class.__name__)
-    #     ds = d_class('/data', transform=transforms.ToTensor())
-    #     data = next(iter(ds))
-    #     print(data[0].shape, data[1])
-    #     print(ds.class_name[:5])
-    #     print(f'{ds.str2num("tench")}, {ds.num2str(data[1])}')
-
-    ds = ImageNetV2('/data', transform=transforms.ToTensor())
+    for d_class in [ImageNetR, ImageNetA, ImageNetV2, ImageNetSketch, ObjectNet]:
+        print(d_class.__name__)
+        ds = d_class('/data', transform=transforms.ToTensor())
+        data = next(iter(ds))
+        print(data[0].shape, data[1])
+        print(ds.class_name[:5])
+        print(f'{ds.str2num("tench")}, {ds.num2str(data[1])}')
