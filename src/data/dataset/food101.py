@@ -4,11 +4,11 @@ from torch.utils.data import Dataset
 from torchvision.datasets import Food101 as TorchFood101
 from torchvision.transforms import transforms
 
-from . import VLMDataset, FOOD101_CLASS_NAME
+from src.data.dataset import VLMDataset, FOOD101_CLASS_NAME
 
 
 class Food101(VLMDataset, Dataset):
-    dataset_path = 'food101'
+    dataset_path = 'food-101'
     n_class = 101
 
     def __init__(self, root, split='test', transform=None, target_transform=None, n_shot=0):
@@ -32,7 +32,7 @@ class Food101(VLMDataset, Dataset):
 
 
 if __name__ == '__main__':
-    ds = Food101('/data/vlm', transform=transforms.ToTensor(), n_shot=0)
+    ds = Food101('/data', transform=transforms.ToTensor(), n_shot=0)
 
     data = next(iter(ds))
 

@@ -34,7 +34,7 @@ def dataset2dict(cfg):
             ds_dict[k] = compose(os.path.join('dataset', k)).dataset
         return ds_dict
 
-    if cfg.name == 'imagenet-ds':  # imagenet distribution shift
+    if cfg.name == 'imagenet_ds':  # imagenet distribution shift
         for k in IMAGENET_DS:
             ds_dict[k] = compose(os.path.join('dataset', k)).dataset
         return ds_dict
