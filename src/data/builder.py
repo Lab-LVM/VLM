@@ -21,6 +21,7 @@ DATASET_DICT = {
     'ucf101': UCF101,
     'cifar100': CIFAR100,
     'pcam': PCam,
+    'country211': Country211,
 }
 
 

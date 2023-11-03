@@ -14,3 +14,4 @@ from .dtd import DescribableTextures
 from .ucf101 import UCF101
 from .cifar100 import CIFAR100
 from .pcam import PCam
+from .country211 import Country211
