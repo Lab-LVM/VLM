@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets import PCAM as TorchPCAM
 from torchvision.transforms import transforms
 
-from src.data.dataset import VLMDataset, PCAM_CLASS_NAME
+from . import VLMDataset, PCAM_CLASS_NAME
 
 
 class PCam(VLMDataset, Dataset):

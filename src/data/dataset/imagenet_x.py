@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 
-from src.data.dataset import VLMDataset, IMAGENET_CLASS_NAME
+from . import VLMDataset, IMAGENET_CLASS_NAME
 
 imagenet_a_class_number = [
     6, 11, 13, 15, 17, 22, 23, 27, 30, 37, 39, 42, 47, 50, 57, 70, 71, 76, 79, 89, 90, 94, 96, 97, 99, 105, 107, 108,
@@ -70,19 +70,53 @@ class ImageNetR(ImageNetX):
     n_class = 200
     class_number = imagenet_r_class_number
 
+    @staticmethod
+    def _imgs_targets(dataset):
+        imgs = [x[0] for x in dataset.imgs]
+        targets = [imagenet_r_class_number[t] for t in dataset.targets]
+        return imgs, targets
+
 
 class ImageNetA(ImageNetX):
     dataset_path = 'imageNet-A'
     n_class = 200
     class_number = imagenet_a_class_number
 
-
-class ImageNetV2(ImageNetX):
-    dataset_path = 'imageNet-V2'
+    @staticmethod
+    def _imgs_targets(dataset):
+        imgs = [x[0] for x in dataset.imgs]
+        targets = [imagenet_a_class_number[t] for t in dataset.targets]
+        return imgs, targets
 
 
 class ImageNetSketch(ImageNetX):
     dataset_path = 'imageNet-Sketch'
+
+
+class ImageNetV2(VLMDataset, Dataset, ABC):
+    dataset_path = 'imageNet-V2'
+    n_class = 1000
+
+    def __init__(self, root, split=None, transform=None, target_transform=None, n_shot=0):
+        self._split_warning(self.__class__.__name__, split, None)
+        imgs, targets = list(), list()
+        for sample in glob(os.path.join(root, self.dataset_path, '*/*')):
+            imgs.append(sample)
+            targets.append(int(os.path.basename(os.path.dirname(sample))))
+        class_name_list = IMAGENET_CLASS_NAME
+        super().__init__(root, imgs, targets, class_name_list, transform, target_transform, n_shot)
+
+    @property
+    def prompt(self):
+        return [
+            lambda c: f'itap of a {c}.',
+            lambda c: f'a bad photo of the {c}.',
+            lambda c: f'a origami {c}.',
+            lambda c: f'a photo of the large {c}.',
+            lambda c: f'a {c} in a video game.',
+            lambda c: f'art of the {c}.',
+            lambda c: f'a photo of the small {c}.',
+        ]
 
 
 class ObjectNet(VLMDataset, Dataset):
@@ -142,10 +176,12 @@ class ObjectNet(VLMDataset, Dataset):
 
 
 if __name__ == '__main__':
-    for d_class in [ImageNetR, ImageNetA, ImageNetV2, ImageNetSketch, ObjectNet]:
-        print(d_class.__name__)
-        ds = d_class('/data', transform=transforms.ToTensor())
-        data = next(iter(ds))
-        print(data[0].shape, data[1])
-        print(ds.class_name[:5])
-        print(f'{ds.str2num("tench")}, {ds.num2str(data[1])}')
+    # for d_class in [ImageNetR, ImageNetA, ImageNetV2, ImageNetSketch, ObjectNet]:
+    #     print(d_class.__name__)
+    #     ds = d_class('/data', transform=transforms.ToTensor())
+    #     data = next(iter(ds))
+    #     print(data[0].shape, data[1])
+    #     print(ds.class_name[:5])
+    #     print(f'{ds.str2num("tench")}, {ds.num2str(data[1])}')
+
+    ds = ImageNetV2('/data', transform=transforms.ToTensor())

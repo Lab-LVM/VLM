@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets import Country211 as TorchCountry211
 from torchvision.transforms import transforms
 
-from src.data.dataset import VLMDataset, COUNTRY211_CLASS_NAME
+from . import VLMDataset, COUNTRY211_CLASS_NAME
 
 
 class Country211(VLMDataset, Dataset):
