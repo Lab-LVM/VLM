@@ -22,14 +22,12 @@ class CLIP_SimpleAdapterTaskEngine(CLIPTaskEngine):
 class CLIP_SimpleAdapterTrainEngine(TrainEngine):
     def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs):
         super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
-        self.best_metric = float('-inf')
         self.train_loader.dataset.setup_prompt_transform()
 
     def iterate(self, model, data, criterion):
         x, y, ra_prompt = data
 
         x = x.to(self.device).to(memory_format=torch.channels_last)
-        y = y.to(self.device)
         onehot_y = torch.arange(x.shape[0]).long().to(self.device)
         ra_prompt = self._tokenize(ra_prompt).to(self.device)
 
@@ -47,8 +45,6 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
             self._distribute_bn()
             self.scheduler.step(epoch + 1)
 
-            eval_metrics = {'r_loss': -train_metrics['loss']}
-
-            self._save(epoch, eval_metrics['r_loss'])
-            self._log(train_metrics, eval_metrics, epoch)
+            self._save(epoch, train_metrics[self.cm])
+            self._log(train_metrics, {}, epoch)
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)

@@ -32,10 +32,11 @@ class TrainEngine:
         self.train_loader, self.val_loader = loaders
 
         self.cm = cfg.train.criteria_metric
+        self.decreasing = cfg.train.criteria_decreasing
         self.losses = MeanMetric().to(self.device)
         self.metric_fn = self._init_metrics(cfg.dataset.task, cfg.train.eval_metrics,
                                             0.5, self.num_classes, self.num_classes, 'macro')
-        self.best_metric = self.best_epoch = 0
+        self.best_metric = self.best_epoch = 0 if not self.decreasing else float('inf')
 
     def __call__(self, *args, **kwargs):
         for epoch in range(self.start_epoch, self.num_epochs):
@@ -45,7 +46,7 @@ class TrainEngine:
             self._distribute_bn()
             eval_metrics = self.eval(epoch)
 
-            self.scheduler.step(epoch + 1, eval_metrics[self.cm])
+            self.scheduler.step(epoch + 1)
 
             self._save(epoch, eval_metrics[self.cm])
             self._log(train_metrics, eval_metrics, epoch)
@@ -160,7 +161,9 @@ class TrainEngine:
             save_state[self.cm] = criterion_metric
         self.fabric.save(save_path, save_state)
 
-        if criterion_metric > self.best_metric:
+        is_best = (self.decreasing and criterion_metric < self.best_metric) or (
+                    not self.decreasing and criterion_metric > self.best_metric)
+        if is_best:
             self.best_metric, self.best_epoch = criterion_metric, epoch
             if self.fabric.local_rank == 0:
                 shutil.copy(save_path, 'best.ckpt')
