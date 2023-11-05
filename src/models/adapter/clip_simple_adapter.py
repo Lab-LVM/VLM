@@ -24,24 +24,28 @@ def encode_text(self, text):
 
 
 @register_model
-def CLIP_SimpleAdapter(freeze=False, finetune=False, **kwargs):
+def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
+                       **kwargs):
     assert finetune
-    model, _ = clip.load("ViT-B/32")
+    model, _ = clip.load(backbone)
 
     if freeze:
         for name, param in model.named_parameters():
             param.requires_grad = False
 
     if finetune:
+        assert language_adapter or vision_adapter
         model.logit_scale.require_grad = True
         import torch
-        model.__setattr__('language_adapter', torch.nn.Linear(512, 512))
-        model.__setattr__('vision_adapter', torch.nn.Linear(512, 512))
 
-        encode_text_bound_method = encode_text.__get__(model, model.__class__)
-        encode_image_bound_method = encode_image.__get__(model, model.__class__)
+        if language_adapter:
+            model.__setattr__('language_adapter', torch.nn.Linear(512, 512))
+            encode_text_bound_method = encode_text.__get__(model, model.__class__)
+            setattr(model, 'encode_text', encode_text_bound_method)
 
-        setattr(model, 'encode_text', encode_text_bound_method)
-        setattr(model, 'encode_image', encode_image_bound_method)
+        if vision_adapter:
+            model.__setattr__('vision_adapter', torch.nn.Linear(512, 512))
+            encode_image_bound_method = encode_image.__get__(model, model.__class__)
+            setattr(model, 'encode_image', encode_image_bound_method)
 
     return model

@@ -3,3 +3,6 @@ defaults:
 
 model_name: CLIP_SimpleAdapter
 finetune: True
+
+language_adapter: True
+vision_adapter: True

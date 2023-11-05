@@ -3,9 +3,9 @@ from src.utils.registry import register_model
 
 
 @register_model
-def Tip(freeze=False, finetune=False, **kwargs):
+def Tip(backbone='ViT-B32', freeze=False, finetune=False, **kwargs):
     assert finetune
-    model, _ = clip.load("ViT-B/32")
+    model, _ = clip.load(backbone)
 
     if freeze:
         for name, param in model.named_parameters():
