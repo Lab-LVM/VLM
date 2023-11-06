@@ -1,4 +1,4 @@
-session_name: baseline
+session_name: eval_all
 windows:
   - window_name: window
     layout: tiled
@@ -11,9 +11,3 @@ windows:
       - python run_eval.py gpu=5 model=clip n_shot=0 cache=False dataset=imagenet_ds model.backbone='ViT-L14'
       - python run_eval.py gpu=6 model=clip n_shot=0 cache=False dataset=vlzb model.backbone='ViT-L14@336px' dataset.eval_size='[3,336,336]'
       - python run_eval.py gpu=7 model=clip n_shot=0 cache=False dataset=imagenet_ds model.backbone='ViT-L14@336px' dataset.eval_size='[3,336,336]'
-#      - python run_eval.py gpu=1 model=clip_simple_adapter checkpoint=finetune/CLIP_SimpleAdapter_1e-3/latest.ckpt n_shot=0 cache=False dataset=vlzb
-#      - python run_eval.py gpu=1 model=tip n_shot='[1,2,5]'
-
-#      - python run_train.py gpu=0 +setup=clip
-#      - python run_train.py gpu=1 +setup=clip_simple_adapter
-#      - python run_train.py gpu=2 +setup=tip

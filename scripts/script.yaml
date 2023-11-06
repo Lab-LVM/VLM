@@ -1,0 +1,11 @@
+session_name: baseline
+windows:
+  - window_name: window
+    layout: tiled
+    panes:
+#      - python run_eval.py gpu=1 model=clip_simple_adapter checkpoint=finetune/CLIP_SimpleAdapter_1e-3/latest.ckpt n_shot=0 cache=False dataset=vlzb
+#      - python run_eval.py gpu=1 model=tip n_shot='[1,2,5]'
+
+#      - python run_train.py gpu=0 +setup=clip
+#      - python run_train.py gpu=1 +setup=clip_simple_adapter
+#      - python run_train.py gpu=2 +setup=tip
