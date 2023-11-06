@@ -13,6 +13,6 @@ def Tip(backbone='ViT-B32', freeze=False, finetune=False, **kwargs):
 
     if finetune:
         import torch
-        model.__setattr__('adapter', torch.nn.Linear(512, kwargs['num_classes']))
+        model.__setattr__('adapter', torch.nn.Linear(512, kwargs['num_classes'] * kwargs['n_shot']))
 
     return model

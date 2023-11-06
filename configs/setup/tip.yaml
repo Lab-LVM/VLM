@@ -7,14 +7,17 @@ defaults:
 
 gpu: 7
 name: ${model.model_name}
-n_shot: 5
+n_shot: 16
 
 train:
   epochs: 20
-  batch_size: 2048
-  total_batch: 2048
+  batch_size: 256
+  total_batch: 256
   num_workers: 4
   criterion: crossentropy
+
+  criteria_metric: Top1
+  criteria_decreasing: False
 
   scheduler:
     sched: cosine
@@ -23,6 +26,7 @@ train:
 
   optimizer:
     lr: 1e-3
+    opt_eps: 1e-4
 
 model:
   model_name: Tip

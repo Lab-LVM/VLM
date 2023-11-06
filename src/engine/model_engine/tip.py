@@ -1,12 +1,15 @@
+import copy
 import gc
 
 import torch
 from torch.nn.functional import one_hot
+from torchvision import transforms
+from tqdm import tqdm
 
 from ..feature_engine import ClassificationFeatureEngine
 from ..task_engine import TaskEngine
 from ..train_engine import TrainEngine
-from ...data import create_dataset
+from ...data import create_dataset, create_dataloader
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
 
 
@@ -14,6 +17,49 @@ from ...utils.registry import register_task_engine, register_train_engine, regis
 class TipClassificationFeatureEngine(ClassificationFeatureEngine):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    @torch.no_grad()
+    def build_support_set(self):
+        if self.train_dataset.n_shot == 0:
+            return None, None
+
+        file_name = f'{self.dataset_name}_support_{self.train_dataset.n_shot}s_feature'
+        sets = self._open_file(file_name)
+        if not isinstance(sets, str):
+            self.sup_features, self.sup_labels = sets
+            return self.sup_features, self.sup_labels
+
+        loader = create_dataloader(self.cfg, copy.deepcopy(self.train_dataset), is_train=False)
+        loader.dataset.transform = transforms.Compose([
+            transforms.RandomResizedCrop(size=self.cfg.dataset.eval_size[-1], scale=(0.5, 1),
+                                         interpolation=transforms.InterpolationMode.BICUBIC),
+            transforms.RandomHorizontalFlip(p=0.5),
+            loader.dataset.transform.transforms[2]
+        ])
+
+        self.model.eval()
+        total_features, total_labels = list(), list()
+        for augment_epoch in range(10):
+            features, labels = list(), list()
+            for data in tqdm(loader, total=len(loader),
+                             desc=f'Build {self.train_dataset.n_shot}-Shot Support Set[{augment_epoch + 1}/10]'):
+                x, y = map(lambda x: x.to(self.device), data)
+                x = x.to(memory_format=torch.channels_last)
+
+                with self.fabric.autocast():
+                    image_features = self.model.encode_image(x)
+
+                features.append(image_features.detach().cpu())
+                labels.append(y.detach().cpu())
+            total_features.append(torch.cat(features, dim=0))
+            total_labels = labels
+
+        total_features = torch.stack(total_features, dim=0).mean(dim=0).to(self.device)
+        self.sup_features = total_features / total_features.norm(dim=-1, keepdim=True)
+        self.sup_labels = torch.cat(total_labels).to(self.device)
+
+        self._save_file((self.sup_features, self.sup_labels), file_name)
+        return self.sup_features, self.sup_labels
 
 
 @register_task_engine
@@ -105,7 +151,6 @@ class TipTaskEngine(TaskEngine):
 class TipTrainEngine(TrainEngine):
     def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs, **kwargs):
         super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
-        print("[!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!] Not implement yet exactly")
 
         cache_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=cfg.n_shot)
         self.feature_engine = TipClassificationFeatureEngine(cfg, fabric, model, tokenizer, cache_dataset,
@@ -131,7 +176,6 @@ class TipTrainEngine(TrainEngine):
             logits = 100. * image_features @ self.text_classifier.mT
 
             affinity = self.model.adapter(image_features)
-
             cache_logits = ((-1) * (self.beta - self.beta * affinity)).exp() @ self.sup_labels.half()
             tip_logits = logits + cache_logits * self.alpha
 
@@ -145,3 +189,4 @@ class TipTrainEngine(TrainEngine):
 
     def _model_eval(self):
         self.model.eval()
+        self.model.adapter.eval()
