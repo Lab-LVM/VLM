@@ -30,6 +30,10 @@ class VLMDataset(ABC):
         self.sampling(n_shot)
 
     @property
+    def name(self):
+        return self.__class__.__name__
+
+    @property
     def prompt(self):
         return [
             lambda c: f'a photo {c}.'

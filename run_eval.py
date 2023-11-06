@@ -34,7 +34,7 @@ def main(cfg: DictConfig) -> None:
             engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, val_dataset)
             metrics = engine(n_shots=to_list(cfg.n_shot))
 
-            row = dict(Data=k, shot=shot, **metrics)
+            row = dict(Data=val_dataset.name, shot=shot, **metrics)
             print(f'{row}\n')
             df = pd.concat([df, pd.DataFrame(row, index=[0])])
 
