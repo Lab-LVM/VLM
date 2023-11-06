@@ -8,7 +8,7 @@ from omegaconf import ListConfig
 from ..data import DATASET_DICT
 
 VLZB = ['caltech101', 'eurosat', 'fgvc', 'flowers102', 'food101', 'oxfordiiitpet', 'stanfordcars', 'sun397', 'dtd',
-        'ucf101', 'pcam', 'imagenet', 'cifar100']
+        'ucf101', 'pcam', 'country211', 'imagenet', 'cifar100']
 
 IMAGENET_DS = ['imagenet', 'imagenet_r', 'imagenet_a', 'imagenet_v2', 'imagenet_sketch', 'objectnet']
 
