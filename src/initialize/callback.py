@@ -23,7 +23,7 @@ class CallBack:
     @staticmethod
     @rank_zero_only
     def on_eval(metrics, epoch, num_iter, max_iter):
-        log = f'{"Eval":>5}: {epoch:>3}: [{num_iter:>4d}/{max_iter}]  '
+        log = f'{"Eval":>5}: {epoch:>3} [{num_iter:>4d}/{max_iter}]  '
         if "ConfusionMatrix" in metrics:
             metrics.pop('ConfusionMatrix')
         for k, v in metrics.items():
