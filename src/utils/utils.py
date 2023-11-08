@@ -72,6 +72,8 @@ def import_config(cfg):
 
     import_cfg.checkpoint = weight_file
     import_cfg.import_cfg = True
+    import_cfg.full_dataset_name = import_cfg.dataset.name
+    OmegaConf.set_struct(import_cfg, True)
 
     print(f'{colored("[Notice] Config is changed by", "green")} {cfg.checkpoint}.')
     return import_cfg
@@ -82,7 +84,9 @@ def move_dir(cfg):
     working_time = working_dir.name.rsplit('_', 1)[-1]
 
     root = working_dir.parent
-    moving_dir = root / f'{cfg.dataset.name}_{cfg.name}_{working_time}'
+
+    dataset_name = cfg.get('full_dataset_name', "NONE")
+    moving_dir = root / f'{dataset_name}_{cfg.name}_{working_time}'
     os.rename(working_dir, moving_dir)
 
 
