@@ -152,6 +152,14 @@ class TipTrainEngine(TrainEngine):
     def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs, **kwargs):
         super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
 
+        # NOTICE: Tip using simple augmentation strategy because strong augmentation makes performance worse.
+        self.train_loader.dataset.transform = transforms.Compose([
+            transforms.RandomResizedCrop(size=cfg.dataset.train_size[-1], scale=(0.5, 1),
+                                         interpolation=transforms.InterpolationMode.BICUBIC),
+            transforms.RandomHorizontalFlip(p=0.5),
+            self.train_loader.dataset.transform.transforms[2]
+        ])
+
         cache_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=cfg.n_shot)
         self.feature_engine = TipClassificationFeatureEngine(cfg, fabric, model, tokenizer, cache_dataset,
                                                              self.val_loader.dataset)
@@ -159,8 +167,9 @@ class TipTrainEngine(TrainEngine):
         self.alpha = kwargs.get('alpha', 1.17)
         self.beta = kwargs.get('beta', 1.0)
         self.sup_features, self.sup_labels = self.feature_engine.build_support_set()
+        self.qry_features, self.qry_labels = self.feature_engine.build_query_set()
         self.text_classifier = self.feature_engine.build_text_classifier()
-        self.sup_labels = one_hot(self.sup_labels)
+        self.sup_labels = one_hot(self.sup_labels).half()
 
         self.model.adapter.weight.data = self.sup_features.float()
 
@@ -176,12 +185,32 @@ class TipTrainEngine(TrainEngine):
             logits = 100. * image_features @ self.text_classifier.mT
 
             affinity = self.model.adapter(image_features)
-            cache_logits = ((-1) * (self.beta - self.beta * affinity)).exp() @ self.sup_labels.half()
+            cache_logits = ((-1) * (self.beta - self.beta * affinity)).exp() @ self.sup_labels
             tip_logits = logits + cache_logits * self.alpha
 
             loss = criterion(tip_logits, y)
 
         return loss, tip_logits, y
+
+    @torch.no_grad()
+    def eval(self, epoch):
+        self._reset_metric()
+        total = len(self.val_loader) - 1
+
+        self._model_eval()
+
+        with self.fabric.autocast():
+            logits = 100. * self.qry_features @ self.text_classifier.mT
+
+            affinity = self.model.adapter(self.qry_features)
+            cache_logits = ((-1) * (self.beta - self.beta * affinity)).exp() @ self.sup_labels
+            tip_logits = logits + cache_logits * self.alpha
+
+        self._update_metric(torch.tensor(0), tip_logits, self.qry_labels)
+
+        self.fabric.call('on_eval', self._metrics(), epoch, 0, total)
+
+        return self._metrics()
 
     def _model_train(self):
         self.model.eval()
