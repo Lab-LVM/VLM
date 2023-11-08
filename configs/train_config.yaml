@@ -9,7 +9,7 @@ name: ${dataset.name}_${model.model_name}_${model.backbone}
 
 n_shot: 0
 checkpoint: # Not used in train
-cache: True
+cache: False
 
 wandb: True
 gpu: 0

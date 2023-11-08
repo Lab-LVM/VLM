@@ -5,11 +5,12 @@ defaults:
   - info: info
   - model: base_model
 
-name: ${dataset.name}_${model.model_name}_${model.backbone}
+name: ${dataset.name}_${model.model_name}_${model.backbone}_${gpu}
 
 n_shot: [ 0,1,2 ]
 checkpoint:
-cache: True
+import_cfg: True
+cache: False
 
 wandb: True
 gpu: 0
