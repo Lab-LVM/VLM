@@ -6,3 +6,5 @@ finetune: True
 
 language_adapter: True
 vision_adapter: True
+
+scale: small
