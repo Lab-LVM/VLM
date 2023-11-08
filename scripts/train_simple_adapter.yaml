@@ -3,6 +3,6 @@ windows:
   - window_name: window
     layout: tiled
     panes:
-      - python run_train.py gpu=0 +setup=clip_simple_adapter model.vision_adapter=False name=imagenet-CLIPSimpleAdapter_ViT-B16_language_adapter
-      - python run_train.py gpu=1 +setup=clip_simple_adapter model.language_adapter=False name=imagenet-CLIPSimpleAdapter_ViT-B16_vision_adapter
-      - python run_train.py gpu=2 +setup=clip_simple_adapter name=imagenet-CLIPSimpleAdapter_ViT-B16_all_adapter
+      - python run_train.py gpu=3 +setup=clip_simple_adapter model.vision_adapter=False name=imagenet_CLIPSimpleAdapter_ViT-B32_language_adapter
+      - python run_train.py gpu=4 +setup=clip_simple_adapter model.language_adapter=False name=imagenet_CLIPSimpleAdapter_ViT-B32_vision_adapter
+      - python run_train.py gpu=5 +setup=clip_simple_adapter name=imagenet_CLIPSimpleAdapter_ViT-B32_all_adapter
