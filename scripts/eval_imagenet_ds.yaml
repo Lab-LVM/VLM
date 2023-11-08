@@ -1,0 +1,8 @@
+session_name: eval_imagenet_ds
+windows:
+  - window_name: window
+    layout: tiled
+    panes:
+      - python run_eval.py gpu=3 dataset=imagenet_ds n_shot=0 checkpoint=finetune/imagenet_CLIPSimpleAdapter_ViT-B32_all_adapter_new_promptv2_20231107-231721
+      - python run_eval.py gpu=4 dataset=imagenet_ds n_shot=0 checkpoint=finetune/imagenet_CLIPSimpleAdapter_ViT-B32_language_adapter_new_promptv2_20231107-231721
+      - python run_eval.py gpu=5 dataset=imagenet_ds n_shot=0 checkpoint=finetune/imagenet_CLIPSimpleAdapter_ViT-B32_vision_adapter_new_promptv2_20231107-231722

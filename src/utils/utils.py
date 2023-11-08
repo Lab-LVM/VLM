@@ -1,9 +1,12 @@
 import os
 from collections import OrderedDict
+from pathlib import Path
 from typing import List
 
+import hydra.utils
 from hydra import compose
-from omegaconf import ListConfig
+from omegaconf import ListConfig, OmegaConf
+from termcolor import colored
 
 from ..data import DATASET_DICT
 
@@ -49,6 +52,38 @@ def to_list(item):
 
 def filter_grad(model):
     return filter(lambda p: p.requires_grad, model.parameters())
+
+
+def import_config(cfg):
+    assert cfg.checkpoint and cfg.import_cfg, f'Checkpoint and import_cfg isn\'t True. Now, {cfg.checkpoint}, {cfg.import_cfg}'
+
+    path = Path(hydra.utils.get_original_cwd()) / cfg.checkpoint
+
+    weight_file = path / 'best.ckpt'
+    cfg_file = path / '.hydra/config.yaml'
+    override_file = Path(os.getcwd()) / '.hydra/overrides.yaml'
+
+    import_cfg = OmegaConf.load(cfg_file)
+    override_cfg = list(OmegaConf.load(override_file))
+
+    for value in override_cfg:
+        key, value = value.split('=')
+        OmegaConf.update(import_cfg, key, OmegaConf.select(cfg, key))
+
+    import_cfg.checkpoint = weight_file
+    import_cfg.import_cfg = True
+
+    print(f'{colored("[Notice] Config is changed by", "green")} {cfg.checkpoint}.')
+    return import_cfg
+
+
+def move_dir(cfg):
+    working_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+    working_time = working_dir.name.rsplit('_', 1)[-1]
+
+    root = working_dir.parent
+    moving_dir = root / f'{cfg.dataset.name}_{cfg.name}_{working_time}'
+    os.rename(working_dir, moving_dir)
 
 
 class EmptyScheduler:

@@ -1,6 +1,3 @@
-import gc
-import os
-
 import hydra
 import pandas as pd
 import wandb
@@ -9,14 +6,14 @@ from omegaconf import DictConfig
 from src.engine import *
 from src.initialize import setup_fabric, ObjectFactory
 from src.models import *
-from src.utils import dataset2dict, to_list
+from src.utils import dataset2dict, to_list, import_config, move_dir
 from src.utils.registry import create_task_engine
-
-os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 
 @hydra.main(config_path="configs", config_name="eval_config", version_base="1.3")
 def main(cfg: DictConfig) -> None:
+    cfg = import_config(cfg) if cfg.import_cfg else cfg
+
     cfg.wandb = False
     fabric = setup_fabric(cfg)
 
@@ -44,6 +41,8 @@ def main(cfg: DictConfig) -> None:
         torch.cuda.empty_cache()
         gc.collect()
         wandb.finish(quiet=True)
+
+    move_dir(cfg) if cfg.import_cfg else None
 
 
 if __name__ == "__main__":
