@@ -3,11 +3,11 @@ windows:
   - window_name: window
     layout: tiled
     panes:
-      - python run_eval.py gpu=0 model=clip n_shot=0 dataset=vlzb
-      - python run_eval.py gpu=1 model=clip n_shot=0 dataset=imagenet_ds
-      - python run_eval.py gpu=2 model=clip n_shot=0 dataset=vlzb model.backbone='ViT-B16'
-      - python run_eval.py gpu=3 model=clip n_shot=0 dataset=imagenet_ds model.backbone='ViT-B16'
-      - python run_eval.py gpu=4 model=clip n_shot=0 dataset=vlzb model.backbone='ViT-L14'
-      - python run_eval.py gpu=5 model=clip n_shot=0 dataset=imagenet_ds model.backbone='ViT-L14'
-      - python run_eval.py gpu=6 model=clip n_shot=0 dataset=vlzb model.backbone='ViT-L14@336px' dataset.eval_size='[3,336,336]'
-      - python run_eval.py gpu=7 model=clip n_shot=0 dataset=imagenet_ds model.backbone='ViT-L14@336px' dataset.eval_size='[3,336,336]'
+      - python run_eval.py gpu=0 model=clip n_shot=0 import_cfg=False dataset=vlzb
+      - python run_eval.py gpu=1 model=clip n_shot=0 import_cfg=False dataset=imagenet_ds
+      - python run_eval.py gpu=2 model=clip n_shot=0 import_cfg=False dataset=vlzb model.backbone='ViT-B16'
+      - python run_eval.py gpu=3 model=clip n_shot=0 import_cfg=False dataset=imagenet_ds model.backbone='ViT-B16'
+      - python run_eval.py gpu=4 model=clip n_shot=0 import_cfg=False dataset=vlzb model.backbone='ViT-L14'
+      - python run_eval.py gpu=5 model=clip n_shot=0 import_cfg=False dataset=imagenet_ds model.backbone='ViT-L14'
+      - python run_eval.py gpu=6 model=clip n_shot=0 import_cfg=False dataset=vlzb model.backbone='ViT-L14@336px' dataset.eval_size='[3,336,336]'
+      - python run_eval.py gpu=7 model=clip n_shot=0 import_cfg=False dataset=imagenet_ds model.backbone='ViT-L14@336px' dataset.eval_size='[3,336,336]'
