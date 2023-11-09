@@ -37,6 +37,22 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
 
         return loss, logits_per_image, onehot_y
 
+    def iterate_ra2(self, model, data, criterion):
+        x, ra_x, y, prompt, ra_prompt = data
+
+        x = torch.concat([x, ra_x])
+        prompt.extend(ra_prompt)
+
+        x = x.to(self.device).to(memory_format=torch.channels_last)
+        onehot_y = torch.arange(x.shape[0]).long().to(self.device)
+        prompt = self._tokenize(prompt).to(self.device)
+
+        with self.fabric.autocast():
+            logits_per_image, logits_per_text = model(x, prompt)
+            loss = criterion(logits_per_image, logits_per_text)
+
+        return loss, logits_per_image, onehot_y
+
     def __call__(self, *args, **kwargs):
         for epoch in range(self.start_epoch, self.num_epochs):
             self.train_loader.sampler.set_epoch(epoch) if self.distributed else None
