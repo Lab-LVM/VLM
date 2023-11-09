@@ -53,12 +53,11 @@ class ClassificationFeatureEngine(FeatureEngine):
             with self.fabric.autocast():
                 text_feature = self.model.encode_text(text_input)
 
-            text_feature /= text_feature.norm(dim=-1, keepdim=True)
             text_feature = text_feature.mean(dim=0)
-            text_feature /= text_feature.norm()
             text_classifier.append(text_feature)
 
         self.text_classifier = torch.stack(text_classifier, dim=0).to(self.device)
+        self.text_classifier /= self.text_classifier.norm(dim=-1, keepdim=True)
 
         self._save_file(self.text_classifier, file_name)
         return self.text_classifier
