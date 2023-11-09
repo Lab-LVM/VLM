@@ -4,6 +4,7 @@ from .dataset import *
 DATASET_DICT = {
     'imagenetra': ImageNetRandaugPrompt,
     'imagenetra2': ImageNetRandaugPromptV2,
+    'imagenetsim': ImageNetSimplePrompt,
     'imagenet': ImageNet,
     'imagenet_a': ImageNetA,
     'imagenet_r': ImageNetR,
