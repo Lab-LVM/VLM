@@ -97,10 +97,10 @@ class VLMDataset(ABC):
     def __getitem__(self, idx):
         path, target = self.imgs[idx], self.targets[idx]
         imgs = self.loader(path)
-        if self.transform is not None:
-            imgs = self.transform(imgs)
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+        # if self.transform is not None:
+        imgs = self.transform(imgs)
+        # if self.target_transform is not None:
+        #     target = self.target_transform(target)
         return imgs, target
 
     def __str__(self):
