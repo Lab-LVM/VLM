@@ -132,10 +132,10 @@ class ImageNetRandaugPrompt(ImageNet):
     def __getitem__(self, idx):
         path, target = self.imgs[idx], self.targets[idx]
         imgs = self.loader(path)
-        if self.transform is not None:
-            imgs = self.pre_processing(imgs)
-            imgs, ra_tf = self.randaug(imgs)
-            imgs = self.post_processing(imgs)
+
+        imgs = self.pre_processing(imgs)
+        imgs, ra_tf = self.randaug(imgs)
+        imgs = self.post_processing(imgs)
 
         return imgs, target, self.ra_prompt(idx, ra_tf, target)
 
@@ -179,26 +179,32 @@ class ImageNetRandaugPromptV2(ImageNet):
     def __getitem__(self, idx):
         path, target = self.imgs[idx], self.targets[idx]
         img = self.loader(path)
-        if self.transform is not None:
-            img = self.pre_processing(img)
-            ra_img, ra_tf = self.randaug(img)
-            ra_img = self.post_processing(ra_img)
-            img = self.post_processing(img)
+
+        img = self.pre_processing(img)
+        ra_img, ra_tf = self.randaug(img)
+        ra_img = self.post_processing(ra_img)
+        img = self.post_processing(img)
 
         return img, ra_img, target, self.original_prompt(idx, target), self.ra_prompt(idx, ra_tf, target)
 
-AUGPROMPT = [
-            lambda augment, name: f'{augment} itap of a {name}.',
-            lambda augment, name: f'itap of a {augment} {name}.',
-            lambda augment, name: f'a bad {augment} photo of the {name}.',
-            lambda augment, name: f'a {augment} origami {name}.',
-            lambda augment, name: f'a {augment} {name} in a video game.',
-            lambda augment, name: f'{augment} art of the {name}.',
-            lambda augment, name: f'art of the {augment} {name}.',
-            lambda augment, name: f'a {augment} photo of the {name}.',
-            lambda augment, name: f'{augment} transformed image of {name}.',
-            lambda augment, name: f'{augment} transformed photo of the {name}.',
-        ]
+
+class ImageNetSimplePrompt(ImageNet):
+    def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0):
+        super().__init__(root, split, transform, target_transform, n_shot)
+
+    def setup_prompt_transform(self):
+        pass
+
+    def ra_prompt(self, target):
+        return f'a photo of {self.num2str(target)}'
+
+    def __getitem__(self, idx):
+        path, target = self.imgs[idx], self.targets[idx]
+        img = self.loader(path)
+        img = self.transform(img)
+
+        return img, target, self.ra_prompt(target)
+
 
 if __name__ == '__main__':
     ds = ImageNet('/data', transform=transforms.ToTensor(), n_shot=0)
