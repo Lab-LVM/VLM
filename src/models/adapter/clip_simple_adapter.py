@@ -39,10 +39,21 @@ def large_linear():
 
 def base_linear():
     return torch.nn.Sequential(
+        torch.nn.LayerNorm(512),
+        torch.nn.GELU(),
         torch.nn.Linear(512, 512 * 4),
         torch.nn.GELU(),
         torch.nn.Linear(512 * 4, 512),
         torch.nn.LayerNorm(512),
+    )
+
+def base_linear_nln():
+    return torch.nn.Sequential(
+        torch.nn.LayerNorm(512),
+        torch.nn.GELU(),
+        torch.nn.Linear(512, 512 * 4),
+        torch.nn.GELU(),
+        torch.nn.Linear(512 * 4, 512),
     )
 
 
@@ -65,10 +76,13 @@ def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, languag
         model.logit_scale.require_grad = True
         import torch
 
-        if kwargs['scale'].lower() == 'base':
-            linear_fn = base_linear
-        elif kwargs['scale'].lower() == 'large':
-            linear_fn = large_linear
+        if kwargs.get('scale',None):
+            if kwargs['scale'].lower() == 'base':
+                linear_fn = base_linear
+            if kwargs['scale'].lower() == 'base_nln':
+                linear_fn = base_linear_nln
+            elif kwargs['scale'].lower() == 'large':
+                linear_fn = large_linear
         else:
             linear_fn = linear
 
