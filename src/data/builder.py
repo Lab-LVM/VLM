@@ -63,6 +63,7 @@ def create_dataloader(cfg, dataset, is_train):
         interpolation=aug.train_interpolation if is_train else aug.test_interpolation,
         mean=tuple(aug.mean),
         std=tuple(aug.std),
+        crop_pct=aug.crop_pct,
         num_workers=cfg.train.num_workers,
         distributed=cfg.distributed,
         pin_memory=aug.pin_mem,
