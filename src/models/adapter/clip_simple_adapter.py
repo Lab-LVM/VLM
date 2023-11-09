@@ -47,6 +47,7 @@ def base_linear():
         torch.nn.LayerNorm(512),
     )
 
+
 def base_linear_nln():
     return torch.nn.Sequential(
         torch.nn.LayerNorm(512),
@@ -76,7 +77,7 @@ def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, languag
         model.logit_scale.require_grad = True
         import torch
 
-        if kwargs.get('scale',None):
+        if kwargs.get('scale', None):
             if kwargs['scale'].lower() == 'base':
                 linear_fn = base_linear
             if kwargs['scale'].lower() == 'base_nln':
