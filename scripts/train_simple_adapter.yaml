@@ -1,8 +1,7 @@
-session_name: simple_adapter_train
+session_name: scale_simple_adapter_train
 windows:
   - window_name: window
     layout: tiled
     panes:
-      - python run_train.py gpu=3 +setup=clip_simple_adapter model.vision_adapter=False name=imagenet_CLIPSimpleAdapter_ViT-B32_language_adapter
-      - python run_train.py gpu=4 +setup=clip_simple_adapter model.language_adapter=False name=imagenet_CLIPSimpleAdapter_ViT-B32_vision_adapter
-      - python run_train.py gpu=5 +setup=clip_simple_adapter name=imagenet_CLIPSimpleAdapter_ViT-B32_all_adapter
+      - python run_train.py gpu=3 +setup=clip_simple_adapter name=CLIPSimpleAdapter_BaseNLN model.scale=base_nln
+      - python run_train.py gpu=4 +setup=clip_simple_adapter name=CLIPSimpleAdapter_Base2 model.scale=base
