@@ -37,3 +37,4 @@ dataset:
   augmentation:
     no_aug: True
     train_interpolation: bicubic
+    auto_aug:

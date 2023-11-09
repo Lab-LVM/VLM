@@ -1,31 +1,36 @@
 # @package _global_
 
 defaults:
-  - override /train/optimizer: lbfgs
+  - override /train/optimizer: adamw
   - override /dataset: imagenet
   - override /model: clip
 
 precision: 32-true
 
-gpu: 7
+gpu: 0
 name: ${model.model_name}
 n_shot: 0
 
 train:
-  epochs: 5
-  batch_size: 2048
-  total_batch: 2048
-  num_workers: 32
+  epochs: 10
+  batch_size: 512
+  total_batch: 512
+  num_workers: 4
   criterion: crossentropy
 
+  criteria_metric: Top1
+  criteria_decreasing: False
+
   scheduler:
-    sched:
+    sched: cosine
+    warmup_epochs: 1
+    cooldown_epochs: 1
+    warmup_lr: 1e-6
+    min_lr: 1e-6
 
   optimizer:
-    lr: 1
-    max_iter: 5
-    history_size: 10
-    line_search_fn: strong_wolfe
+    lr: 1e-3
+    weight_decay: 0.1
 
 model:
   model_name: CLIP
@@ -36,3 +41,4 @@ dataset:
   augmentation:
     no_aug: True
     train_interpolation: bicubic
+    auto_aug:

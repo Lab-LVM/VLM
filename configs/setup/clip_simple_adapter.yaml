@@ -13,7 +13,7 @@ train:
   epochs: 50
   batch_size: 512
   total_batch: 4096
-  num_workers: 16
+  num_workers: 4
 
   scheduler:
     sched: cosine
