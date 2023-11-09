@@ -23,43 +23,13 @@ def encode_text(self, text):
     return self.language_adapter(x)
 
 
-def large_linear():
+def mlp():
     return torch.nn.Sequential(
         torch.nn.Linear(512, 512 * 4),
         torch.nn.GELU(),
         torch.nn.Linear(512 * 4, 512),
         torch.nn.LayerNorm(512),
-        torch.nn.GELU(),
-        torch.nn.Linear(512, 512 * 4),
-        torch.nn.GELU(),
-        torch.nn.Linear(512 * 4, 512),
-        torch.nn.LayerNorm(512),
     )
-
-
-def base_linear():
-    return torch.nn.Sequential(
-        torch.nn.LayerNorm(512),
-        torch.nn.GELU(),
-        torch.nn.Linear(512, 512 * 4),
-        torch.nn.GELU(),
-        torch.nn.Linear(512 * 4, 512),
-        torch.nn.LayerNorm(512),
-    )
-
-
-def base_linear_nln():
-    return torch.nn.Sequential(
-        torch.nn.LayerNorm(512),
-        torch.nn.GELU(),
-        torch.nn.Linear(512, 512 * 4),
-        torch.nn.GELU(),
-        torch.nn.Linear(512 * 4, 512),
-    )
-
-
-def linear():
-    return torch.nn.Linear(512, 512)
 
 
 @register_model
@@ -77,23 +47,13 @@ def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, languag
         model.logit_scale.require_grad = True
         import torch
 
-        if kwargs.get('scale', None):
-            if kwargs['scale'].lower() == 'base':
-                linear_fn = base_linear
-            if kwargs['scale'].lower() == 'base_nln':
-                linear_fn = base_linear_nln
-            elif kwargs['scale'].lower() == 'large':
-                linear_fn = large_linear
-        else:
-            linear_fn = linear
-
         if language_adapter:
-            model.__setattr__('language_adapter', linear_fn())
+            model.__setattr__('language_adapter', mlp())
             encode_text_bound_method = encode_text.__get__(model, model.__class__)
             setattr(model, 'encode_text', encode_text_bound_method)
 
         if vision_adapter:
-            model.__setattr__('vision_adapter', linear_fn())
+            model.__setattr__('vision_adapter', mlp())
             encode_image_bound_method = encode_image.__get__(model, model.__class__)
             setattr(model, 'encode_image', encode_image_bound_method)
 
