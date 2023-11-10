@@ -40,7 +40,7 @@ class CLIPTaskEngine(TaskEngine):
         text_classifier = self.feature_engine.build_text_classifier()
         qry_features, qry_labels = self.feature_engine.build_query_set()
 
-        logits = 100. * qry_features @ text_classifier.mT
+        logits = self.model.logit_scale.exp() * qry_features @ text_classifier.mT
 
         self.metric.update(logits, qry_labels)
         self.metric.prefix = 'clip_zeroshot'
