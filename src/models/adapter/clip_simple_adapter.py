@@ -5,7 +5,8 @@ from src.utils.registry import register_model
 
 
 def encode_image(self, image):
-    return self.vision_adapter(self.visual(image.type(self.dtype)))
+    x = self.visual(image.type(self.dtype))
+    return self.vision_adapter(x) + x
 
 
 def encode_text(self, text):
@@ -20,7 +21,24 @@ def encode_text(self, text):
     # x.shape = [batch_size, n_ctx, transformer.width]
     # take features from the eot embedding (eot_token is the highest number in each sequence)
     x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
-    return self.language_adapter(x)
+    return self.language_adapter(x) + x
+
+
+def forward(self, image, text):
+    image_features = self.encode_image(image)
+    text_features = self.encode_text(text)
+
+    # normalized features
+    image_features = image_features / image_features.norm(dim=1, keepdim=True)
+    text_features = text_features / text_features.norm(dim=1, keepdim=True)
+
+    # cosine similarity as logits
+    logit_scale = self.logit_scale.exp()
+    logits_per_image = logit_scale * image_features @ text_features.t()
+    logits_per_text = logits_per_image.t()
+
+    # shape = [global_batch_size, global_batch_size]
+    return logits_per_image, logits_per_text, self.classifier(image_features)
 
 
 def mlp():
@@ -34,7 +52,7 @@ def mlp():
 
 @register_model
 def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
-                       **kwargs):
+                       classifier=False, **kwargs):
     assert finetune
     model, _ = clip.load(backbone)
 
@@ -56,5 +74,10 @@ def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, languag
             model.__setattr__('vision_adapter', mlp())
             encode_image_bound_method = encode_image.__get__(model, model.__class__)
             setattr(model, 'encode_image', encode_image_bound_method)
+
+        if classifier:
+            model.__setattr__('classifier', torch.nn.Linear(512, 1000))
+            forward_bound_method = forward.__get__(model, model.__class__)
+            setattr(model, 'forward', forward_bound_method)
 
     return model
