@@ -23,8 +23,8 @@ train:
 
   scheduler:
     sched: cosine
-    warmup_epochs: 1
-    cooldown_epochs: 1
+    warmup_epochs: 5
+    cooldown_epochs: 5
     warmup_lr: 1e-6
     min_lr: 1e-5
 
