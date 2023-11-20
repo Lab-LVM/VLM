@@ -1,0 +1,40 @@
+# @package _global_
+
+defaults:
+  - override /train/optimizer: lamb
+  - override /dataset: imagenet
+  - override /model: base_model
+
+gpu: 2
+name: ${model.model_name}
+n_shot: 0
+
+train:
+  epochs: 30
+  batch_size: 1024
+  total_batch: 4096
+  num_workers: 8
+  criterion: crossentropy
+
+  scheduler:
+    sched: cosine
+    warmup_epochs: 5
+    cooldown_epochs: 0
+    min_lr: 1e-5
+
+  optimizer:
+    lr: 8e-3
+    weight_decay: 5e-2
+
+model:
+  backbone: ViT-B32
+  model_name: CLIP_NSAdapter
+
+  freeze: True
+  finetune: True
+  language_adapter: False
+  vision_adapter: True
+
+dataset:
+  augmentation:
+    train_interpolation: bicubic
