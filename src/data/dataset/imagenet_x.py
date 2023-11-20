@@ -4,6 +4,7 @@ from abc import ABC
 from glob import glob
 from pathlib import Path
 
+import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
@@ -113,12 +114,12 @@ class ObjectNet(VLMDataset, Dataset):
 
     def __init__(self, root, split=None, transform=None, target_transform=None, n_shot=0):
         self._split_warning(self.__class__.__name__, split, None)
-        folder_to_ids = self.get_metadata(root)
+        self.folder_to_ids = self.get_metadata(root)
 
         imgs, targets, class_name_list = list(), list(), list()
         target_number = 0
-        for folder, idxs in folder_to_ids.items():
-            class_img = glob(os.path.join(root, self.dataset_path, 'images', folder, '*'))
+        for class_name, idxs in self.folder_to_ids.items():
+            class_img = glob(os.path.join(root, self.dataset_path, 'images', class_name, '*'))
             imgs.extend(class_img)
             targets.extend([target_number for _ in range(len(class_img))])
             class_name = ' or '.join([IMAGENET_CLASS_NAME[idx] for idx in idxs])
@@ -162,6 +163,14 @@ class ObjectNet(VLMDataset, Dataset):
             lambda c: f'a photo of the small {c}.',
         ]
 
+    def to_imageNet_logits(self, logits):
+        new_logits = torch.zeros((logits.size(0), self.n_class), device=logits.device)
+
+        for class_name, idxs in self.folder_to_ids.items():
+            new_logits[:, self.str2num(class_name)] = logits[:, idxs].mean(-1)
+
+        return new_logits
+
 
 if __name__ == '__main__':
     for d_class in [ImageNetR, ImageNetA, ImageNetV2, ImageNetSketch, ObjectNet]:
@@ -171,3 +180,7 @@ if __name__ == '__main__':
         print(data[0].shape, data[1])
         print(ds.class_name[:5])
         print(f'{ds.str2num("tench")}, {ds.num2str(data[1])}')
+
+        logits = torch.rand(100, 1000)
+        new_logits = ds.to_imageNet_logits(logits)
+        print(new_logits.shape)
