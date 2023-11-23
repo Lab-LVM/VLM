@@ -26,6 +26,8 @@ class CLIP_NSAdapterTaskEngine:
         self.model = model
         self.train_dataset = train_dataset
         self.logging_interval = cfg.train.log_interval
+        self.feature_engine = CLIP_NSAdapterClassificationFeatureEngine(cfg, fabric, model, tokenizer, train_dataset,
+                                                                        val_dataset)
 
         self.loader = create_dataloader(self.cfg, val_dataset, is_train=False)
 
@@ -68,8 +70,7 @@ class CLIP_NSAdapterTaskEngine:
             y = y.to(self.device)
 
             with self.fabric.autocast():
-                prob = self.model.classifier(self.model.encode_image(x))
-
+                prob = self.model.classifier(self.model.vision_adapter(self.model.encode_image(x)))
             self.metric.update(prob, y)
 
         self.metric.prefix = 'clip_classification'
@@ -94,7 +95,7 @@ class CLIP_NSAdapterTrainEngine(TrainEngine):
         with self.fabric.autocast():
             with torch.no_grad():
                 feature = model.encode_image(x)
-            prob = model.classifier(feature)
+            prob = model.classifier(model.vision_adapter(feature))
             loss = criterion(prob, y)
 
         return loss, prob, y
@@ -120,6 +121,18 @@ class CLIP_BaseAdapterTaskEngine(CLIP_NSAdapterTaskEngine):
 
 @register_train_engine
 class CLIP_BaseAdapterTrainEngine(CLIP_NSAdapterTrainEngine):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+@register_task_engine
+class CLIP_BaseAdapter2TaskEngine(CLIP_NSAdapterTaskEngine):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+@register_train_engine
+class CLIP_BaseAdapter2TrainEngine(CLIP_NSAdapterTrainEngine):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
