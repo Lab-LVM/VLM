@@ -1,5 +1,5 @@
-from .create_loader2 import create_loader_v2
-from .dataset import *
+from src.data.create_loader2 import create_loader_v2
+from src.data.dataset import *
 
 DATASET_DICT = {
     'imagenetra': ImageNetRandaugPrompt,
@@ -75,7 +75,16 @@ def create_dataloader(cfg, dataset, is_train):
 
 
 if __name__ == '__main__':
+    import omegaconf
+
     for k, v in DATASET_DICT.items():
-        ds = v('/data/vlm')
-        if len(ds.class_name) != ds.n_class:
-            print(k, len(ds.class_name), ds.n_class)
+        cfg = omegaconf.OmegaConf.load(f'/home/seungmin/dmount/VLM/configs/dataset/{k}.yaml')
+        cfg.root = '/data'
+        if cfg.train is not None:
+            ds = v(cfg.root, cfg.train)
+            ds_val = v(cfg.root, cfg.valid)
+
+            print(f'{ds.__class__.__name__}: {len(ds.imgs)} / {len(ds_val.imgs)}')
+        else:
+            ds = v(cfg.root)
+            print(f'NOSPLIT {ds.__class__.__name__}: {len(ds.imgs)}')
