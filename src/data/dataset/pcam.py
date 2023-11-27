@@ -23,6 +23,8 @@ class PCam(VLMDataset, Dataset):
     def prompt(self):
         return [
             lambda c: f'this is a photo of {c}',
+            lambda c: f'a histopathology slide showing {c}',
+            lambda c: f'histopathology image of {c}'
         ]
 
     def _data_dict(self):
