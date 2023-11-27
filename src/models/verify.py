@@ -1,7 +1,7 @@
 import datasets
 import torch
+from transformers import CLIPTokenizerFast
 
-from src.models.clip.tokenizer_fast import CLIPTokenizerFast
 from src.utils.registry import create_model
 
 datasets.disable_progress_bar()
