@@ -6,6 +6,6 @@ name: fgvc
 
 num_classes: 100
 
-train: trainval
-valid: test
+train: train
+valid: val
 test: test
