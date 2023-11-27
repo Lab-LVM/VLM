@@ -11,14 +11,14 @@ n_shot: 0
 
 train:
   epochs: 50
-  batch_size: 512
+  batch_size: 1024
   total_batch: 4096
-  num_workers: 4
+  num_workers: 8
 
   scheduler:
     sched: cosine
     warmup_epochs: 5
-    cooldown_epochs: 0
+    cooldown_epochs: 5
     min_lr: 1e-5
 
   optimizer:
