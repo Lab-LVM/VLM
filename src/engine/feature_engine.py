@@ -4,6 +4,7 @@ from pathlib import Path
 
 import hydra
 import torch
+from torch.nn.functional import normalize
 from tqdm import tqdm
 
 from ..data import create_dataloader
@@ -46,15 +47,13 @@ class ClassificationFeatureEngine(FeatureEngine):
         text_classifier = list()
         self.model.eval()
         for class_name in tqdm(self.train_dataset.class_name, desc='Build Text Classifier'):
-            class_name = class_name.replace('_', ' ')
             text = [p(class_name) for p in self.train_dataset.prompt]
             text_input = self.tokenizer(text).to(self.device)
 
             with self.fabric.autocast():
                 text_feature = self.model.encode_text(text_input)
 
-            text_feature /= text_feature.norm(dim=-1, keepdim=True)
-            text_feature = text_feature.mean(dim=0)
+            text_feature = normalize(text_feature, dim=-1).mean(0)
             text_feature /= text_feature.norm()
             text_classifier.append(text_feature)
 
@@ -89,7 +88,7 @@ class ClassificationFeatureEngine(FeatureEngine):
             labels.append(y.detach().cpu())
 
         features = torch.cat(features, dim=0).to(self.device)
-        self.sup_features = features / features.norm(dim=-1, keepdim=True)
+        self.sup_features = normalize(features, dim=-1)
         self.sup_labels = torch.cat(labels).to(self.device)
 
         self._save_file((self.sup_features, self.sup_labels), file_name)
@@ -117,8 +116,8 @@ class ClassificationFeatureEngine(FeatureEngine):
             features.append(image_features.detach().cpu())
             labels.append(y.detach().cpu())
 
-        features = torch.cat(features).to(self.device)
-        self.qry_features = features / features.norm(dim=-1, keepdim=True)
+        features = torch.cat(features, dim=0).to(self.device)
+        self.qry_features = normalize(features, dim=-1)
         self.qry_labels = torch.cat(labels).to(self.device)
 
         self._save_file((self.qry_features, self.qry_labels), file_name)
