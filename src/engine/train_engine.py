@@ -1,9 +1,12 @@
 import shutil
 from time import time
 
+import datasets
 import torch
 import torchmetrics
 from torchmetrics import MeanMetric
+
+datasets.disable_progress_bar()
 
 
 class TrainEngine:
@@ -162,7 +165,7 @@ class TrainEngine:
         self.fabric.save(save_path, save_state)
 
         is_best = (self.decreasing and criterion_metric < self.best_metric) or (
-                    not self.decreasing and criterion_metric > self.best_metric)
+                not self.decreasing and criterion_metric > self.best_metric)
         if is_best:
             self.best_metric, self.best_epoch = criterion_metric, epoch
             if self.fabric.local_rank == 0:
@@ -204,5 +207,10 @@ class TrainEngine:
         return {f"{prefix}{separator}{k}": v for k, v in metrics.items()}
 
     def _tokenize(self, text):
-        text_embedding = self.tokenizer(text)
-        return text_embedding
+        dataset = datasets.Dataset.from_dict({'text': text})
+
+        text_embedding = dataset.map(
+            lambda item: self.tokenizer(item['text'], padding='max_length', return_attention_mask=False),
+            remove_columns=['text'], batched=True).with_format('pt', device=self.device)
+
+        return text_embedding['input_ids']

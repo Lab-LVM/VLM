@@ -1,6 +1,5 @@
 # https://github.com/mlfoundations/open_clip/blob/main/src/open_clip/loss.py
 
-import torch
 import torch.distributed.nn
 import torch.nn as nn
 from torch import distributed as dist
@@ -144,6 +143,28 @@ class CoCaLoss(CLIPLoss):
 
 
 class SupervisedContrastiveLoss(nn.Module):
+    def __init__(self, temperature=1.0):
+        super(SupervisedContrastiveLoss, self).__init__()
+        self.temperature = temperature
+
+    def forward(self, logits, targets):
+        device = logits.device
+
+        dot_product_tempered = logits / self.temperature
+        # Minus max for numerical stability with exponential. Same done in cross entropy. Epsilon added to avoid log(0)
+        exp_dot_tempered = (
+                torch.exp(dot_product_tempered - torch.max(dot_product_tempered, dim=1, keepdim=True)[0]) + 1e-5
+        )
+        same_class = (targets.unsqueeze(1).repeat(1, targets.shape[0]) == targets).to(device)
+        cardinality_per_samples = torch.sum(same_class, dim=1)
+
+        log_prob = -torch.log(exp_dot_tempered / (torch.sum(exp_dot_tempered * same_class, dim=1, keepdim=True)))
+        supervised_contrastive_loss_per_sample = torch.sum(log_prob * same_class, dim=1) / cardinality_per_samples
+        supervised_contrastive_loss = torch.mean(supervised_contrastive_loss_per_sample)
+        return supervised_contrastive_loss
+
+
+class OriginalSupervisedContrastiveLoss(nn.Module):
     def __init__(self, temperature=0.07):
         """
         Implementation of the loss described in the paper Supervised Contrastive Learning :
@@ -151,7 +172,7 @@ class SupervisedContrastiveLoss(nn.Module):
 
         :param temperature: int
         """
-        super(SupervisedContrastiveLoss, self).__init__()
+        super(OriginalSupervisedContrastiveLoss, self).__init__()
         self.temperature = temperature
 
     def forward(self, projections, targets):
@@ -178,3 +199,14 @@ class SupervisedContrastiveLoss(nn.Module):
         supervised_contrastive_loss = torch.mean(supervised_contrastive_loss_per_sample)
 
         return supervised_contrastive_loss
+
+
+if __name__ == '__main__':
+    import torch
+
+    prob = torch.rand(5, 512) * 200
+    target = torch.arange(0, 5)
+    target[1] += 2
+    loss = OriginalSupervisedContrastiveLoss()
+
+    loss(prob, target)

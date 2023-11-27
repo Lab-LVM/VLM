@@ -8,6 +8,7 @@ import torch
 from PIL import Image
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
 from tqdm import tqdm
+from transformers import CLIPTokenizerFast
 
 from src.utils.registry import register_model
 from .model import build_model
@@ -256,4 +257,4 @@ def CLIP(backbone='ViT-B32', **kwargs):
 
 @register_model
 def CLIP_tokenizer(**kwargs):
-    return tokenize
+    return CLIPTokenizerFast.from_pretrained('openai/clip-vit-base-patch32')

@@ -68,11 +68,12 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         x = x.to(self.device).to(memory_format=torch.channels_last)
         y = y.to(self.device)
         onehot_y = torch.arange(x.shape[0]).long().to(self.device)
-        ra_prompt = self._tokenize(ra_prompt).to(self.device)
+        ra_prompt = self._tokenize(ra_prompt)
 
         with self.fabric.autocast():
             logits_per_image, logits_per_text, image_prob = model(x, ra_prompt)
-            loss = (criterion(logits_per_image, logits_per_text) + self.crossentropy(image_prob, y)) / 2
+            # loss = (criterion(logits_per_image, logits_per_text) + self.crossentropy(image_prob, y)) / 2
+            loss = (criterion(logits_per_image, y) + criterion(logits_per_text, y)) / 2
 
         return loss, logits_per_image, onehot_y
 

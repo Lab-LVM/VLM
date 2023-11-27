@@ -1,16 +1,24 @@
+import datasets
 import torch
-import src.models
+
+from src.models.clip.tokenizer_fast import CLIPTokenizerFast
 from src.utils.registry import create_model
+
+datasets.disable_progress_bar()
+
 
 def normalize(features):
     return features / features.norm(dim=-1, keepdim=True)
 
 
 model = create_model('CLIP')
-tokenizer = create_model('CLIP_tokenizer')
+# tokenizer = create_model('CLIP_tokenizer')
+tokenizer = CLIPTokenizerFast.from_pretrained('openai/clip-vit-base-patch32', num_proc=5)
 
-text_input = tokenizer(["a photo of a cat", "a image of a dog"])
-print(text_input.shape)
+dataset = datasets.Dataset.from_dict({'text': ["a photo of a cat", "a image of a dog"]})
+text_input = dataset.map(lambda item: tokenizer(item['text'], padding='max_length', return_attention_mask=False),
+                         remove_columns=['text'], batched=True).with_format('pt')['input_ids']
+
 text_feature = model.encode_text(text_input)
 text_feature = normalize(text_feature)
 
