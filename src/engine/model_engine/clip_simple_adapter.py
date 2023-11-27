@@ -29,9 +29,9 @@ class CLIP_SimpleAdapterTaskEngine(TaskEngine):
 
     @property
     def available_task(self):
-        return ['classification_zeroshot']
+        return ['classification']
 
-    def classification_zeroshot(self, **kwargs):
+    def classification(self, **kwargs):
         self.feature_engine.sampling(0)
         self.metric.reset()
 
@@ -41,17 +41,17 @@ class CLIP_SimpleAdapterTaskEngine(TaskEngine):
         logits = self.model.logit_scale.exp() * qry_features @ text_classifier.mT
 
         # Classifier logits
-        # classifier_logits = self.model.classifier(qry_features)
-        # if self.cfg.dataset.name == 'imagenet_r':
-        #     classifier_logits = classifier_logits[:, imagenet_r_class_number]
-        # elif self.cfg.dataset.name == 'imagenet_a':
-        #     classifier_logits = classifier_logits[:, imagenet_a_class_number]
-        # elif self.cfg.dataset.name == 'objectnet':
-        #     classifier_logits = self.train_dataset.to_imageNet_logits(classifier_logits)
-        # logits += classifier_logits
+        classifier_logits = self.model.classifier(qry_features)
+        if self.cfg.dataset.name == 'imagenet_r':
+            classifier_logits = classifier_logits[:, imagenet_r_class_number]
+        elif self.cfg.dataset.name == 'imagenet_a':
+            classifier_logits = classifier_logits[:, imagenet_a_class_number]
+        elif self.cfg.dataset.name == 'objectnet':
+            classifier_logits = self.train_dataset.to_imageNet_logits(classifier_logits)
+        logits += classifier_logits
 
         self.metric.update(logits, qry_labels)
-        self.metric.prefix = 'clip_zeroshot'
+        self.metric.prefix = 'simple_adapter_classification'
         return self._output
 
 

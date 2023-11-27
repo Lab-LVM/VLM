@@ -43,12 +43,12 @@ def forward(self, image, text):
     return logits_per_image, logits_per_text, self.classifier(image_features)
 
 
-def mlp():
+def mlp(dim=512):
     return torch.nn.Sequential(
-        torch.nn.Linear(512, 512 * 4),
+        torch.nn.Linear(dim, dim * 4),
         torch.nn.GELU(),
-        torch.nn.Linear(512 * 4, 512),
-        torch.nn.LayerNorm(512),
+        torch.nn.Linear(dim * 4, dim),
+        torch.nn.LayerNorm(dim),
     )
 
 

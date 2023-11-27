@@ -26,12 +26,12 @@ def main(cfg: DictConfig) -> None:
         for shot in to_list(cfg.n_shot):
             cfg.dataset = v
             train_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train)
-            val_dataset = create_dataset(cfg.dataset, split=cfg.dataset.valid)
+            test_dataset = create_dataset(cfg.dataset, split=cfg.dataset.test)
 
-            engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, val_dataset)
+            engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
             metrics = engine(n_shots=to_list(cfg.n_shot))
 
-            row = dict(Data=val_dataset.name, shot=shot, **metrics)
+            row = dict(Data=test_dataset.name, shot=shot, **metrics)
             print(f'{row}\n')
             df = pd.concat([df, pd.DataFrame(row, index=[0])])
 
