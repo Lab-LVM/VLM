@@ -193,7 +193,6 @@ class ImageNetSimplePrompt(ImageNet):
         super().__init__(root, split, transform, target_transform, n_shot)
 
     def setup_prompt_transform(self):
-        # self.transform.transforms[2] = transforms.Lambda(lambda x: x)
         pass
 
     def ra_prompt(self, target):
