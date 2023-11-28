@@ -48,7 +48,7 @@ class ClassificationFeatureEngine(FeatureEngine):
         self.model.eval()
         for class_name in tqdm(self.train_dataset.class_name, desc='Build Text Classifier'):
             text = [p(class_name) for p in self.train_dataset.prompt]
-            text_input = self.tokenizer(text).to(self.device)
+            text_input = self.tokenizer(text, padding='max_length', return_attention_mask=False, return_tensors='pt')['input_ids'].to(self.device)
 
             with self.fabric.autocast():
                 text_feature = self.model.encode_text(text_input)

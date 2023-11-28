@@ -207,10 +207,11 @@ class TrainEngine:
         return {f"{prefix}{separator}{k}": v for k, v in metrics.items()}
 
     def _tokenize(self, text):
-        dataset = datasets.Dataset.from_dict({'text': text})
+        # dataset = datasets.Dataset.from_dict({'text': text})
+        #
+        # text_embedding = dataset.map(
+        #     lambda item: self.tokenizer(item['text'], padding='max_length', return_attention_mask=False),
+        #     remove_columns=['text'], batched=True).with_format('pt', device=self.device)
+        # return text_embedding['input_ids']
 
-        text_embedding = dataset.map(
-            lambda item: self.tokenizer(item['text'], padding='max_length', return_attention_mask=False),
-            remove_columns=['text'], batched=True).with_format('pt', device=self.device)
-
-        return text_embedding['input_ids']
+        return self.tokenizer(text, padding='max_length', return_attention_mask=False, return_tensors='pt')['input_ids'].to(self.device)
