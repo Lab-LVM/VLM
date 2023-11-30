@@ -10,9 +10,9 @@ from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normal
 from tqdm import tqdm
 from transformers import CLIPTokenizerFast
 
+from src.models.clip.model import build_model
+from src.models.clip.simple_tokenizer import SimpleTokenizer as _Tokenizer
 from src.utils.registry import register_model
-from .model import build_model
-from .simple_tokenizer import SimpleTokenizer as _Tokenizer
 
 try:
     from torchvision.transforms import InterpolationMode

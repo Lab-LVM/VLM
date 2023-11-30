@@ -4,6 +4,7 @@ from .. import TaskEngine
 from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
 from ...data.dataset.imagenet_x import imagenet_a_class_number, imagenet_r_class_number
+from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
 
 
@@ -41,14 +42,17 @@ class CLIP_SimpleAdapterTaskEngine(TaskEngine):
         logits = self.model.logit_scale.exp() * qry_features @ text_classifier.mT
 
         # Classifier logits
-        classifier_logits = self.model.classifier(qry_features)
-        if self.cfg.dataset.name == 'imagenet_r':
-            classifier_logits = classifier_logits[:, imagenet_r_class_number]
-        elif self.cfg.dataset.name == 'imagenet_a':
-            classifier_logits = classifier_logits[:, imagenet_a_class_number]
-        elif self.cfg.dataset.name == 'objectnet':
-            classifier_logits = self.train_dataset.to_imageNet_logits(classifier_logits)
-        logits += classifier_logits
+        try:
+            classifier_logits = self.model.classifier(qry_features)
+            if self.cfg.dataset.name == 'imagenet_r':
+                classifier_logits = classifier_logits[:, imagenet_r_class_number]
+            elif self.cfg.dataset.name == 'imagenet_a':
+                classifier_logits = classifier_logits[:, imagenet_a_class_number]
+            elif self.cfg.dataset.name == 'objectnet':
+                classifier_logits = self.train_dataset.to_imageNet_logits(classifier_logits)
+            logits += classifier_logits
+        except:
+            pass
 
         self.metric.update(logits, qry_labels)
         self.metric.prefix = 'simple_adapter_classification'
@@ -62,6 +66,37 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         self.train_loader.dataset.setup_prompt_transform()
         self.crossentropy = torch.nn.CrossEntropyLoss()
 
+        if isinstance(criterion[0], IndomainOutdomainContrastiveLoss):
+            self.criterion_forward = self.IO_forward
+        elif isinstance(criterion[0], SupervisedContrastiveLoss):
+            self.criterion_forward = self.SCL_forward
+        else:
+            self.criterion_forward = self.CLCR_forward
+
+    def IO_forward(self, criterion, y, image_feature, text_feature, image_prob=None):
+        logits_per_image = torch.mm(image_feature, text_feature.t())
+        logits_per_text = logits_per_image.t()
+        logits_image_self = torch.mm(image_feature, image_feature.t())
+        logits_text_self = torch.mm(text_feature, text_feature.t())
+
+        criterion.set_mask(y)
+        loss = (criterion(logits_per_image) + criterion(logits_per_text)
+                + criterion(logits_image_self) + criterion(logits_text_self))
+        if image_prob is not None:
+            loss = loss + self.crossentropy(image_prob, y) * 0.2
+
+        return loss
+
+    def SCL_forward(self, criterion, y, logits_per_image, logits_per_text, image_prob=None):
+        loss = (criterion(logits_per_image, y) + criterion(logits_per_text, y)) / 2
+        if image_prob is not None:
+            loss = loss + self.crossentropy(image_prob, y) * 0.3
+        return loss
+
+    def CLCR_forward(self, criterion, y, logits_per_image, logits_per_text, image_prob):
+        loss = (criterion(logits_per_image, logits_per_text) + self.crossentropy(image_prob, y)) / 2
+        return loss
+
     def iterate(self, model, data, criterion):  # for additional classifier
         x, y, ra_prompt = data
 
@@ -71,11 +106,10 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         ra_prompt = self._tokenize(ra_prompt)
 
         with self.fabric.autocast():
-            logits_per_image, logits_per_text, image_prob = model(x, ra_prompt)
-            # loss = (criterion(logits_per_image, logits_per_text) + self.crossentropy(image_prob, y)) / 2
-            loss = (criterion(logits_per_image, y) + criterion(logits_per_text, y)) / 2
+            outs = model(x, ra_prompt)
+            loss = self.criterion_forward(criterion, y, *outs)
 
-        return loss, logits_per_image, onehot_y
+        return loss, outs[0], onehot_y
 
     def iterate_origin(self, model, data, criterion):
         x, y, ra_prompt = data

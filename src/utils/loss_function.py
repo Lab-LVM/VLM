@@ -142,24 +142,40 @@ class CoCaLoss(CLIPLoss):
         return clip_loss, caption_loss
 
 
+class IndomainOutdomainContrastiveLoss(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def set_mask(self, targets):
+        self.mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
+        self.mask_inverse = 1 - self.mask_same_class
+        self.cardinality = torch.sum(self.mask_same_class, dim=1)
+
+    def forward(self, logits):
+        exp_logits = torch.exp(logits - torch.max(logits, dim=1, keepdim=True)[0]) + 1e-5
+        log_prob = -torch.log(exp_logits / torch.sum(exp_logits * self.mask_inverse, dim=1, keepdim=True))
+        loss = torch.sum(log_prob * self.mask_same_class, dim=1) / self.cardinality
+
+        return torch.mean(loss)
+
+
 class SupervisedContrastiveLoss(nn.Module):
-    def __init__(self, temperature=1.0):
+    def __init__(self):
         super(SupervisedContrastiveLoss, self).__init__()
-        self.temperature = temperature
 
     def forward(self, logits, targets):
-        device = logits.device
-
-        dot_product_tempered = logits / self.temperature
+        dot_product_tempered = logits
         # Minus max for numerical stability with exponential. Same done in cross entropy. Epsilon added to avoid log(0)
         exp_dot_tempered = (
                 torch.exp(dot_product_tempered - torch.max(dot_product_tempered, dim=1, keepdim=True)[0]) + 1e-5
         )
-        same_class = (targets.unsqueeze(1).repeat(1, targets.shape[0]) == targets).to(device)
-        cardinality_per_samples = torch.sum(same_class, dim=1)
+        mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
+        mask_anchor_out = 1 - mask_same_class
 
-        log_prob = -torch.log(exp_dot_tempered / (torch.sum(exp_dot_tempered * same_class, dim=1, keepdim=True)))
-        supervised_contrastive_loss_per_sample = torch.sum(log_prob * same_class, dim=1) / cardinality_per_samples
+        cardinality_per_samples = torch.sum(mask_same_class, dim=1)
+
+        log_prob = -torch.log(exp_dot_tempered / (torch.sum(exp_dot_tempered * mask_anchor_out, dim=1, keepdim=True)))
+        supervised_contrastive_loss_per_sample = torch.sum(log_prob * mask_same_class, dim=1) / cardinality_per_samples
         supervised_contrastive_loss = torch.mean(supervised_contrastive_loss_per_sample)
         return supervised_contrastive_loss
 
@@ -204,9 +220,10 @@ class OriginalSupervisedContrastiveLoss(nn.Module):
 if __name__ == '__main__':
     import torch
 
-    prob = torch.rand(5, 512) * 200
+    prob = torch.rand(5, 5)
     target = torch.arange(0, 5)
     target[1] += 2
-    loss = OriginalSupervisedContrastiveLoss()
+    loss_fn = IndomainOutdomainContrastiveLoss()
 
-    loss(prob, target)
+    loss_fn(prob, target, indomain=True)
+    loss_fn(prob, target, indomain=False)

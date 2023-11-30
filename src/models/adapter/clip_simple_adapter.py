@@ -43,6 +43,27 @@ def forward(self, image, text):
     return logits_per_image, logits_per_text, self.classifier(image_features)
 
 
+def forward_features(self, image, text):
+    image_features = self.encode_image(image)
+    text_features = self.encode_text(text)
+
+    # normalized features
+    image_features = image_features / image_features.norm(dim=1, keepdim=True)
+    text_features = text_features / text_features.norm(dim=1, keepdim=True)
+
+    return image_features, text_features
+
+def forward_features_prob(self, image, text):
+    image_features = self.encode_image(image)
+    text_features = self.encode_text(text)
+
+    # normalized features
+    image_features = image_features / image_features.norm(dim=1, keepdim=True)
+    text_features = text_features / text_features.norm(dim=1, keepdim=True)
+
+    return image_features, text_features, self.classifier(image_features)
+
+
 def mlp(dim=512):
     return torch.nn.Sequential(
         torch.nn.Linear(dim, dim * 4),
@@ -81,5 +102,13 @@ def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, languag
             model.__setattr__('classifier', torch.nn.Linear(512, 1000))
             forward_bound_method = forward.__get__(model, model.__class__)
             setattr(model, 'forward', forward_bound_method)
+
+        if kwargs.get('feature_out', False):
+            if classifier:
+                forward_bound_method = forward_features_prob.__get__(model, model.__class__)
+                setattr(model, 'forward', forward_bound_method)
+            else:
+                forward_bound_method = forward_features.__get__(model, model.__class__)
+                setattr(model, 'forward', forward_bound_method)
 
     return model
