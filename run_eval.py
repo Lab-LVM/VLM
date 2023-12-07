@@ -23,6 +23,7 @@ def main(cfg: DictConfig) -> None:
 
     factory = ObjectFactory(cfg, fabric)
     model, tokenizer = factory.create_model()  # model, tokenizer
+    model = fabric.setup_module(model)
 
     df = pd.DataFrame()
 

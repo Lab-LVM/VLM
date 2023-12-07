@@ -32,6 +32,7 @@ def main(cfg: DictConfig) -> None:
 
     model, optimizer, scheduler, start_epoch = resume(model, optimizer, scheduler, cfg, fabric)
     model, optimizer = fabric.setup(model, optimizer)
+    loaders = fabric.setup_dataloaders(*loaders)
 
     cfg = factory.cfg
     fabric.loggers[0].update_config(cfg) if cfg.wandb else None

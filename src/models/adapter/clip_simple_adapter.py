@@ -5,24 +5,22 @@ from src.utils.registry import register_model
 
 
 def encode_image(self, image):
-    with torch.no_grad():
-        x = self.visual(image.type(self.dtype))
+    x = self.visual(image.type(self.dtype))
     return self.vision_adapter(x) + x
 
 
 def encode_text(self, text):
-    with torch.no_grad():
-        x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
+    x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
 
-        x = x + self.positional_embedding.type(self.dtype)
-        x = x.permute(1, 0, 2)  # NLD -> LND
-        x = self.transformer(x)
-        x = x.permute(1, 0, 2)  # LND -> NLD
-        x = self.ln_final(x).type(self.dtype)
+    x = x + self.positional_embedding.type(self.dtype)
+    x = x.permute(1, 0, 2)  # NLD -> LND
+    x = self.transformer(x)
+    x = x.permute(1, 0, 2)  # LND -> NLD
+    x = self.ln_final(x).type(self.dtype)
 
-        # x.shape = [batch_size, n_ctx, transformer.width]
-        # take features from the eot embedding (eot_token is the highest number in each sequence)
-        x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
+    # x.shape = [batch_size, n_ctx, transformer.width]
+    # take features from the eot embedding (eot_token is the highest number in each sequence)
+    x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
     return self.language_adapter(x) + x
 
 
@@ -52,6 +50,7 @@ def forward_features(self, image, text):
     text_features = text_features / text_features.norm(dim=1, keepdim=True)
 
     return image_features, text_features
+
 
 def forward_features_prob(self, image, text):
     image_features = self.encode_image(image)
@@ -86,7 +85,6 @@ def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, languag
     if finetune:
         assert language_adapter or vision_adapter
         model.logit_scale.require_grad = True
-        import torch
 
         if language_adapter:
             model.__setattr__('language_adapter', mlp())

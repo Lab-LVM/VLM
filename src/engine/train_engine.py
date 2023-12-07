@@ -55,7 +55,7 @@ class TrainEngine:
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)
 
     def iterate(self, model, data, criterion):
-        x, y = map(lambda a: a.to(self.device), data)
+        x, y = data
         x = x.to(memory_format=torch.channels_last)
 
         with self.fabric.autocast():
@@ -73,7 +73,7 @@ class TrainEngine:
         total_len = total_len - 1
 
         self.model.train()
-        self.optimizer.zero_grad()
+        self.optimizer.zero_grad(set_to_none=True)
         data_start = start = perf_counter()
         for i, data in enumerate(self.train_loader):
             self.data_duration.update(perf_counter() - data_start)
@@ -91,7 +91,7 @@ class TrainEngine:
                 continue
 
             self.optimizer.step()
-            self.optimizer.zero_grad()
+            self.optimizer.zero_grad(set_to_none=True)
 
             self.duration.update(perf_counter() - start)
             start = perf_counter()

@@ -105,29 +105,14 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
     def iterate(self, model, data, criterion):  # for additional classifier
         x, y, ra_prompt = data
 
-        x = x.to(self.device).to(memory_format=torch.channels_last)
-        y = y.to(self.device)
-        ra_prompt = ra_prompt.to(self.device)
-        onehot_y = torch.arange(x.shape[0]).long().to(self.device)
+        x = x.to(memory_format=torch.channels_last)
+        onehot_y = torch.arange(x.shape[0], device=self.device, dtype=torch.long)
 
         with self.fabric.autocast():
             outs = model(x, ra_prompt)
             loss = self.criterion_forward(criterion, y, *outs)
 
         return loss, outs[0], onehot_y
-
-    def iterate_origin(self, model, data, criterion):
-        x, y, ra_prompt = data
-
-        x = x.to(self.device).to(memory_format=torch.channels_last)
-        onehot_y = torch.arange(x.shape[0]).long().to(self.device)
-        ra_prompt = self._tokenize(ra_prompt).to(self.device)
-
-        with self.fabric.autocast():
-            logits_per_image, logits_per_text = model(x, ra_prompt)
-            loss = criterion(logits_per_image, logits_per_text)
-
-        return loss, logits_per_image, onehot_y
 
     def iterate_ra2(self, model, data, criterion):
         x, ra_x, y, prompt, ra_prompt = data
@@ -136,10 +121,8 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         y = torch.concat([y, y])
         prompt = torch.concat([prompt, ra_prompt])
 
-        x = x.to(self.device).to(memory_format=torch.channels_last)
-        y = y.to(self.device)
-        prompt = prompt.to(self.device)
-        onehot_y = torch.arange(x.shape[0]).long().to(self.device)
+        x = x.to(memory_format=torch.channels_last)
+        onehot_y = torch.arange(x.shape[0], device=self.device, dtype=torch.long)
 
         with self.fabric.autocast():
             outs = model(x, prompt)
