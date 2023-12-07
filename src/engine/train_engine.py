@@ -1,5 +1,5 @@
 import shutil
-from time import time
+from time import perf_counter
 
 import torch
 import torchmetrics
@@ -34,6 +34,7 @@ class TrainEngine:
         self.cm = cfg.train.criteria_metric
         self.decreasing = cfg.train.criteria_decreasing
         self.duration = MeanMetric().to(self.device)
+        self.data_duration = MeanMetric().to(self.device)
         self.losses = MeanMetric().to(self.device)
         self.metric_fn = self._init_metrics(cfg.dataset.task, cfg.train.eval_metrics,
                                             0.5, self.num_classes, self.num_classes, 'macro')
@@ -73,8 +74,9 @@ class TrainEngine:
 
         self.model.train()
         self.optimizer.zero_grad()
-        start = time()
+        data_start = start = perf_counter()
         for i, data in enumerate(self.train_loader):
+            self.data_duration.update(perf_counter() - data_start)
             is_accumulating = (i + 1) % accum_steps != 0
             update_idx = i // accum_steps
 
@@ -85,22 +87,24 @@ class TrainEngine:
             self.losses.update(loss)
 
             if is_accumulating:
+                data_start = perf_counter()
                 continue
 
             self.optimizer.step()
             self.optimizer.zero_grad()
 
-            self.duration.update(tnow := time() - start)
-            start = tnow
+            self.duration.update(perf_counter() - start)
+            start = perf_counter()
             num_updates += 1
             if update_idx % self.logging_interval == 0 or i == total_len:
                 lrl = [param_group['lr'] for param_group in self.optimizer.param_groups]
                 lr = sum(lrl) / len(lrl)
 
                 self.fabric.call('on_train', epoch, update_idx, update_len, loss, lr, self.duration.compute().item(),
-                                 self.sample_size)
+                                 self.sample_size, self.data_duration.compute().item())
 
             self.scheduler.step_update(num_updates=num_updates, metric=self.losses.compute())
+            data_start = perf_counter()
 
         if hasattr(self.optimizer, 'sync_lookahead'):
             self.optimizer.sync_lookahead()
@@ -142,6 +146,7 @@ class TrainEngine:
             fn.update(prob, target)
 
     def _reset_metric(self):
+        self.data_duration.reset()
         self.duration.reset()
         self.losses.reset()
         for fn in self.metric_fn.values():
