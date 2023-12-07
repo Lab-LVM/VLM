@@ -5,15 +5,15 @@ defaults:
   - override /dataset: imagenet
   - override /model: clip_simple_adapter
 
-gpu: 2
+gpu: 0
 name: ${model.model_name}
 n_shot: 0
 
 train:
   epochs: 50
-  batch_size: 1024
+  batch_size: 4096
   total_batch: 4096
-  num_workers: 8
+  num_workers: 4
 
   scheduler:
     sched: cosine
@@ -34,4 +34,3 @@ dataset:
   name: imagenetra
   augmentation:
     train_interpolation: bicubic
-    prefetcher: False
