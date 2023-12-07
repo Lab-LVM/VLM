@@ -16,10 +16,10 @@ def load_checkpoint(model, checkpoint_path, optimizer=None, fabric=None):
     resume_epoch = None
     base_path = hydra.utils.get_original_cwd()
 
-    if checkpoint_path.endswith('pth.tar'):
+    if checkpoint_path.endswith('.ckpt'):
         checkpoint_path = os.path.join(base_path, checkpoint_path)
     else:
-        checkpoint_path = os.path.join(base_path, checkpoint_path, 'last.pth.tar')
+        checkpoint_path = os.path.join(base_path, checkpoint_path, 'latest.ckpt')
 
     if os.path.isfile(checkpoint_path):
         checkpoint = fabric.load(checkpoint_path)
