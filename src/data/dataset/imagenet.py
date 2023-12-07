@@ -2,7 +2,6 @@ import os
 from collections import defaultdict
 
 import numpy as np
-import torch
 from torch.utils.data import Dataset
 from torchvision.datasets import ImageNet as TorchImagenet
 from torchvision.transforms import transforms
@@ -368,7 +367,7 @@ class ImageNetRandaugPrompt(ImageNet):
         rand_augmentation_token = RAND_AUG_TOKENS[ra_tf[0].name] + AND + RAND_AUG_TOKENS[ra_tf[1].name]
 
         prompt = prompt(rand_augmentation_token, IMAGENET_CLASS_NAME_TOKEN[target])
-        return torch.tensor(prompt + [49407] * (MAX_LENGTH - len(prompt)), dtype=torch.int)
+        return prompt + [49407] * (MAX_LENGTH - len(prompt))
 
     def __getitem__(self, idx):
         path, target = self.imgs[idx], self.targets[idx]
@@ -396,12 +395,12 @@ class ImageNetRandaugPromptV2(ImageNet):
         rand_augmentation_token = RAND_AUG_TOKENS[ra_tf[0].name] + AND + RAND_AUG_TOKENS[ra_tf[1].name]
 
         prompt = prompt(rand_augmentation_token, IMAGENET_CLASS_NAME_TOKEN[target])
-        return torch.tensor(prompt + [49407] * (MAX_LENGTH - len(prompt)), dtype=torch.int)
+        return prompt + [49407] * (MAX_LENGTH - len(prompt))
 
     def original_prompt(self, idx, target):
         prompt = AUG_PROMPT_TOKENS[idx % self.len_prompt]
         prompt = prompt([3117], IMAGENET_CLASS_NAME_TOKEN[target])
-        return torch.tensor(prompt + [49407] * (MAX_LENGTH - len(prompt)), dtype=torch.int)
+        return prompt + [49407] * (MAX_LENGTH - len(prompt))
 
     def __getitem__(self, idx):
         path, target = self.imgs[idx], self.targets[idx]

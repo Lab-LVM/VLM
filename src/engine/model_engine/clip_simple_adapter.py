@@ -106,13 +106,12 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         x, y, ra_prompt = data
 
         x = x.to(memory_format=torch.channels_last)
-        onehot_y = torch.arange(x.shape[0], device=self.device, dtype=torch.long)
 
         with self.fabric.autocast():
             outs = model(x, ra_prompt)
             loss = self.criterion_forward(criterion, y, *outs)
 
-        return loss, outs[0], onehot_y
+        return loss, outs[0], y
 
     def iterate_ra2(self, model, data, criterion):
         x, ra_x, y, prompt, ra_prompt = data
@@ -122,13 +121,12 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         prompt = torch.concat([prompt, ra_prompt])
 
         x = x.to(memory_format=torch.channels_last)
-        onehot_y = torch.arange(x.shape[0], device=self.device, dtype=torch.long)
 
         with self.fabric.autocast():
             outs = model(x, prompt)
             loss = self.criterion_forward(criterion, y, *outs)
 
-        return loss, outs[0], onehot_y
+        return loss, outs[0], y
 
     def __call__(self, *args, **kwargs):
         for epoch in range(self.start_epoch, self.num_epochs):
