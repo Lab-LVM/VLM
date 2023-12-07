@@ -1,3 +1,5 @@
+import os
+
 import hydra
 import pandas as pd
 import wandb
@@ -8,6 +10,8 @@ from src.initialize import setup_fabric, ObjectFactory
 from src.models import *
 from src.utils import dataset2dict, to_list, import_config, move_dir
 from src.utils.registry import create_task_engine
+
+os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
 
 @hydra.main(config_path="configs", config_name="eval_config", version_base="1.3")

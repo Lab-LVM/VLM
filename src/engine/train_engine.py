@@ -1,12 +1,9 @@
 import shutil
 from time import time
 
-import datasets
 import torch
 import torchmetrics
 from torchmetrics import MeanMetric
-
-datasets.disable_progress_bar()
 
 
 class TrainEngine:
@@ -36,6 +33,7 @@ class TrainEngine:
 
         self.cm = cfg.train.criteria_metric
         self.decreasing = cfg.train.criteria_decreasing
+        self.duration = MeanMetric().to(self.device)
         self.losses = MeanMetric().to(self.device)
         self.metric_fn = self._init_metrics(cfg.dataset.task, cfg.train.eval_metrics,
                                             0.5, self.num_classes, self.num_classes, 'macro')
@@ -92,14 +90,15 @@ class TrainEngine:
             self.optimizer.step()
             self.optimizer.zero_grad()
 
-            tnow = time()
-            duration, start = tnow - start, tnow
+            self.duration.update(tnow := time() - start)
+            start = tnow
             num_updates += 1
             if update_idx % self.logging_interval == 0 or i == total_len:
                 lrl = [param_group['lr'] for param_group in self.optimizer.param_groups]
                 lr = sum(lrl) / len(lrl)
 
-                self.fabric.call('on_train', epoch, update_idx, update_len, loss, lr, duration, self.sample_size)
+                self.fabric.call('on_train', epoch, update_idx, update_len, loss, lr, self.duration.compute().item(),
+                                 self.sample_size)
 
             self.scheduler.step_update(num_updates=num_updates, metric=self.losses.compute())
 
@@ -143,6 +142,7 @@ class TrainEngine:
             fn.update(prob, target)
 
     def _reset_metric(self):
+        self.duration.reset()
         self.losses.reset()
         for fn in self.metric_fn.values():
             fn.reset()
@@ -214,4 +214,5 @@ class TrainEngine:
         #     remove_columns=['text'], batched=True).with_format('pt', device=self.device)
         # return text_embedding['input_ids']
 
-        return self.tokenizer(text, padding='max_length', return_attention_mask=False, return_tensors='pt')['input_ids'].to(self.device)
+        return self.tokenizer(text, padding='max_length', return_attention_mask=False, return_tensors='pt')[
+            'input_ids'].to(self.device)

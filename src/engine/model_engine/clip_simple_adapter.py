@@ -3,6 +3,7 @@ import torch
 from .. import TaskEngine
 from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
+from ...data.dataset import ImageNetRandaugPromptV2
 from ...data.dataset.imagenet_x import imagenet_a_class_number, imagenet_r_class_number
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
@@ -73,6 +74,9 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         else:
             self.criterion_forward = self.CLCR_forward
 
+        if isinstance(self.train_loader.dataset, ImageNetRandaugPromptV2):
+            self.iterate = self.iterate_ra2
+
     def IO_forward(self, criterion, y, image_feature, text_feature, image_prob=None):
         logits_per_image = torch.mm(image_feature, text_feature.t())
         logits_per_text = logits_per_image.t()
@@ -80,8 +84,9 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         logits_text_self = torch.mm(text_feature, text_feature.t())
 
         criterion.set_mask(y)
+        # loss = (criterion(logits_per_image) + criterion(logits_per_text)) / 2
         loss = (criterion(logits_per_image) + criterion(logits_per_text)
-                + criterion(logits_image_self) + criterion(logits_text_self))
+                + criterion(logits_image_self) + criterion(logits_text_self)) / 4
         if image_prob is not None:
             loss = loss + self.crossentropy(image_prob, y) * 0.2
 
@@ -102,8 +107,8 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
 
         x = x.to(self.device).to(memory_format=torch.channels_last)
         y = y.to(self.device)
+        ra_prompt = ra_prompt.to(self.device)
         onehot_y = torch.arange(x.shape[0]).long().to(self.device)
-        ra_prompt = self._tokenize(ra_prompt)
 
         with self.fabric.autocast():
             outs = model(x, ra_prompt)
@@ -128,17 +133,19 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         x, ra_x, y, prompt, ra_prompt = data
 
         x = torch.concat([x, ra_x])
-        prompt.extend(ra_prompt)
+        y = torch.concat([y, y])
+        prompt = torch.concat([prompt, ra_prompt])
 
         x = x.to(self.device).to(memory_format=torch.channels_last)
+        y = y.to(self.device)
+        prompt = prompt.to(self.device)
         onehot_y = torch.arange(x.shape[0]).long().to(self.device)
-        prompt = self._tokenize(prompt).to(self.device)
 
         with self.fabric.autocast():
-            logits_per_image, logits_per_text = model(x, prompt)
-            loss = criterion(logits_per_image, logits_per_text)
+            outs = model(x, prompt)
+            loss = self.criterion_forward(criterion, y, *outs)
 
-        return loss, logits_per_image, onehot_y
+        return loss, outs[0], onehot_y
 
     def __call__(self, *args, **kwargs):
         for epoch in range(self.start_epoch, self.num_epochs):

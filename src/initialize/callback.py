@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 
 from lightning.fabric.utilities.rank_zero import rank_zero_only
 from termcolor import colored
@@ -18,12 +19,13 @@ class CallBack:
                      f'Loss: {loss.item():#.3g}  '
                      f'LR: {lr:.3e}  '
                      f'TP: {batch_size / duration:>7.2f}/s  '
+                     f'ETA: {timedelta(seconds=int((updates_per_epoch - update_idx) * duration))}  '
                      )
 
     @staticmethod
     @rank_zero_only
     def on_eval(metrics, epoch, num_iter, max_iter):
-        log = f'{"Eval":>5}: {epoch:>3} [{num_iter:>4d}/{max_iter}]  '
+        log = f'{"Eval":>5}: {epoch:>3}: [{num_iter:>4d}/{max_iter}]  '
         if "ConfusionMatrix" in metrics:
             metrics.pop('ConfusionMatrix')
         for k, v in metrics.items():
