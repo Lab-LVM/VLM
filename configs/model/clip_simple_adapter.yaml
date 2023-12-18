@@ -3,7 +3,8 @@ defaults:
 
 model_name: CLIP_SimpleAdapter
 finetune: True
+eval: False
 
 language_adapter: True
 vision_adapter: True
-classifier: True
+classifier: False
