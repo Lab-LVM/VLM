@@ -4,6 +4,7 @@ import os
 import hydra
 import wandb
 from omegaconf import DictConfig
+from torch.utils.data import DataLoader
 
 from src.data import create_dataloader
 from src.engine import *
@@ -23,9 +24,7 @@ def main(cfg: DictConfig) -> None:
     model, tokenizer = factory.create_model()  # model, tokenizer
 
     train_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=cfg.n_shot)
-    val_dataset = create_dataset(cfg.dataset, split=cfg.dataset.valid)
-    loaders = [create_dataloader(cfg, train_dataset, is_train=True),
-               create_dataloader(cfg, val_dataset, is_train=False)]
+    loaders = [DataLoader(train_dataset, batch_size=cfg.train.batch_size, shuffle=False, num_workers=cfg.train.num_workers), None]
 
     optimizer, scheduler, n_epochs = factory.create_optimizer_and_scheduler(model, len(loaders[0]))
     criterion = factory.create_criterion()
