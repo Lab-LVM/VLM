@@ -2,7 +2,7 @@ from src.data.create_loader2 import create_loader_v2
 from src.data.dataset import *
 
 DATASET_DICT = {
-    'imagenetra': ImageNetRandaugPrompt,
+    'imagenetra': ImageNetRandaugPromptFeatures,  # ImageNetRandaugPrompt
     'imagenetra2': ImageNetRandaugPromptV2,
     'imagenetsim': ImageNetSimplePrompt,
     'imagenet': ImageNet,
@@ -36,6 +36,7 @@ def create_dataset(ds_cfg, **kwargs):
     )
     if kwargs.get('split', None):
         ds_kwargs['split'] = kwargs['split']
+
     return DATASET_DICT[ds_cfg.name](**ds_kwargs)
 
 
