@@ -64,8 +64,8 @@ class CLIP_SimpleAdapterTaskEngine(TaskEngine):
 class CLIP_SimpleAdapterTrainEngine(TrainEngine):
     def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs):
         super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
-        self.train_loader.dataset.setup_prompt_transform()
         self.crossentropy = torch.nn.CrossEntropyLoss()
+        # self.train_loader.dataset.setup_prompt_transform()
 
         if isinstance(criterion[0], IndomainOutdomainContrastiveLoss):
             self.criterion_forward = self.IO_forward
@@ -78,15 +78,15 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
             self.iterate = self.iterate_ra2
 
     def IO_forward(self, criterion, y, image_feature, text_feature, image_prob=None):
-        logits_per_image = torch.mm(image_feature, text_feature.t())
+        logit_scale = self.model.logit_scale.exp()
+        logits_per_image = logit_scale * torch.mm(image_feature, text_feature.t())
         logits_per_text = logits_per_image.t()
-        logits_image_self = torch.mm(image_feature, image_feature.t())
-        logits_text_self = torch.mm(text_feature, text_feature.t())
+        logits_image_self = logit_scale * torch.mm(image_feature, image_feature.t())
+        logits_text_self = logit_scale * torch.mm(text_feature, text_feature.t())
 
-        criterion.set_mask(y)
-        # loss = (criterion(logits_per_image) + criterion(logits_per_text)) / 2
-        loss = (criterion(logits_per_image) + criterion(logits_per_text)
-                + criterion(logits_image_self) + criterion(logits_text_self)) / 4
+        # loss = (criterion(logits_per_image, y) + criterion(logits_per_text, y)) / 2
+        loss = (criterion(logits_per_image, y) + criterion(logits_per_text, y)
+                + criterion(logits_image_self, y)) / 3
         if image_prob is not None:
             loss = loss + self.crossentropy(image_prob, y) * 0.2
 
@@ -103,9 +103,7 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         return loss
 
     def iterate(self, model, data, criterion):  # for additional classifier
-        x, y, ra_prompt = data
-
-        x = x.to(memory_format=torch.channels_last)
+        x, y, ra_prompt = map(lambda a: a.to(self.device, non_blocking=True), data)
 
         with self.fabric.autocast():
             outs = model(x, ra_prompt)
@@ -114,13 +112,11 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         return loss, outs[0], y
 
     def iterate_ra2(self, model, data, criterion):
-        x, ra_x, y, prompt, ra_prompt = data
+        x, ra_x, y, prompt, ra_prompt = map(lambda a: a.to(self.device, non_blocking=True), data)
 
         x = torch.concat([x, ra_x])
         y = torch.concat([y, y])
         prompt = torch.concat([prompt, ra_prompt])
-
-        x = x.to(memory_format=torch.channels_last)
 
         with self.fabric.autocast():
             outs = model(x, prompt)
@@ -131,11 +127,20 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
     def __call__(self, *args, **kwargs):
         for epoch in range(self.start_epoch, self.num_epochs):
             self.train_loader.sampler.set_epoch(epoch) if self.distributed else None
+            self.train_loader.dataset.set_feature(epoch)
 
             train_metrics = self.train(epoch)
             self._distribute_bn()
             self.scheduler.step(epoch + 1)
 
-            self._save(epoch, train_metrics[self.cm])
+            if epoch < 45:
+                criterion_metric = train_metrics[self.cm]
+                is_best = (self.decreasing and criterion_metric < self.best_metric) or (
+                        not self.decreasing and criterion_metric > self.best_metric)
+                if is_best:
+                    self.best_metric, self.best_epoch = criterion_metric, epoch
+            else:
+                self._save(epoch, train_metrics[self.cm])
+
             self._log(train_metrics, {}, epoch)
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)

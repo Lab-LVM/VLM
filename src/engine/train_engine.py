@@ -33,9 +33,9 @@ class TrainEngine:
 
         self.cm = cfg.train.criteria_metric
         self.decreasing = cfg.train.criteria_decreasing
-        self.duration = MeanMetric().to(self.device)
-        self.data_duration = MeanMetric().to(self.device)
-        self.losses = MeanMetric().to(self.device)
+        self.duration = MeanMetric().to(self.device, non_blocking=True)
+        self.data_duration = MeanMetric().to(self.device, non_blocking=True)
+        self.losses = MeanMetric().to(self.device, non_blocking=True)
         self.metric_fn = self._init_metrics(cfg.dataset.task, cfg.train.eval_metrics,
                                             0.5, self.num_classes, self.num_classes, 'macro')
         self.best_metric = self.best_epoch = 0 if not self.decreasing else float('inf')
@@ -197,7 +197,7 @@ class TrainEngine:
                 metric_fn[metric] = torchmetrics.__dict__[metric](task=task, threshold=threshold, num_classes=num_class,
                                                                   average=average, num_labels=num_label, top_k=top_k)
 
-        metric_fn = torchmetrics.MetricCollection(metric_fn).to(self.device)
+        metric_fn = torchmetrics.MetricCollection(metric_fn).to(self.device, non_blocking=True)
         return metric_fn
 
     def _log(self, train_metrics, eval_metrics, epoch):
@@ -220,4 +220,4 @@ class TrainEngine:
         # return text_embedding['input_ids']
 
         return self.tokenizer(text, padding='max_length', return_attention_mask=False, return_tensors='pt')[
-            'input_ids'].to(self.device)
+            'input_ids'].to(self.device, non_blocking=True)
