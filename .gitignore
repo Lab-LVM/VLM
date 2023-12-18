@@ -5,6 +5,7 @@ runs/
 *.pt
 *.pth
 *.pth.tar
+src/data_new/
 .DS_Store
 
 # Byte-compiled / optimized / DLL files
