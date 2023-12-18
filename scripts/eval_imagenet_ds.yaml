@@ -3,6 +3,8 @@ windows:
   - window_name: window
     layout: tiled
     panes:
-      - python run_eval.py gpu=3 dataset=imagenet_ds n_shot=0 checkpoint=finetune/imagenet_CLIPSimpleAdapter_ViT-B32_all_adapter_new_promptv2_20231107-231721
-      - python run_eval.py gpu=4 dataset=imagenet_ds n_shot=0 checkpoint=finetune/imagenet_CLIPSimpleAdapter_ViT-B32_language_adapter_new_promptv2_20231107-231721
-      - python run_eval.py gpu=5 dataset=imagenet_ds n_shot=0 checkpoint=finetune/imagenet_CLIPSimpleAdapter_ViT-B32_vision_adapter_new_promptv2_20231107-231722
+      - python run_eval.py +model.eval=True dataset=imagenet gpu=1 checkpoint=finetune/SCL8192_20231207-170209
+      - python run_eval.py +model.eval=True dataset=imagenet gpu=2 checkpoint=finetune/SimpleAdapterIOL_CLS_20231130-180316
+      - python run_eval.py +model.eval=True dataset=imagenet gpu=3 checkpoint=finetune/SimpleAdapterIOL_20231130-153119
+      - python run_eval.py +model.eval=True dataset=imagenet gpu=4 checkpoint=finetune/SimpleAdapterSCL_CLS_20231130-180322
+#      - python run_eval.py +model.eval=True dataset=imagenet gpu=4 checkpoint=finetune/
