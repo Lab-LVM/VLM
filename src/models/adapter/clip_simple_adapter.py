@@ -24,6 +24,14 @@ def encode_text(self, text):
     return self.language_adapter(x) + x
 
 
+def encode_image_train(self, x):
+    return self.vision_adapter(x) + x
+
+
+def encode_text_train(self, x):
+    return self.language_adapter(x) + x
+
+
 def forward(self, image, text):
     image_features = self.encode_image(image)
     text_features = self.encode_text(text)
@@ -79,6 +87,7 @@ def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, languag
     model, _ = clip.load(backbone)
 
     if freeze:
+        assert freeze
         for name, param in model.named_parameters():
             param.requires_grad = False
 
@@ -88,12 +97,19 @@ def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, languag
 
         if language_adapter:
             model.__setattr__('language_adapter', mlp())
-            encode_text_bound_method = encode_text.__get__(model, model.__class__)
+            if kwargs.get('eval', False):
+                encode_text_bound_method = encode_text.__get__(model, model.__class__)
+            else:
+                encode_text_bound_method = encode_text_train.__get__(model, model.__class__)
             setattr(model, 'encode_text', encode_text_bound_method)
 
         if vision_adapter:
             model.__setattr__('vision_adapter', mlp())
-            encode_image_bound_method = encode_image.__get__(model, model.__class__)
+            if kwargs.get('eval', False):
+                encode_image_bound_method = encode_image.__get__(model, model.__class__)
+            else:
+                encode_image_bound_method = encode_image_train.__get__(model, model.__class__)
+
             setattr(model, 'encode_image', encode_image_bound_method)
 
         if classifier:
@@ -107,6 +123,26 @@ def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, languag
                 setattr(model, 'forward', forward_bound_method)
             else:
                 forward_bound_method = forward_features.__get__(model, model.__class__)
-                setattr(model, 'forward', forward_bound_method)
+            setattr(model, 'forward', forward_bound_method)
+
+    return model
+
+
+def forward_tmp(self, image, text):
+    image_features = self.encode_image(image)
+    text_features = self.encode_text(text)
+    return image_features, text_features
+
+
+@register_model
+def CLIPTMP(backbone='ViT-B32', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
+            classifier=False, **kwargs):
+    model, _ = clip.load(backbone)
+
+    for name, param in model.named_parameters():
+        param.requires_grad = False
+
+    forward_bound_method = forward_tmp.__get__(model, model.__class__)
+    setattr(model, 'forward', forward_bound_method)
 
     return model

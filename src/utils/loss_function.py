@@ -146,15 +146,14 @@ class IndomainOutdomainContrastiveLoss(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def set_mask(self, targets):
-        self.mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
-        self.mask_inverse = 1 - self.mask_same_class
-        self.cardinality = torch.sum(self.mask_same_class, dim=1)
+    def forward(self, logits, targets):
+        mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
+        mask_inverse = 1 - mask_same_class
+        cardinality = torch.sum(mask_same_class, dim=1)
 
-    def forward(self, logits):
         exp_logits = torch.exp(logits - torch.max(logits, dim=1, keepdim=True)[0]) + 1e-5
-        log_prob = -torch.log(exp_logits / torch.sum(exp_logits * self.mask_inverse, dim=1, keepdim=True))
-        loss = torch.sum(log_prob * self.mask_same_class, dim=1) / self.cardinality
+        log_prob = -torch.log(exp_logits / torch.sum(exp_logits * mask_inverse, dim=1, keepdim=True))
+        loss = torch.sum(log_prob * mask_same_class, dim=1) / cardinality
 
         return torch.mean(loss)
 

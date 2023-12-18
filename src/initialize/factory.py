@@ -49,8 +49,8 @@ class ObjectFactory:
         if self.checkpoint is not None:
             import os
             import hydra
-            model.load_state_dict(
-                self.fabric.load(os.path.join(hydra.utils.get_original_cwd(), self.checkpoint))['state_dict'])
+            state_dict = self.fabric.load(os.path.join(hydra.utils.get_original_cwd(), self.checkpoint))['state_dict']
+            model.load_state_dict(state_dict, strict=True)
 
     def create_optimizer_and_scheduler(self, model, iter_per_epoch):
         self.cfg.train.iter_per_epoch = iter_per_epoch
