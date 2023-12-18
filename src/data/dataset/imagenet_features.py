@@ -4,8 +4,7 @@ import pickle
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
-from src.data.const.constants import IMAGENET_CLASS_NAME
-from src.data.dataset import VLMDataset
+from . import VLMDataset, IMAGENET_CLASS_NAME
 
 
 class ImageNetRandaugPromptFeatures(VLMDataset):

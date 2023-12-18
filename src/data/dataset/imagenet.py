@@ -7,7 +7,7 @@ from torchvision.datasets import ImageNet as TorchImagenet
 from torchvision.transforms import transforms
 from transformers import CLIPTokenizerFast
 
-from src.data.dataset import VLMDataset, IMAGENET_CLASS_NAME
+from . import VLMDataset, IMAGENET_CLASS_NAME
 
 
 class ImageNet(VLMDataset, Dataset):
