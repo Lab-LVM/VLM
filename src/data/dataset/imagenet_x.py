@@ -82,7 +82,7 @@ class ImageNetSketch(ImageNetX):
     dataset_path = 'imageNet-Sketch'
 
 
-class ImageNetV2(VLMDataset, Dataset, ABC):
+class ImageNetV2(VLMDataset, Dataset):
     dataset_path = 'imageNet-V2'
     n_class = 1000
 
