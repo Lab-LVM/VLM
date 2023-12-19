@@ -249,7 +249,7 @@ def CLIP(backbone='ViT-B32', **kwargs):
         for name, param in model.named_parameters():
             param.requires_grad = False
 
-    if kwargs.get('finetune', False):
+    if kwargs.get('classifier', False):
         model.__setattr__('classifier', torch.nn.Linear(512, kwargs['num_classes']))
 
     return model
