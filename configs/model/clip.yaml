@@ -2,3 +2,4 @@ defaults:
   - base_model
 
 model_name: CLIP
+classifier: False
