@@ -5,6 +5,7 @@ from glob import glob
 from pathlib import Path
 
 import torch
+from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
@@ -65,6 +66,11 @@ class ImageNetX(VLMDataset, Dataset, ABC):
             lambda c: f'a photo of the small {c}.',
         ]
 
+    def project_logits(self, logits):
+        if logits.shape[-1] == self.n_class:
+            return logits
+        return logits[:, self.class_number]
+
 
 class ImageNetR(ImageNetX):
     dataset_path = 'imageNet-R'
@@ -80,6 +86,9 @@ class ImageNetA(ImageNetX):
 
 class ImageNetSketch(ImageNetX):
     dataset_path = 'imageNet-Sketch'
+
+    def project_logits(self, logits):
+        return logits
 
 
 class ImageNetV2(VLMDataset, Dataset):
@@ -114,22 +123,29 @@ class ObjectNet(VLMDataset, Dataset):
 
     def __init__(self, root, split=None, transform=None, target_transform=None, n_shot=0):
         self._split_warning(self.__class__.__name__, split, None)
-        self.folder_to_ids = self.get_metadata(root)
+        _, _, self.folders_to_ids, self.classname_map = self.get_metadata(root)
 
-        imgs, targets, class_name_list = list(), list(), list()
-        target_number = 0
-        for class_name, idxs in self.folder_to_ids.items():
+        self.class_name = sorted(list(self.folders_to_ids.keys()))
+        self.rev_class_idx_map = dict()
+        self.class_idx_map = dict()
+        for idx, name in enumerate(self.class_name):
+            self.rev_class_idx_map[idx] = self.folders_to_ids[name]
+            for imagenet_idx in self.rev_class_idx_map[idx]:
+                self.class_idx_map[imagenet_idx] = idx
+
+        self.class_name = [self.classname_map[c].lower() for c in self.class_name]
+
+        imgs, targets = list(), list()
+        for idx, class_name in enumerate(sorted(list(self.folders_to_ids.keys()))):
             class_img = glob(os.path.join(root, self.dataset_path, 'images', class_name, '*'))
             imgs.extend(class_img)
-            targets.extend([target_number for _ in range(len(class_img))])
-            class_name = ' or '.join([IMAGENET_CLASS_NAME[idx] for idx in idxs])
-            class_name_list.append(class_name)
-            target_number += 1
+            targets.extend([idx for _ in range(len(class_img))])
 
-        super().__init__(root, imgs, targets, class_name_list, transform, target_transform, n_shot)
+        super().__init__(root, imgs, targets, IMAGENET_CLASS_NAME, transform, target_transform, n_shot)
 
     def get_metadata(self, root):
         metadata = Path(os.path.join(root, self.dataset_path, 'mappings'))
+
         with open(metadata / 'folder_to_objectnet_label.json', 'r') as f:
             folder_map = json.load(f)
             folder_map = {v: k for k, v in folder_map.items()}
@@ -143,13 +159,18 @@ class ObjectNet(VLMDataset, Dataset):
         with open(metadata / 'imagenet_to_label_2012_v2', 'r') as f:
             imagenet_map = {v.strip(): str(pytorch_map[i]) for i, v in enumerate(f)}
 
-        folder_to_ids = dict()
+        folder_to_ids, class_sublist = dict(), list()
+
         for objectnet_name, imagenet_names in objectnet_map.items():
             imagenet_names = imagenet_names.split('; ')
             imagenet_ids = [int(imagenet_map[imagenet_name]) for imagenet_name in imagenet_names]
+            class_sublist.extend(imagenet_ids)
             folder_to_ids[folder_map[objectnet_name]] = imagenet_ids
 
-        return folder_to_ids
+        class_sublist = sorted(class_sublist)
+        class_sublist_mask = [(i in class_sublist) for i in range(1000)]
+        classname_map = {v: k for k, v in folder_map.items()}
+        return class_sublist, class_sublist_mask, folder_to_ids, classname_map
 
     @property
     def prompt(self):
@@ -163,13 +184,29 @@ class ObjectNet(VLMDataset, Dataset):
             lambda c: f'a photo of the small {c}.',
         ]
 
-    def to_imageNet_logits(self, logits):
-        new_logits = torch.zeros((logits.size(0), self.n_class), device=logits.device)
+    def project_logits(self, logits):
+        device = logits.device
+        if logits.shape[1] == self.n_class:
+            return logits
+        if torch.is_tensor(logits):
+            logits = logits.detach()
+        logits_projected = torch.zeros((logits.shape[0], self.n_class), device=device)
+        for k, v in self.rev_class_idx_map.items():
+            logits_projected[:, k] = torch.amax(logits[:, v], dim=1)
+        return logits_projected
 
-        for class_name, idxs in self.folder_to_ids.items():
-            new_logits[:, self.str2num(class_name)] = logits[:, idxs].mean(-1)
+    def project_labels(self, labels):
+        device = labels.device
+        projected_labels = [self.class_idx_map[int(label)] for label in labels]
+        return torch.tensor(projected_labels, dtype=torch.long, device=device)
 
-        return new_logits
+    @staticmethod
+    def loader(path):
+        with open(path, "rb") as f:
+            img = Image.open(f)
+            width, height = img.size
+            img = img.crop((2, 2, width - 2, height - 2))
+            return img.convert('RGB')
 
 
 if __name__ == '__main__':
