@@ -34,7 +34,7 @@ def seed_everything(seed, local_rank=0, workers=0):
 
 def setup_fabric(cfg):
     setup_environ()
-    if isinstance(cfg.gpu, int) and cfg.gpu > 0:
+    if isinstance(cfg.gpu, int) and cfg.gpu > -1:
         cfg.gpu = [cfg.gpu]
 
     if cfg.gpu != -1 and len(cfg.gpu) == 1 and cfg.strategy != 'auto':
