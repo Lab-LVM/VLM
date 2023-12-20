@@ -1,8 +1,11 @@
+from functools import partial
+
 from src.data.create_loader2 import create_loader_v2
 from src.data.dataset import *
 
 DATASET_DICT = {
     'imagenetra': ImageNetRandaugPromptFeatures,  # ImageNetRandaugPrompt
+    'imagenetraB32': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_features_B32'),
     'imagenetra2': ImageNetRandaugPromptV2,
     'imagenetsim': ImageNetSimplePrompt,
     'imagenet': ImageNet,

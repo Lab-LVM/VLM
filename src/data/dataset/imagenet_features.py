@@ -8,11 +8,11 @@ from . import VLMDataset, IMAGENET_CLASS_NAME
 
 
 class ImageNetRandaugPromptFeatures(VLMDataset):
-    dataset_path = 'imageNet_train_features'
-
-    def __init__(self, root, split='train', transform=None, target_transform=None, n_shot=0):
+    def __init__(self, root, split='train', transform=None, target_transform=None, n_shot=0,
+                 dataset_path='imageNet_train_features_B16'):
         assert split == 'train', f'{self.__class__.name} only supports train split. Now is {split}.'
         super().__init__(root, None, None, IMAGENET_CLASS_NAME, None, None, 0)
+        self.dataset_path = dataset_path
         self.set_feature(0)
 
     def set_feature(self, index):
