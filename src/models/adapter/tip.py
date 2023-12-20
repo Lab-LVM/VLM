@@ -3,7 +3,7 @@ from src.utils.registry import register_model
 
 
 @register_model
-def Tip(backbone='ViT-B32', freeze=False, finetune=False, **kwargs):
+def Tip(backbone='ViT-B16', freeze=False, finetune=False, **kwargs):
     assert finetune
     model, _ = clip.load(backbone)
 

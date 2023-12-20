@@ -81,7 +81,7 @@ def mlp(dim=512):
 
 
 @register_model
-def CLIP_SimpleAdapter(backbone='ViT-B32', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
+def CLIP_SimpleAdapter(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
                        classifier=False, **kwargs):
     assert finetune
     model, _ = clip.load(backbone)
@@ -135,7 +135,7 @@ def forward_tmp(self, image, text):
 
 
 @register_model
-def CLIPTMP(backbone='ViT-B32', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
+def CLIPTMP(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
             classifier=False, **kwargs):
     model, _ = clip.load(backbone)
 

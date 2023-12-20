@@ -242,7 +242,7 @@ def tokenize(texts: Union[str, List[str]], context_length: int = 77, truncate: b
 
 
 @register_model
-def CLIP(backbone='ViT-B32', **kwargs):
+def CLIP(backbone='ViT-B16', **kwargs):
     model, _ = load(backbone)
 
     if kwargs.get('freeze', False):
