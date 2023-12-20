@@ -4,7 +4,6 @@ from .. import TaskEngine
 from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
 from ...data.dataset import ImageNetRandaugPromptV2
-from ...data.dataset.imagenet_x import imagenet_a_class_number, imagenet_r_class_number
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
 
@@ -26,7 +25,7 @@ class CLIP_SimpleAdapterTaskEngine(TaskEngine):
         self.fabric = fabric
         self.device = fabric.device
         self.model = model
-        self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
         self.logging_interval = cfg.train.log_interval
 
     @property
@@ -42,15 +41,14 @@ class CLIP_SimpleAdapterTaskEngine(TaskEngine):
 
         logits = self.model.logit_scale.exp() * qry_features @ text_classifier.mT
 
+        if self.cfg.dataset.name == 'objectnet':
+            logits = self.val_dataset.project_logits(logits)
+
         # Classifier logits
         try:
             classifier_logits = self.model.classifier(qry_features)
-            if self.cfg.dataset.name == 'imagenet_r':
-                classifier_logits = classifier_logits[:, imagenet_r_class_number]
-            elif self.cfg.dataset.name == 'imagenet_a':
-                classifier_logits = classifier_logits[:, imagenet_a_class_number]
-            elif self.cfg.dataset.name == 'objectnet':
-                classifier_logits = self.train_dataset.to_imageNet_logits(classifier_logits)
+            if hasattr(self.val_dataset, 'project_logits'):
+                classifier_logits = self.val_dataset.project_logits(classifier_logits)
             logits += classifier_logits
         except:
             pass

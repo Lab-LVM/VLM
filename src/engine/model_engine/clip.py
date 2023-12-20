@@ -42,6 +42,18 @@ class CLIPTaskEngine(TaskEngine):
 
         logits = self.model.logit_scale.exp() * qry_features @ text_classifier.mT
 
+        if self.cfg.dataset.name == 'objectnet':
+            logits = self.val_dataset.project_logits(logits)
+
+        # Classifier logits
+        try:
+            classifier_logits = self.model.classifier(qry_features)
+            if hasattr(self.val_dataset, 'project_logits'):
+                classifier_logits = self.val_dataset.project_logits(classifier_logits)
+            logits += classifier_logits
+        except:
+            pass
+
         self.metric.update(logits, qry_labels)
         self.metric.prefix = 'clip_zeroshot'
         return self._output
