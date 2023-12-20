@@ -11,7 +11,7 @@ from src.data.dataset import ImageNetRandaugPromptText
 from src.models import CLIPTMP, CLIP_tokenizer
 
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+os.environ['CUDA_VISIBLE_DEVICES'] = '8'
 
 
 def create_dataset(ds_cfg, **kwargs):
@@ -31,11 +31,11 @@ if __name__ == '__main__':
     with initialize('configs', version_base='1.3'):
         cfg = compose('train_config', overrides=['model.backbone=ViT-B16', '+setup=clip_simple_adapter',
                                                  'dataset.augmentation.prefetcher=False'])
-    cfg.train.batch_size = 4096
+    cfg.train.batch_size = 1024
 
     device = torch.device('cuda')
 
-    clip = CLIPTMP()
+    clip = CLIPTMP(**cfg.model)
     clip.eval()
     clip.to(device)
 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     keys = ('vision_features', 'language_features', 'targets')
 
-    for i in range(30,55):
+    for i in range(39, 55):
         print(f'EPOCH: {i}')
         obj = {k: list() for k in keys}
 
