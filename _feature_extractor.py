@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     keys = ('vision_features', 'language_features', 'targets')
 
-    for i in range(39, 55):
+    for i in range(10):
         print(f'EPOCH: {i}')
         obj = {k: list() for k in keys}
 
