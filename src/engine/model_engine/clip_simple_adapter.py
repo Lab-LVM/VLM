@@ -131,7 +131,7 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
             self._distribute_bn()
             self.scheduler.step(epoch + 1)
 
-            if epoch < 45:
+            if epoch < 5:
                 criterion_metric = train_metrics[self.cm]
                 is_best = (self.decreasing and criterion_metric < self.best_metric) or (
                         not self.decreasing and criterion_metric > self.best_metric)
