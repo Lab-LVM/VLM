@@ -3,7 +3,7 @@ import torch
 from .. import TaskEngine
 from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
-from ...data.dataset import ImageNetRandaugPromptV2
+from ...data.dataset import ImageNetRandaugPromptV2, ImageNetRandaugPrompt
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
 
@@ -63,7 +63,10 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
     def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs):
         super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
         self.crossentropy = torch.nn.CrossEntropyLoss()
-        # self.train_loader.dataset.setup_prompt_transform()
+
+        if hasattr(criterion[0], 'rank'):
+            criterion[0].rank = fabric.local_rank
+            criterion[0].world_size = fabric.world_size
 
         if isinstance(criterion[0], IndomainOutdomainContrastiveLoss):
             self.criterion_forward = self.IO_forward
@@ -74,6 +77,8 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
 
         if isinstance(self.train_loader.dataset, ImageNetRandaugPromptV2):
             self.iterate = self.iterate_ra2
+        if isinstance(self.train_loader.dataset, ImageNetRandaugPrompt):
+            self.train_loader.dataset.setup_prompt_transform()
 
     def IO_forward(self, criterion, y, image_feature, text_feature, image_prob=None):
         logit_scale = self.model.logit_scale.exp()
@@ -82,9 +87,7 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
         logits_image_self = logit_scale * torch.mm(image_feature, image_feature.t())
         logits_text_self = logit_scale * torch.mm(text_feature, text_feature.t())
 
-        # loss = (criterion(logits_per_image, y) + criterion(logits_per_text, y)) / 2
-        loss = (criterion(logits_per_image, y) + criterion(logits_per_text, y)
-                + criterion(logits_image_self, y)) / 3
+        loss = criterion(logits_per_image, logits_per_text, logits_image_self, logits_text_self, y)
         if image_prob is not None:
             loss = loss + self.crossentropy(image_prob, y) * 0.2
 
@@ -96,8 +99,8 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
             loss = loss + self.crossentropy(image_prob, y) * 0.3
         return loss
 
-    def CLCR_forward(self, criterion, y, logits_per_image, logits_per_text, image_prob):
-        loss = (criterion(logits_per_image, logits_per_text) + self.crossentropy(image_prob, y)) / 2
+    def CLCR_forward(self, criterion, y, logits_per_image, logits_per_text):
+        loss = criterion(logits_per_image, logits_per_text)
         return loss
 
     def iterate(self, model, data, criterion):  # for additional classifier
@@ -125,7 +128,7 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
     def __call__(self, *args, **kwargs):
         for epoch in range(self.start_epoch, self.num_epochs):
             self.train_loader.sampler.set_epoch(epoch) if self.distributed else None
-            self.train_loader.dataset.set_feature(epoch)
+            self.train_loader.dataset.set_feature(epoch) if hasattr(self.train_loader.dataset, 'set_feature') else None
 
             train_metrics = self.train(epoch)
             self._distribute_bn()

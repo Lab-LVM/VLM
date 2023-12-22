@@ -6,7 +6,7 @@ from src.utils.registry import register_model
 
 def encode_image(self, image):
     x = self.visual(image.type(self.dtype))
-    return self.vision_adapter(x) + x
+    return self.vision_adapter(x) + x * self.alpha
 
 
 def encode_text(self, text):
@@ -21,15 +21,15 @@ def encode_text(self, text):
     # x.shape = [batch_size, n_ctx, transformer.width]
     # take features from the eot embedding (eot_token is the highest number in each sequence)
     x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
-    return self.language_adapter(x) + x
+    return self.language_adapter(x) + x * self.alpha
 
 
 def encode_image_train(self, x):
-    return self.vision_adapter(x) + x
+    return self.vision_adapter(x) + x * self.alpha
 
 
 def encode_text_train(self, x):
-    return self.language_adapter(x) + x
+    return self.language_adapter(x) + x * self.alpha
 
 
 def forward(self, image, text):
@@ -87,7 +87,6 @@ def CLIP_SimpleAdapter(backbone='ViT-B16', freeze=False, finetune=False, languag
     model, _ = clip.load(backbone)
 
     if freeze:
-        assert freeze
         for name, param in model.named_parameters():
             param.requires_grad = False
 
@@ -116,6 +115,11 @@ def CLIP_SimpleAdapter(backbone='ViT-B16', freeze=False, finetune=False, languag
             model.__setattr__('classifier', torch.nn.Linear(512, 1000))
             forward_bound_method = forward.__get__(model, model.__class__)
             setattr(model, 'forward', forward_bound_method)
+
+        if kwargs.get('alpha', False):
+            model.__setattr__('alpha', torch.nn.Parameter(torch.rand(1)))
+        else:
+            model.__setattr__('alpha', 1)
 
         if kwargs.get('feature_out', False):
             if classifier:
@@ -146,3 +150,10 @@ def CLIPTMP(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=F
     setattr(model, 'forward', forward_bound_method)
 
     return model
+
+
+if __name__ == '__main__':
+    model = CLIP_SimpleAdapter(eval=True, alpha=False, finetune=True, freeze=True, language_adapter=True, vision_adapter=True)
+
+    o = model(torch.rand(2, 3, 224, 224), torch.ones(2, 77, dtype=torch.long))
+    print(o.shape)
