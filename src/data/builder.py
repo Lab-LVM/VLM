@@ -1,11 +1,14 @@
 from functools import partial
 
-from src.data.create_loader2 import create_loader_v2
+from timm.data import create_transform
+from torch.utils.data import DataLoader
+
 from src.data.dataset import *
 
 DATASET_DICT = {
     'imagenetra': ImageNetRandaugPromptFeatures,  # ImageNetRandaugPrompt
     'imagenetraB32': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_features_B32'),
+    'imagenetraText': ImageNetRandaugPrompt,
     'imagenetra2': ImageNetRandaugPromptV2,
     'imagenetsim': ImageNetSimplePrompt,
     'imagenet': ImageNet,
@@ -45,36 +48,26 @@ def create_dataset(ds_cfg, **kwargs):
 
 def create_dataloader(cfg, dataset, is_train):
     aug = cfg.dataset.augmentation
-    loader = create_loader_v2(
-        dataset,
-        input_size=tuple(cfg.dataset.train_size) if is_train else tuple(cfg.dataset.eval_size),
-        batch_size=cfg.train.batch_size,
+    dataset.transform = create_transform(
+        tuple(cfg.dataset.train_size) if is_train else tuple(cfg.dataset.eval_size),
         is_training=is_train,
-        use_prefetcher=aug.prefetcher,
         no_aug=aug.no_aug,
-        re_prob=aug.re_prob,
-        re_mode=aug.re_mode,
-        re_count=aug.re_count,
-        re_split=aug.re_split,
         scale=aug.scale,
         ratio=aug.ratio,
         hflip=aug.hflip,
         vflip=aug.vflip,
         color_jitter=aug.color_jitter,
         auto_augment=aug.auto_aug,
-        num_aug_repeats=aug.aug_repeats,
-        num_aug_splits=aug.aug_splits,
         interpolation=aug.train_interpolation if is_train else aug.test_interpolation,
         mean=tuple(aug.mean),
         std=tuple(aug.std),
         crop_pct=aug.crop_pct,
-        num_workers=cfg.train.num_workers,
-        distributed=cfg.distributed,
-        pin_memory=aug.pin_mem,
-        use_multi_epochs_loader=aug.use_multi_epochs_loader,
-        worker_seeding=aug.worker_seeding,
+        re_prob=aug.re_prob,
+        re_mode=aug.re_mode,
+        re_count=aug.re_count,
     )
-
+    loader = DataLoader(dataset, cfg.train.batch_size, shuffle=is_train, num_workers=cfg.train.num_workers,
+                        drop_last=is_train, pin_memory=True)
     return loader
 
 

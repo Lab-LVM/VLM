@@ -24,13 +24,14 @@ def main(cfg: DictConfig) -> None:
     model, tokenizer = factory.create_model()  # model, tokenizer
 
     train_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=cfg.n_shot)
-    loaders = [DataLoader(train_dataset, batch_size=cfg.train.batch_size, shuffle=False, num_workers=cfg.train.num_workers), None]
+    loaders = create_dataloader(cfg, train_dataset, is_train=True)
 
-    optimizer, scheduler, n_epochs = factory.create_optimizer_and_scheduler(model, len(loaders[0]))
+    optimizer, scheduler, n_epochs = factory.create_optimizer_and_scheduler(model, len(loaders))
     criterion = factory.create_criterion()
 
     model, optimizer, scheduler, start_epoch = resume(model, optimizer, scheduler, cfg, fabric)
     model, optimizer = fabric.setup(model, optimizer)
+    loaders = [fabric.setup_dataloaders(loaders), None]
 
     cfg = factory.cfg
     fabric.loggers[0].update_config(cfg) if cfg.wandb else None

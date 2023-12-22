@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 from torchvision.datasets import ImageNet as TorchImagenet
 from torchvision.transforms import transforms
@@ -377,7 +378,7 @@ class ImageNetRandaugPrompt(ImageNet):
         imgs, ra_tf = self.randaug(imgs)
         imgs = self.post_processing(imgs)
 
-        return imgs, target, self.ra_prompt(idx, ra_tf, target)
+        return imgs, target, torch.tensor(self.ra_prompt(idx, ra_tf, target), dtype=torch.int64)
 
 
 class ImageNetRandaugPromptV2(ImageNet):
