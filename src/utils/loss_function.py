@@ -142,27 +142,81 @@ class CoCaLoss(CLIPLoss):
         return clip_loss, caption_loss
 
 
+def gather_all_features(rank, world_size, *features):
+    gathered_features = list()
+
+    for i, f in enumerate(features):
+        for _ in range(world_size):
+            gathered_features.append([torch.zeros_like(f) for _ in range(world_size)])
+
+    for gather_f, f in zip(gathered_features, features):
+        dist.all_gather(gather_f, f)
+
+    for gather_f, f in zip(gathered_features, features):
+        gather_f[rank] = f
+
+    for i in range(len(gathered_features)):
+        gathered_features[i] = torch.cat(gathered_features[i], dim=0)
+
+    return gathered_features
+
+
+def gather_all_features2(
+        image_features,
+        rank=0,
+        world_size=1,
+):
+
+    gathered_image_features = [torch.zeros_like(image_features) for _ in range(world_size)]
+    dist.all_gather(gathered_image_features, image_features)
+    gathered_image_features[rank] = image_features
+    all_image_features = torch.cat(gathered_image_features, dim=0)
+
+    return all_image_features
+
+
 class IndomainOutdomainContrastiveLoss(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def forward(self, logits, targets):
+    def two_domain(self, logits, targets):
         mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         mask_inverse = 1 - mask_same_class
         cardinality = torch.sum(mask_same_class, dim=1)
 
         exp_logits = torch.exp(logits - torch.max(logits, dim=1, keepdim=True)[0]) + 1e-5
         log_prob = -torch.log(exp_logits / torch.sum(exp_logits * mask_inverse, dim=1, keepdim=True))
-        loss = torch.sum(log_prob * mask_same_class, dim=1) / cardinality
+        sample_wise_loss = torch.sum(log_prob * mask_same_class, dim=1) / cardinality
 
-        return torch.mean(loss)
+        return torch.mean(sample_wise_loss)
+
+    def one_domain(self, logits, targets):
+        mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
+        loss = F.cross_entropy(logits, mask_same_class)
+        return loss
+
+    def forward(self, logits_per_image, logits_per_text, logits_image_self, logits_text_self, targets):
+        loss = (self.two_domain(logits_per_image, targets) + self.two_domain(logits_per_text, targets)
+                + self.one_domain(logits_image_self, targets) + self.one_domain(logits_text_self, targets)) / 4
+        return loss
 
 
 class SupervisedContrastiveLoss(nn.Module):
     def __init__(self):
         super(SupervisedContrastiveLoss, self).__init__()
+        self.rank = 0
+        self.world_size = 1
 
     def forward(self, logits, targets):
+        # if self.rank == 0:
+        #     print('input', logits.shape, targets.shape)
+        # if self.world_size > 1:
+        #     # logits, targets = gather_all_features(self.rank, self.world_size, logits, targets.to(torch.float32))
+        #     logits = gather_all_features2(logits, self.rank, self.world_size)
+        #     targets = gather_all_features2(targets.to(torch.float32), self.rank, self.world_size)
+        # if self.rank == 0:
+        #     print('output', logits.shape, targets.shape)
+
         dot_product_tempered = logits
         # Minus max for numerical stability with exponential. Same done in cross entropy. Epsilon added to avoid log(0)
         exp_dot_tempered = (
