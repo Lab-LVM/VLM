@@ -89,6 +89,9 @@ def CLIP_SimpleAdapter(backbone='ViT-B16', freeze=False, finetune=False, languag
     if freeze:
         for name, param in model.named_parameters():
             param.requires_grad = False
+    else:
+        for name, param in model.named_parameters():
+            param.requires_grad = True
 
     if finetune:
         assert language_adapter or vision_adapter
