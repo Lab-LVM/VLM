@@ -95,7 +95,6 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
 
     if finetune:
         assert language_adapter or vision_adapter
-        model.logit_scale.require_grad = True
 
         if language_adapter:
             model.__setattr__('language_adapter', mlp())
