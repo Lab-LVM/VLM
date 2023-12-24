@@ -35,7 +35,7 @@ DATASET_DICT = {
 
 def create_dataset(ds_cfg, is_train, **kwargs):
     ds_kwargs = dict(
-        transform=kwargs.get('transform', create_transform(cfg, is_train)),
+        transform=kwargs.get('transform', create_transform(ds_cfg, is_train)),
         root=kwargs.get('root', ds_cfg.root),
         target_transform=kwargs.get('target_transform', None),
         n_shot=kwargs.get('n_shot', 0),
@@ -52,10 +52,10 @@ def create_dataloader(cfg, dataset, is_train):
     return loader
 
 
-def create_transform(cfg, is_train):
-    aug = cfg.dataset.augmentation
+def create_transform(ds_cfg, is_train):
+    aug = ds_cfg.augmentation
     return timm_create_transform(
-        tuple(cfg.dataset.train_size) if is_train else tuple(cfg.dataset.eval_size),
+        tuple(ds_cfg.train_size) if is_train else tuple(ds_cfg.eval_size),
         is_training=is_train,
         no_aug=aug.no_aug,
         scale=aug.scale,
