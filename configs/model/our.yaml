@@ -1,7 +1,7 @@
 defaults:
   - base_model
 
-model_name: CLIP_SimpleAdapter
+model_name: Our
 finetune: True
 
 language_adapter: True
