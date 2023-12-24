@@ -1,16 +1,10 @@
-import gc
-import os
-
 import hydra
-import wandb
 from omegaconf import DictConfig
-from torch.utils.data import DataLoader
 
-from src.data import create_dataloader
 from src.engine import *
+from src.models import *
 from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data
-from src.models import *
 from src.utils import resume
 from src.utils.registry import create_train_engine
 
@@ -23,7 +17,7 @@ def main(cfg: DictConfig) -> None:
     factory = ObjectFactory(cfg, fabric)
     model, tokenizer = factory.create_model()  # model, tokenizer
 
-    train_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=cfg.n_shot)
+    train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, n_shot=cfg.n_shot)
     loaders = create_dataloader(cfg, train_dataset, is_train=True)
 
     optimizer, scheduler, n_epochs = factory.create_optimizer_and_scheduler(model, len(loaders))
@@ -43,6 +37,9 @@ def main(cfg: DictConfig) -> None:
     train_engine()
 
     if cfg.is_master:
+        import torch
+        import gc
+        import wandb
         torch.cuda.empty_cache()
         gc.collect()
         wandb.finish(quiet=True)
