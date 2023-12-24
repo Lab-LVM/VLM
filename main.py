@@ -58,8 +58,8 @@ def main(cfg: DictConfig) -> None:
     for k, v in dataset2dict(cfg.eval_dataset).items():
         for shot in to_list(cfg.n_shot):
             cfg.dataset = v
-            train_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train)
-            test_dataset = create_dataset(cfg.dataset, split=cfg.dataset.test)
+            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
+            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
 
             engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
             metrics = engine(n_shots=to_list(cfg.n_shot))
