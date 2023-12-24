@@ -1,9 +1,0 @@
-session_name: eval_imagenet_ds
-windows:
-  - window_name: window
-    layout: tiled
-    panes:
-      - python run_eval.py model.eval=True dataset=imagenet_ds gpu=0 train.batch_size=512 checkpoint=finetune/IOL
-      - python run_eval.py model.eval=True dataset=imagenet_ds gpu=1 train.batch_size=512 checkpoint=finetune/SCL_e100
-      - python run_eval.py model.eval=True dataset=imagenet_ds gpu=2 train.batch_size=512 checkpoint=finetune/SCL_e50
-      - python run_eval.py model.eval=True dataset=imagenet_ds gpu=3 train.batch_size=512 checkpoint=finetune/Ours
