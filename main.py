@@ -45,7 +45,7 @@ def main(cfg: DictConfig) -> None:
 
     # Eval
     del model
-    cfg.model.eval = True
+    cfg.model.forward_backbone = True
     cfg.train.batch_size = 1024
     factory = ObjectFactory(cfg, fabric)
     model, _ = factory.create_model()  # model, tokenizer

@@ -8,5 +8,6 @@ language_adapter: True
 vision_adapter: True
 classifier: False
 
-eval: False
+forward_backbone: False
+return_feature: False
 alpha: False

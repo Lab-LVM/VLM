@@ -99,7 +99,7 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
 
         if language_adapter:
             model.__setattr__('language_adapter', mlp())
-            if kwargs.get('eval', False):
+            if kwargs.get('forward_backbone', False):
                 encode_text_bound_method = encode_text.__get__(model, model.__class__)
             else:
                 encode_text_bound_method = encode_text_train.__get__(model, model.__class__)
@@ -107,7 +107,7 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
 
         if vision_adapter:
             model.__setattr__('vision_adapter', mlp())
-            if kwargs.get('eval', False):
+            if kwargs.get('forward_backbone', False):
                 encode_image_bound_method = encode_image.__get__(model, model.__class__)
             else:
                 encode_image_bound_method = encode_image_train.__get__(model, model.__class__)
@@ -124,7 +124,7 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
         else:
             model.__setattr__('alpha', 1)
 
-        if kwargs.get('feature_out', False):
+        if kwargs.get('return_feature', False):
             if classifier:
                 forward_bound_method = forward_features_prob.__get__(model, model.__class__)
                 setattr(model, 'forward', forward_bound_method)

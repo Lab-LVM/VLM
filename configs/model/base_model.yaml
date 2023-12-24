@@ -6,4 +6,5 @@ finetune: False
 
 tokenizer: CLIP_tokenizer
 
-eval: False
+forward_backbone: False
+return_feature: False
