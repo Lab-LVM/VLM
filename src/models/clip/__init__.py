@@ -1,1 +1,1 @@
-from .clip import CLIP, CLIP_tokenizer
+from .clip import CLIP, CLIP_tokenizer, load

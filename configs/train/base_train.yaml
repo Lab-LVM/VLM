@@ -2,7 +2,7 @@ defaults:
   - scheduler: cosine
   - optimizer: lamb
 
-epochs: 100
+epochs: 10
 iter_per_epoch:
 batch_size: 512
 total_batch: 4096
