@@ -4,6 +4,7 @@ defaults:
   - dataset: imagenet
   - info: info
   - model: base_model
+  - dataset@eval_dataset: imagenet_ds
 
 name: ${dataset.name}_${model.model_name}_${model.backbone}
 

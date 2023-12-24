@@ -3,8 +3,6 @@ windows:
   - window_name: window
     layout: tiled
     panes:
-      - python run_eval.py +model.eval=True dataset=imagenet gpu=1 checkpoint=finetune/SCL8192_20231207-170209
-      - python run_eval.py +model.eval=True dataset=imagenet gpu=2 checkpoint=finetune/SimpleAdapterIOL_CLS_20231130-180316
-      - python run_eval.py +model.eval=True dataset=imagenet gpu=3 checkpoint=finetune/SimpleAdapterIOL_20231130-153119
-      - python run_eval.py +model.eval=True dataset=imagenet gpu=4 checkpoint=finetune/SimpleAdapterSCL_CLS_20231130-180322
-#      - python run_eval.py +model.eval=True dataset=imagenet gpu=4 checkpoint=finetune/
+      - python run_eval.py model.eval=True dataset=imagenet_ds gpu=1 checkpoint=finetune/SCL1;python run_eval.py model.eval=True dataset=imagenet_ds gpu=1 checkpoint=finetune/SCL2;python run_eval.py model.eval=True dataset=imagenet_ds gpu=1 checkpoint=finetune/SCL3;
+      - python run_eval.py model.eval=True train.batch_size=512 dataset=imagenet_ds gpu=3 checkpoint=finetune/SCLB81921;python run_eval.py model.eval=True train.batch_size=512 dataset=imagenet_ds gpu=3 checkpoint=finetune/SCLB81922;python run_eval.py model.eval=True train.batch_size=512 dataset=imagenet_ds gpu=3 checkpoint=finetune/SCLB81923;
+#      - python run_eval.py model.eval=True dataset=imagenet_ds gpu=8 checkpoint=finetune/SCL_lr1e3
