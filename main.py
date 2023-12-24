@@ -1,3 +1,5 @@
+import os
+
 import hydra
 import pandas as pd
 import wandb
@@ -9,6 +11,8 @@ from src.misc import print_meta_data
 from src.models import *
 from src.utils import resume, dataset2dict, to_list
 from src.utils.registry import create_train_engine, create_task_engine
+
+os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
 
 @hydra.main(config_path="configs", config_name="train_config", version_base="1.3")
@@ -47,6 +51,7 @@ def main(cfg: DictConfig) -> None:
     model, _ = factory.create_model()  # model, tokenizer
     state_dict = fabric.load('best.ckpt')['state_dict']
     model.load_state_dict(state_dict, strict=True)
+    model.eval()
 
     df = pd.DataFrame()
 
