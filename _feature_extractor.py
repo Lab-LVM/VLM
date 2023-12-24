@@ -8,10 +8,28 @@ from tqdm import tqdm
 
 from src.data import create_dataloader
 from src.data.dataset import ImageNetRandaugPromptText
-from src.models import CLIPTMP, CLIP_tokenizer
+from src.models import CLIP_tokenizer
 
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = '8'
+
+
+def forward_for_feature_extraction(self, image, text):
+    image_features = self.encode_image(image)
+    text_features = self.encode_text(text)
+    return image_features, text_features
+
+
+def CLIPTMP(backbone='ViT-B16'):
+    model, _ = clip.load(backbone)
+
+    for name, param in model.named_parameters():
+        param.requires_grad = False
+
+    forward_bound_method = forward_for_feature_extraction.__get__(model, model.__class__)
+    setattr(model, 'forward', forward_bound_method)
+
+    return model
 
 
 def create_dataset(ds_cfg, **kwargs):
@@ -35,7 +53,7 @@ if __name__ == '__main__':
 
     device = torch.device('cuda')
 
-    clip = CLIPTMP(**cfg.model)
+    clip = CLIPTMP(cfg.model.backbone)
     clip.eval()
     clip.to(device)
 

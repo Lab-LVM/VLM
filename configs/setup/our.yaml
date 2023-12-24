@@ -3,7 +3,7 @@
 defaults:
   - override /train/optimizer: lamb
   - override /dataset: imagenet
-  - override /model: clip_simple_adapter
+  - override /model: our
 
 gpu: 0
 name: ${model.model_name}
@@ -27,7 +27,7 @@ train:
     weight_decay: 5e-2
 
 model:
-  model_name: CLIP_SimpleAdapter
+  model_name: Our
   backbone: ViT-B16
   freeze: True
   finetune: True

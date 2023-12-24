@@ -1,11 +1,7 @@
-import os
-
 import hydra
 import pandas as pd
 import wandb
 from omegaconf import DictConfig
-
-os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
 from src.engine import *
 from src.initialize import setup_fabric, ObjectFactory
@@ -38,17 +34,19 @@ def main(cfg: DictConfig) -> None:
     print_meta_data(cfg, model, *loaders) if cfg.is_master else None
 
     # Train
-
     train_engine = create_train_engine(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler,
                                        (start_epoch, n_epochs))
 
     train_engine()
 
     # Eval
-    if hasattr(cfg.model, 'eval'):
-        cfg.model.eval = True
+    del model
+    cfg.model.eval = True
+    cfg.train.batch_size = 1024
     factory = ObjectFactory(cfg, fabric)
-    model, tokenizer = factory.create_model()  # model, tokenizer
+    model, _ = factory.create_model()  # model, tokenizer
+    state_dict = fabric.load('best.ckpt')['state_dict']
+    model.load_state_dict(state_dict, strict=True)
 
     df = pd.DataFrame()
 

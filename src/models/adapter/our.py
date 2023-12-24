@@ -81,8 +81,8 @@ def mlp(dim=512):
 
 
 @register_model
-def CLIP_SimpleAdapter(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
-                       classifier=False, **kwargs):
+def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
+        classifier=False, **kwargs):
     assert finetune
     model, _ = clip.load(backbone)
 
@@ -135,28 +135,9 @@ def CLIP_SimpleAdapter(backbone='ViT-B16', freeze=False, finetune=False, languag
     return model
 
 
-def forward_tmp(self, image, text):
-    image_features = self.encode_image(image)
-    text_features = self.encode_text(text)
-    return image_features, text_features
-
-
-@register_model
-def CLIPTMP(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
-            classifier=False, **kwargs):
-    model, _ = clip.load(backbone)
-
-    for name, param in model.named_parameters():
-        param.requires_grad = False
-
-    forward_bound_method = forward_tmp.__get__(model, model.__class__)
-    setattr(model, 'forward', forward_bound_method)
-
-    return model
-
 
 if __name__ == '__main__':
-    model = CLIP_SimpleAdapter(eval=True, alpha=False, finetune=True, freeze=True, language_adapter=True, vision_adapter=True)
+    model = Our(eval=True, alpha=False, finetune=True, freeze=True, language_adapter=True, vision_adapter=True)
 
     o = model(torch.rand(2, 3, 224, 224), torch.ones(2, 77, dtype=torch.long))
     print(o.shape)

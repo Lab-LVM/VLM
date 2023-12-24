@@ -9,16 +9,16 @@ from ...utils.registry import register_task_engine, register_train_engine, regis
 
 
 @register_feature_engine
-class CLIP_SimpleAdapterClassificationFeatureEngine(ClassificationFeatureEngine):
+class OurClassificationFeatureEngine(ClassificationFeatureEngine):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
 @register_task_engine
-class CLIP_SimpleAdapterTaskEngine(TaskEngine):
+class OurTaskEngine(TaskEngine):
     def __init__(self, cfg, fabric, model, tokenizer, train_dataset, val_dataset):
-        feature_engine = CLIP_SimpleAdapterClassificationFeatureEngine(cfg, fabric, model, tokenizer, train_dataset,
-                                                                       val_dataset)
+        feature_engine = OurClassificationFeatureEngine(cfg, fabric, model, tokenizer, train_dataset,
+                                                        val_dataset)
         super().__init__(feature_engine)
 
         self.cfg = cfg
@@ -59,7 +59,7 @@ class CLIP_SimpleAdapterTaskEngine(TaskEngine):
 
 
 @register_train_engine
-class CLIP_SimpleAdapterTrainEngine(TrainEngine):
+class OurTrainEngine(TrainEngine):
     def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs):
         super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
         self.crossentropy = torch.nn.CrossEntropyLoss()
@@ -134,14 +134,6 @@ class CLIP_SimpleAdapterTrainEngine(TrainEngine):
             self._distribute_bn()
             self.scheduler.step(epoch + 1)
 
-            if epoch < 5:
-                criterion_metric = train_metrics[self.cm]
-                is_best = (self.decreasing and criterion_metric < self.best_metric) or (
-                        not self.decreasing and criterion_metric > self.best_metric)
-                if is_best:
-                    self.best_metric, self.best_epoch = criterion_metric, epoch
-            else:
-                self._save(epoch, train_metrics[self.cm])
-
+            self._save(epoch, train_metrics[self.cm])
             self._log(train_metrics, {}, epoch)
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)
