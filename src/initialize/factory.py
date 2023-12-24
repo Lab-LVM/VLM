@@ -7,7 +7,8 @@ from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler_v2, scheduler_kwargs
 from torch import nn
 
-from src.utils.loss_function import CLIPLoss, CoCaLoss, SupervisedContrastiveLoss, IndomainOutdomainContrastiveLoss
+from src.utils.loss_function import CLIPLoss, CoCaLoss, SupervisedContrastiveLoss, IndomainOutdomainContrastiveLoss, \
+    SupervisedContrastiveLossMultiProcessing
 from src.utils.registry import create_model
 from src.utils.utils import filter_grad, EmptyScheduler
 
@@ -95,6 +96,9 @@ class ObjectFactory:
 
         elif self.train.criterion == 'IOL':
             train_loss_fn = validate_loss_fn = IndomainOutdomainContrastiveLoss()  # contextual
+
+        elif self.train.criterion == 'SCLM':
+            train_loss_fn = validate_loss_fn = SupervisedContrastiveLossMultiProcessing()
 
         elif self.dataset.augmentation.cutmix > 0 or self.dataset.augmentation.mixup > 0:
             # smoothing is handled with mixup target transform which outputs sparse, soft targets

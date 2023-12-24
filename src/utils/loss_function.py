@@ -142,37 +142,16 @@ class CoCaLoss(CLIPLoss):
         return clip_loss, caption_loss
 
 
-def gather_all_features(rank, world_size, *features):
-    gathered_features = list()
-
-    for i, f in enumerate(features):
-        for _ in range(world_size):
-            gathered_features.append([torch.zeros_like(f) for _ in range(world_size)])
-
-    for gather_f, f in zip(gathered_features, features):
-        dist.all_gather(gather_f, f)
-
-    for gather_f, f in zip(gathered_features, features):
-        gather_f[rank] = f
-
-    for i in range(len(gathered_features)):
-        gathered_features[i] = torch.cat(gathered_features[i], dim=0)
-
+def _gather_features(features, rank=0, world_size=1):
+    gathered_features = [torch.zeros_like(features) for _ in range(world_size)]
+    dist.all_gather(gathered_features, features)
+    gathered_features[rank] = features
+    gathered_features = torch.cat(gathered_features, dim=0)
     return gathered_features
 
 
-def gather_all_features2(
-        image_features,
-        rank=0,
-        world_size=1,
-):
-
-    gathered_image_features = [torch.zeros_like(image_features) for _ in range(world_size)]
-    dist.all_gather(gathered_image_features, image_features)
-    gathered_image_features[rank] = image_features
-    all_image_features = torch.cat(gathered_image_features, dim=0)
-
-    return all_image_features
+def gather_all_features(rank=0, world_size=1, *features):
+    return [_gather_features(feature, rank, world_size) for feature in features]
 
 
 class IndomainOutdomainContrastiveLoss(nn.Module):
@@ -195,10 +174,42 @@ class IndomainOutdomainContrastiveLoss(nn.Module):
         loss = F.cross_entropy(logits, mask_same_class)
         return loss
 
+    # Todo: self-logit은 infoNCE나 SimCLR Loss
     def forward(self, logits_per_image, logits_per_text, logits_image_self, logits_text_self, targets):
         loss = (self.two_domain(logits_per_image, targets) + self.two_domain(logits_per_text, targets)
-                + self.one_domain(logits_image_self, targets) + self.one_domain(logits_text_self, targets)) / 4
+                + self.two_domain(logits_image_self, targets)) / 3
         return loss
+
+
+class SupervisedContrastiveLossMultiProcessing(nn.Module):
+    def __init__(self):
+        super(SupervisedContrastiveLossMultiProcessing, self).__init__()
+        self.rank = 0
+        self.world_size = 1
+
+    def SCL(self, dot_product_tempered, targets):
+        exp_dot_tempered = (
+                torch.exp(dot_product_tempered - torch.max(dot_product_tempered, dim=1, keepdim=True)[0]) + 1e-5
+        )
+        mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
+        mask_anchor_out = 1 - mask_same_class
+
+        cardinality_per_samples = torch.sum(mask_same_class, dim=1)
+
+        log_prob = -torch.log(exp_dot_tempered / (torch.sum(exp_dot_tempered * mask_anchor_out, dim=1, keepdim=True)))
+        supervised_contrastive_loss_per_sample = torch.sum(log_prob * mask_same_class, dim=1) / cardinality_per_samples
+        supervised_contrastive_loss = torch.mean(supervised_contrastive_loss_per_sample)
+        return supervised_contrastive_loss
+
+    def forward(self, image_features, text_features, targets, logit_scale):
+        if self.world_size > 1:
+            features = (image_features, text_features, targets)
+            image_features, text_features, targets = gather_all_features(self.rank, self.world_size, *features)
+
+        logits_per_image = logit_scale * torch.mm(image_features, text_features.t())
+        logits_per_text = logits_per_image.t()
+
+        return self.SCL(logits_per_image, targets) + self.SCL(logits_per_text, targets)
 
 
 class SupervisedContrastiveLoss(nn.Module):
@@ -208,14 +219,14 @@ class SupervisedContrastiveLoss(nn.Module):
         self.world_size = 1
 
     def forward(self, logits, targets):
-        # if self.rank == 0:
-        #     print('input', logits.shape, targets.shape)
-        # if self.world_size > 1:
-        #     # logits, targets = gather_all_features(self.rank, self.world_size, logits, targets.to(torch.float32))
-        #     logits = gather_all_features2(logits, self.rank, self.world_size)
-        #     targets = gather_all_features2(targets.to(torch.float32), self.rank, self.world_size)
-        # if self.rank == 0:
-        #     print('output', logits.shape, targets.shape)
+        if self.rank == 0:
+            print('input', logits.shape, targets.shape)
+        if self.world_size > 1:
+            # logits, targets = gather_all_features(self.rank, self.world_size, logits, targets.to(torch.float32))
+            logits = gather_all_features2(logits, self.rank, self.world_size)
+            targets = gather_all_features2(targets.to(torch.float32), self.rank, self.world_size)
+        if self.rank == 0:
+            print('output', logits.shape, targets.shape)
 
         dot_product_tempered = logits
         # Minus max for numerical stability with exponential. Same done in cross entropy. Epsilon added to avoid log(0)
