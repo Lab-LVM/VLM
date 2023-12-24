@@ -6,6 +6,7 @@ scripts/
 *.pt
 *.pth
 *.pth.tar
+tmp*.py
 src/data_new/
 .DS_Store
 
