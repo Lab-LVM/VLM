@@ -176,8 +176,8 @@ class IndomainOutdomainContrastiveLoss(nn.Module):
 
     # Todo: self-logit은 infoNCE나 SimCLR Loss
     def forward(self, logits_per_image, logits_per_text, logits_image_self, logits_text_self, targets):
-        loss = (self.two_domain(logits_per_image, targets) + self.two_domain(logits_per_text, targets)
-                + self.two_domain(logits_image_self, targets)) / 3
+        loss = (self.two_domain(logits_per_image, targets) + self.two_domain(logits_per_text, targets)) / 2
+        loss = loss + self.two_domain(logits_image_self, targets) * 0.1
         return loss
 
 
@@ -219,15 +219,6 @@ class SupervisedContrastiveLoss(nn.Module):
         self.world_size = 1
 
     def forward(self, logits, targets):
-        if self.rank == 0:
-            print('input', logits.shape, targets.shape)
-        if self.world_size > 1:
-            # logits, targets = gather_all_features(self.rank, self.world_size, logits, targets.to(torch.float32))
-            logits = gather_all_features2(logits, self.rank, self.world_size)
-            targets = gather_all_features2(targets.to(torch.float32), self.rank, self.world_size)
-        if self.rank == 0:
-            print('output', logits.shape, targets.shape)
-
         dot_product_tempered = logits
         # Minus max for numerical stability with exponential. Same done in cross entropy. Epsilon added to avoid log(0)
         exp_dot_tempered = (
