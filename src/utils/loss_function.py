@@ -142,16 +142,30 @@ class CoCaLoss(CLIPLoss):
         return clip_loss, caption_loss
 
 
-def _gather_features(features, rank=0, world_size=1):
-    gathered_features = [torch.zeros_like(features) for _ in range(world_size)]
-    dist.all_gather(gathered_features, features)
-    gathered_features[rank] = features
-    gathered_features = torch.cat(gathered_features, dim=0)
-    return gathered_features
+class AllGatherFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, tensor: torch.Tensor, reduce_dtype: torch.dtype = torch.float32):
+        ctx.reduce_dtype = reduce_dtype
+
+        output = list(torch.empty_like(tensor) for _ in range(dist.get_world_size()))
+        dist.all_gather(output, tensor)
+        output = torch.cat(output, dim=0)
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output: torch.Tensor):
+        grad_dtype = grad_output.dtype
+        input_list = list(grad_output.to(ctx.reduce_dtype).chunk(dist.get_world_size()))
+        grad_input = torch.empty_like(input_list[dist.get_rank()])
+        dist.reduce_scatter(grad_input, input_list)
+        return grad_input.to(grad_dtype)
 
 
-def gather_all_features(rank=0, world_size=1, *features):
-    return [_gather_features(feature, rank, world_size) for feature in features]
+def all_gather(tensor):
+    return AllGatherFunction.apply(tensor)
+
+def gather_all_features(*features):
+    return [all_gather(feature) for feature in features]
 
 
 class IndomainOutdomainContrastiveLoss(nn.Module):
@@ -203,8 +217,7 @@ class SupervisedContrastiveLossMultiProcessing(nn.Module):
 
     def forward(self, image_features, text_features, targets, logit_scale):
         if self.world_size > 1:
-            features = (image_features, text_features, targets)
-            image_features, text_features, targets = gather_all_features(self.rank, self.world_size, *features)
+            image_features, text_features, targets = gather_all_features(image_features, text_features, targets)
 
         logits_per_image = logit_scale * torch.mm(image_features, text_features.t())
         logits_per_text = logits_per_image.t()
