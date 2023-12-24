@@ -9,9 +9,10 @@ from tqdm import tqdm
 from src.data import create_dataloader
 from src.data.dataset import ImageNetRandaugPromptText
 from src.models import CLIP_tokenizer
+import src.models.clip as clip
 
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-os.environ['CUDA_VISIBLE_DEVICES'] = '8'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 
 def forward_for_feature_extraction(self, image, text):
@@ -47,14 +48,14 @@ def create_dataset(ds_cfg, **kwargs):
 
 if __name__ == '__main__':
     with initialize('configs', version_base='1.3'):
-        cfg = compose('train_config', overrides=['model.backbone=ViT-B16', '+setup=clip_simple_adapter',
+        cfg = compose('train_config', overrides=['model.backbone=ViT-B16', '+setup=our',
                                                  'dataset.augmentation.prefetcher=False'])
     cfg.train.batch_size = 1024
 
     device = torch.device('cuda')
 
     clip = CLIPTMP(cfg.model.backbone)
-    clip.eval()
+    clip.train()
     clip.to(device)
 
     tokenizer = CLIP_tokenizer()
@@ -62,12 +63,12 @@ if __name__ == '__main__':
     ds = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=0)
     dl = create_dataloader(cfg, ds, is_train=True)
     dl.dataset.setup_prompt_transform()
-    root = Path(f'/home/seungmin/shared/hdd_ext/hdd4000/seungmin/imageNet_train_features_B16')
+    root = Path(f'/home/seungmin/dmount/feature_data/imageNet_train_features_B16_train')
     root.mkdir(exist_ok=True)
 
     keys = ('vision_features', 'language_features', 'targets')
 
-    for i in range(10):
+    for i in range(10,11):
         print(f'EPOCH: {i}')
         obj = {k: list() for k in keys}
 
