@@ -56,7 +56,7 @@ class ObjectFactory:
     def create_optimizer_and_scheduler(self, model, iter_per_epoch):
         self.cfg.train.iter_per_epoch = iter_per_epoch
         self.train.iter_per_epoch = iter_per_epoch
-        self.check_total_batch_size()
+        # self.check_total_batch_size()
 
         if self.optim.opt == 'lbfgs':
             lbfgs_kwargs = copy(self.optim)

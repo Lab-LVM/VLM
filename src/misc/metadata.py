@@ -72,9 +72,9 @@ def print_meta_data(cfg, model=None, train_loader=None, val_loader=None):
     title = 'Experiment Setting'
     contents = {
         'Epochs': cfg.train.epochs,
-        'Batch Size': f'{cfg.train.batch_size} / {cfg.train.total_batch}',
+        'Batch Size': f'{cfg.train.batch_size}',# / {cfg.train.total_batch}',
         'World Size': cfg.world_size,
-        'Grad Accum': cfg.train.optimizer.get('grad_accumulation', 1),
+        # 'Grad Accum': cfg.train.optimizer.get('grad_accumulation', 1),
         'Optimizer': cfg.train.optimizer.get('opt', 'LBFGS'),
         'LR': cfg.train.optimizer.lr,
         'Weight Decay': cfg.train.optimizer.get('weight_decay', 0),
