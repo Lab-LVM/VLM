@@ -79,6 +79,7 @@ def print_meta_data(cfg, model=None, train_loader=None, val_loader=None):
         'LR': cfg.train.optimizer.lr,
         'Weight Decay': cfg.train.optimizer.get('weight_decay', 0),
         'Scheduler': cfg.train.scheduler.sched,
+        'CoolDown Epochs': cfg.train.scheduler.cooldown_epochs,
         'Warmup LR': cfg.train.scheduler.warmup_lr,
         'Warmup Epochs': cfg.train.scheduler.warmup_epochs,
         'Min LR': cfg.train.scheduler.min_lr,
