@@ -1,0 +1,30 @@
+project: VLM
+name: Ours_B16
+description: The sweep of our methods on ViT-B/16 backbone with freezing this.
+entity: SoongE
+
+program: sweep.py
+method: bayes
+metric:
+  name: EvalAccuracy
+  goal: maximize
+parameters:
+  gpu:
+    value: 0
+  train.batch_size:
+    values: [ 512, 1024, 2048, 4096 ]
+  train.optimizer.lr:
+    distribution: uniform
+    min: 1e-4
+    max: 1e-2
+  train.optimizer.weight_decay:
+    values: [ 5e-2, 1e-2 ]
+  train.scheduler.min_lr:
+    values: [ 1e-5, 1e-6 ]
+
+command:
+  - ${env}
+  - python
+  - ${program}
+  - ${args_no_hyphens}
+  - +setup=our
