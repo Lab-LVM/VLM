@@ -1,9 +1,12 @@
 import torch
+from torch.nn.functional import normalize
+from torch.utils.data import DataLoader
+from torchmetrics import Accuracy
 
 from .. import TaskEngine
 from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
-from ...data.dataset import ImageNetRandaugPromptV2, ImageNetRandaugPrompt
+from ...data.dataset import ImageNetRandaugPromptV2, ImageNetRandaugPrompt, ObjectNet
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss, \
     SupervisedContrastiveLossMultiProcessing
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
@@ -18,9 +21,9 @@ class OurClassificationFeatureEngine(ClassificationFeatureEngine):
 @register_task_engine
 class OurTaskEngine(TaskEngine):
     def __init__(self, cfg, fabric, model, tokenizer, train_dataset, val_dataset):
-        feature_engine = OurClassificationFeatureEngine(cfg, fabric, model, tokenizer, train_dataset,
-                                                        val_dataset)
-        super().__init__(feature_engine)
+        # feature_engine = OurClassificationFeatureEngine(cfg, fabric, model, tokenizer, train_dataset,
+        #                                                 val_dataset)
+        # super().__init__(feature_engine)
 
         self.cfg = cfg
         self.fabric = fabric
@@ -29,11 +32,59 @@ class OurTaskEngine(TaskEngine):
         self.val_dataset = val_dataset
         self.logging_interval = cfg.train.log_interval
 
+        self.metric = Accuracy('multiclass', num_classes=cfg.dataset.num_classes).to(self.device)
+        self.model.eval()
+
     @property
     def available_task(self):
         return ['classification']
 
     def classification(self, **kwargs):
+        self.metric.reset()
+        text_features = self.val_dataset.text.to(self.device, non_blocking=True)
+        new_feature = list()
+        with self.fabric.autocast():
+            for i in range(text_features.size(0)):
+                f = self.model.encode_text(text_features[i])
+                f = normalize(f, dim=-1).mean(0)
+                f /= f.norm()
+                new_feature.append(f)
+            text_features = torch.stack(new_feature).t()
+
+        dl = DataLoader(self.val_dataset, batch_size=self.cfg.train.batch_size)
+        image_features = list()
+        targets = list()
+        for item in dl:
+            image = item[0].to(self.device, non_blocking=True)
+            target = item[1].to(self.device, non_blocking=True)
+            with self.fabric.autocast():
+                image_features.append(self.model.encode_image(image))
+            targets.append(target)
+
+        targets = torch.cat(targets)
+        with self.fabric.autocast():
+            image_features = torch.cat(image_features)
+            image_features = normalize(image_features, dim=-1)
+
+            logits = self.model.logit_scale.exp() * torch.mm(image_features, text_features)
+
+        if self.cfg.dataset.name == 'objectnet':
+            logits = ObjectNet(self.cfg.dataset.root).project_logits(logits)
+
+        # Classifier logits
+        try:
+            classifier_logits = self.model.classifier(image_features)
+            if hasattr(self.val_dataset, 'project_logits'):
+                classifier_logits = self.val_dataset.project_logits(classifier_logits)
+            logits += classifier_logits
+        except:
+            pass
+
+        self.metric.update(logits, targets)
+        self.metric.prefix = 'simple_adapter_classification'
+        return self._output
+
+    def classification0(self, **kwargs):
         self.feature_engine.sampling(0)
         self.metric.reset()
 

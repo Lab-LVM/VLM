@@ -11,12 +11,18 @@ DATASET_DICT = {
     'imagenetraText': ImageNetRandaugPrompt,
     'imagenetra2': ImageNetRandaugPromptV2,
     'imagenetsim': ImageNetSimplePrompt,
-    'imagenet': ImageNet,
-    'imagenet_a': ImageNetA,
-    'imagenet_r': ImageNetR,
-    'imagenet_v2': ImageNetV2,
-    'imagenet_sketch': ImageNetSketch,
-    'objectnet': ObjectNet,
+    'imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),
+    'imagenet_a': partial(ImageNetEvalFeatures, dataset_name='imagenet_a'),
+    'imagenet_r': partial(ImageNetEvalFeatures, dataset_name='imagenet_r'),
+    'imagenet_v2': partial(ImageNetEvalFeatures, dataset_name='imagenet_v2'),
+    'imagenet_sketch': partial(ImageNetEvalFeatures, dataset_name='imagenet_sketch'),
+    'objectnet': partial(ImageNetEvalFeatures, dataset_name='objectnet'),
+    # 'imagenet': ImageNet,
+    # 'imagenet_a': ImageNetA,
+    # 'imagenet_r': ImageNetR,
+    # 'imagenet_v2': ImageNetV2,
+    # 'imagenet_sketch': ImageNetSketch,
+    # 'objectnet': ObjectNet,
     'caltech101': Caltech101,
     'eurosat': EuroSAT,
     'fgvc': FGVCAircraft,
@@ -42,6 +48,8 @@ def create_dataset(ds_cfg, is_train, **kwargs):
     )
     if kwargs.get('split', None):
         ds_kwargs['split'] = kwargs['split']
+    if kwargs.get('backbone', None):
+        ds_kwargs['backbone'] = kwargs['backbone']
 
     return DATASET_DICT[ds_cfg.name](**ds_kwargs)
 

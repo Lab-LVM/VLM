@@ -1,7 +1,7 @@
 import os
 import pickle
 
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import transforms
 
 from . import VLMDataset, IMAGENET_CLASS_NAME
@@ -26,6 +26,24 @@ class ImageNetRandaugPromptFeatures(VLMDataset):
 
     def __getitem__(self, idx):
         return self.imgs[idx], self.targets[idx], self.prompts[idx]
+
+
+class ImageNetEvalFeatures(Dataset):
+    def __init__(self, root, backbone, dataset_path='imagenet_ds_eval', dataset_name='imagenet', **kwargs):
+        self.name = dataset_name
+        pickle_file = os.path.join(root, f'{backbone}_{dataset_path}', f'{dataset_name}.pkl')
+
+        with open(pickle_file, 'rb') as f:
+            data = pickle.load(f)
+        self.imgs = data['vision_features']
+        self.text = data['language_features']
+        self.targets = data['targets']
+
+    def __getitem__(self, idx):
+        return self.imgs[idx], self.targets[idx]
+
+    def __len__(self):
+        return len(self.imgs)
 
 
 if __name__ == '__main__':

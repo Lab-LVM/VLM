@@ -6,7 +6,7 @@ from .fgvc import FGVCAircraft
 from .flowers102 import Flowers102
 from .food101 import Food101
 from .imagenet import ImageNet, ImageNetRandaugPrompt, ImageNetRandaugPromptV2, ImageNetSimplePrompt
-from .imagenet_features import ImageNetRandaugPromptFeatures
+from .imagenet_features import ImageNetRandaugPromptFeatures, ImageNetEvalFeatures
 from .imagenet_text import ImageNetRandaugPromptText
 from .imagenet_x import ImageNetA, ImageNetR, ImageNetSketch, ImageNetV2, ObjectNet
 from .oxfordiiitpet import OxfordIIITPet

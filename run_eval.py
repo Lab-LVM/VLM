@@ -11,8 +11,6 @@ from src.models import *
 from src.utils import dataset2dict, to_list, import_config, move_dir
 from src.utils.registry import create_task_engine
 
-os.environ['TOKENIZERS_PARALLELISM'] = 'true'
-
 
 @hydra.main(config_path="configs", config_name="eval_config", version_base="1.3")
 def main(cfg: DictConfig) -> None:
@@ -30,8 +28,9 @@ def main(cfg: DictConfig) -> None:
     for k, v in dataset2dict(cfg.dataset).items():
         for shot in to_list(cfg.n_shot):
             cfg.dataset = v
-            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
-            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
+            backbone = cfg.model.backbone.split('-')[-1]
+            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, backbone=backbone)
+            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=backbone)
 
             engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
             metrics = engine(n_shots=to_list(cfg.n_shot))
