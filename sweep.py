@@ -1,7 +1,4 @@
-import os
-
 import hydra
-import pandas as pd
 import wandb
 from omegaconf import DictConfig, OmegaConf
 
@@ -12,15 +9,13 @@ from src.misc import print_meta_data
 from src.utils import resume, dataset2dict, to_list
 from src.utils.registry import create_train_engine, create_task_engine
 
-os.environ['TOKENIZERS_PARALLELISM'] = 'true'
-
 
 @hydra.main(config_path="configs", config_name="train_config", version_base="1.3")
 def main(cfg: DictConfig) -> None:
     cfg.wandb = False
     wandb_cfg = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
-    with wandb.init(project=cfg.info.project, entity=cfg.info.entity, config=wandb_cfg, name=f"{cfg.name}",
-                    settings=wandb.Settings(_disable_stats=True, start_method="thread"), resume='allow'):
+    with wandb.init(project=cfg.info.project, entity=cfg.info.entity, config=wandb_cfg,
+                    settings=wandb.Settings(_disable_stats=True, start_method="thread")):
         cfg.info.id = wandb.run.id
         fabric = setup_fabric(cfg)
 
@@ -51,32 +46,28 @@ def main(cfg: DictConfig) -> None:
 
         # Eval
         del model
-        cfg.model.forward_backbone = True
-        cfg.train.batch_size = 1024
+        cfg.train.batch_size = 4096
         factory = ObjectFactory(cfg, fabric)
         model, _ = factory.create_model()  # model, tokenizer
         state_dict = fabric.load('best.ckpt')['state_dict']
         model.load_state_dict(state_dict, strict=True)
         model.eval()
 
-        df = pd.DataFrame()
-        cfg.dataset.name = 'imagenet'
+        cfg.dataset.name = 'imagenet_ds'
+        acc_list = list()
         for k, v in dataset2dict(cfg.dataset).items():
-            for shot in to_list(cfg.n_shot):
-                cfg.dataset = v
-                train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
-                test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
+            cfg.dataset = v
+            backbone = cfg.model.backbone.split('-')[-1]
+            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, backbone=backbone)
+            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=backbone)
 
-                engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
-                metrics = engine(n_shots=to_list(cfg.n_shot))
-                wandb.log({'EvalAccuracy': float(metrics['simple_adapter_classification'])})
-                print("??", float(metrics['simple_adapter_classification']))
+            engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+            metrics = engine(n_shots=to_list(cfg.n_shot))
+            acc = float(metrics['simple_adapter_classification'])
+            acc_list.append(acc)
+            wandb.log({f'{k}_acc': acc})
 
-                row = dict(Data=test_dataset.name, shot=shot, **metrics)
-                print(f'{row}\n')
-                df = pd.concat([df, pd.DataFrame(row, index=[0])])
-
-        df.to_csv(f'result_{cfg.name}.csv', index=False)
+        wandb.log({'EvalAccuracy': sum(acc_list) / len(acc_list)})
 
 
 if __name__ == "__main__":
