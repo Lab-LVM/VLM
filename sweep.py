@@ -22,7 +22,8 @@ def main(cfg: DictConfig) -> None:
         factory = ObjectFactory(cfg, fabric)
         model, tokenizer = factory.create_model()  # model, tokenizer
 
-        train_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.train)
+        ds_backbone = cfg.model.backbone.split('-')[-1]
+        train_dataset = create_dataset(cfg.dataset, backbone=ds_backbone, is_train=False, split=cfg.dataset.train)
         loaders = create_dataloader(cfg, train_dataset, is_train=True)
 
         optimizer, scheduler, n_epochs = factory.create_optimizer_and_scheduler(model, len(loaders))
@@ -45,21 +46,16 @@ def main(cfg: DictConfig) -> None:
         train_engine()
 
         # Eval
-        del model
         cfg.train.batch_size = 4096
-        factory = ObjectFactory(cfg, fabric)
-        model, _ = factory.create_model()  # model, tokenizer
-        state_dict = fabric.load('best.ckpt')['state_dict']
-        model.load_state_dict(state_dict, strict=True)
         model.eval()
 
         cfg.dataset.name = 'imagenet_ds'
         acc_list = list()
         for k, v in dataset2dict(cfg.dataset).items():
             cfg.dataset = v
-            backbone = cfg.model.backbone.split('-')[-1]
-            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, backbone=backbone)
-            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=backbone)
+            ds_backbone = cfg.model.backbone.split('-')[-1]
+            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, backbone=ds_backbone)
+            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=ds_backbone)
 
             engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
             metrics = engine(n_shots=to_list(cfg.n_shot))
@@ -67,6 +63,7 @@ def main(cfg: DictConfig) -> None:
             acc_list.append(acc)
             wandb.log({f'{k}_acc': acc})
 
+        wandb.log({'OODAccuracy': sum(acc_list[1:]) / len(acc_list[1:])})
         wandb.log({'EvalAccuracy': sum(acc_list) / len(acc_list)})
 
 
