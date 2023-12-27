@@ -8,15 +8,16 @@ from . import VLMDataset, IMAGENET_CLASS_NAME
 
 
 class ImageNetRandaugPromptFeatures(VLMDataset):
-    def __init__(self, root, split='train', transform=None, target_transform=None, n_shot=0,
-                 dataset_path='imageNet_train_features_B16_train'):
+    def __init__(self, root, backbone, split='train', transform=None, target_transform=None, n_shot=0,
+                 dataset_path='imageNet_train'):
         assert split == 'train', f'{self.__class__.name} only supports train split. Now is {split}.'
         super().__init__(root, None, None, IMAGENET_CLASS_NAME, None, None, 0)
         self.dataset_path = dataset_path
+        self.backbone = backbone
         self.set_feature(0)
 
     def set_feature(self, index):
-        file_name = os.path.join(self.root, self.dataset_path, f'{index}.pkl')
+        file_name = os.path.join(self.root, f'{self.backbone}_{self.dataset_path}', f'{index}.pkl')
         with open(file_name, 'rb') as f:
             data = pickle.load(f)
 
