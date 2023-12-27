@@ -13,12 +13,14 @@ parameters:
     value: 0
   train.batch_size:
     values: [ 512, 1024, 2048, 4096 ]
+  train/optimizer:
+    values: ['adamw', 'lamb']
   train.optimizer.lr:
     distribution: uniform
     min: 1e-4
-    max: 1e-2
+    max: 1e-1
   train.optimizer.weight_decay:
-    values: [ 5e-2, 1e-2 ]
+    values: [ 5e-2, 1e-1, 1e-2 ]
   train.scheduler.min_lr:
     values: [ 1e-5, 1e-6 ]
 
