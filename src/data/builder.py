@@ -7,7 +7,7 @@ from src.data.dataset import *
 
 DATASET_DICT = {
     'imagenetra': ImageNetRandaugPromptFeatures,  # ImageNetRandaugPrompt
-    'imagenetraB32': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_features_B32'),
+    'imagenetram9': partial(ImageNetRandaugPromptFeatures, dataset_path='m9_imageNet_train'),
     'imagenetraText': ImageNetRandaugPrompt,
     'imagenetra2': ImageNetRandaugPromptV2,
     'imagenetsim': ImageNetSimplePrompt,
