@@ -4,7 +4,6 @@ from pathlib import Path
 
 import torch
 from hydra import initialize, compose
-from torch.nn.functional import normalize
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -15,7 +14,7 @@ from src.utils import VLZB, IMAGENET_DS
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 
 def forward_for_feature_extraction(self, image, text):
@@ -104,9 +103,9 @@ def dataset2dict(cfg):
 if __name__ == '__main__':
     with initialize('../../configs', version_base='1.3'):
         cfg = compose('train_config',
-                      overrides=['model.backbone=ViT-B32', '+setup=our', 'dataset.augmentation.prefetcher=False',
+                      overrides=['model.backbone=ViT-L14@336px', '+setup=our', 'dataset.augmentation.prefetcher=False',
                                  'dataset=imagenet_ds'])
-    cfg.train.batch_size = 1024
+    cfg.train.batch_size = 512
     cfg.dataset.name = 'imagenet_ds'
 
     device = torch.device('cuda')
@@ -116,11 +115,14 @@ if __name__ == '__main__':
     clip.to(device)
 
     tokenizer = CLIP_tokenizer()
-    root = Path(f'/home/seungmin/dmount/feature_data/B32_imagenet_ds_eval')
-    root.mkdir(exist_ok=True)
+    root = Path(f'/home/seungmin/dmount/feature_data/L14@336px_imagenet_ds_eval')
+    root.mkdir(exist_ok=True, parents=True)
+    backbone = cfg.model.backbone.split('-')[-1]
     for k, v in dataset2dict(cfg.dataset).items():
         print(k)
         cfg.dataset = v
+        cfg.dataset.train_size = [3, 336, 336]
+        cfg.dataset.eval_size = [3, 336, 336]
         train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
         test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
 

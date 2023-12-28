@@ -6,15 +6,15 @@ import torch
 from hydra import initialize, compose
 from tqdm import tqdm
 
+import src.models.clip as clip
 from src.data import create_dataloader
 from src.data.builder import create_transform
 from src.data.dataset import ImageNetRandaugPromptText
 from src.models import CLIP_tokenizer
-import src.models.clip as clip
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 
 def forward_for_feature_extraction(self, image, text):
@@ -50,9 +50,12 @@ def create_dataset(ds_cfg, **kwargs):
 
 if __name__ == '__main__':
     with initialize('../../configs', version_base='1.3'):
-        cfg = compose('train_config', overrides=['model.backbone=ViT-B32', '+setup=our',
+        cfg = compose('train_config', overrides=['model.backbone=ViT-L14@336px', '+setup=our',
                                                  'dataset.augmentation.prefetcher=False'])
-    cfg.train.batch_size = 1024
+    cfg.train.batch_size = 512
+    # cfg.dataset.augmentation.auto_aug = 'rand-m9-mstd0.5-inc1'
+    cfg.dataset.train_size = [3, 336, 336]
+    cfg.dataset.eval_size = [3, 336, 336]
     print(cfg.model.backbone)
 
     device = torch.device('cuda')
@@ -66,13 +69,13 @@ if __name__ == '__main__':
     ds = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=0, is_train=True)
     dl = create_dataloader(cfg, ds, is_train=True)
     dl.dataset.setup_prompt_transform()
-    root = Path(f'/home/seungmin/dmount/feature_data/B32_imageNet_train')
-    root.mkdir(exist_ok=True)
+    root = Path(f'/home/seungmin/dmount/feature_data/L14@336px_imageNet_train')
+    root.mkdir(exist_ok=True, parents=True)
 
     keys = ('vision_features', 'language_features', 'targets')
 
     with torch.cuda.amp.autocast():
-        for i in range(0, 11):
+        for i in range(11, 22):
             print(f'EPOCH: {i}')
             obj = {k: list() for k in keys}
 
