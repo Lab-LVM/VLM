@@ -85,6 +85,10 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
         classifier=False, **kwargs):
     assert finetune
     model, _ = clip.load(backbone)
+    if 'B16' in backbone or 'B32' in backbone:
+        dim = 512
+    else:
+        dim = 768
 
     if freeze:
         for name, param in model.named_parameters():
@@ -97,7 +101,7 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
         assert language_adapter or vision_adapter
 
         if language_adapter:
-            model.__setattr__('language_adapter', mlp())
+            model.__setattr__('language_adapter', mlp(dim=dim))
             if kwargs.get('forward_backbone', False):
                 encode_text_bound_method = encode_text.__get__(model, model.__class__)
             else:
@@ -105,7 +109,7 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
             setattr(model, 'encode_text', encode_text_bound_method)
 
         if vision_adapter:
-            model.__setattr__('vision_adapter', mlp())
+            model.__setattr__('vision_adapter', mlp(dim=dim))
             if kwargs.get('forward_backbone', False):
                 encode_image_bound_method = encode_image.__get__(model, model.__class__)
             else:
@@ -114,7 +118,7 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
             setattr(model, 'encode_image', encode_image_bound_method)
 
         if classifier:
-            model.__setattr__('classifier', torch.nn.Linear(512, 1000))
+            model.__setattr__('classifier', torch.nn.Linear(dim, 1000))
             forward_bound_method = forward.__get__(model, model.__class__)
             setattr(model, 'forward', forward_bound_method)
 
@@ -132,7 +136,6 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
             setattr(model, 'forward', forward_bound_method)
 
     return model
-
 
 
 if __name__ == '__main__':
