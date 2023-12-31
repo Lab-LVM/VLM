@@ -1,4 +1,5 @@
 import os
+import random
 from collections import defaultdict
 
 import numpy as np
@@ -113,6 +114,15 @@ class ImageNetRandaugPromptText(ImageNet):
             lambda augment, name: f'{augment} transformed image of {name}.',
             lambda augment, name: f'{augment} transformed photo of the {name}.',
         ]
+        self.original_prompt= [
+            lambda c: f'itap of a {c}.',
+            lambda c: f'a bad photo of the {c}.',
+            lambda c: f'a origami {c}.',
+            lambda c: f'a photo of the large {c}.',
+            lambda c: f'a {c} in a video game.',
+            lambda c: f'art of the {c}.',
+            lambda c: f'a photo of the small {c}.',
+        ]
         self.len_prompt = len(self.augmentation_prompt)
 
     def setup_prompt_transform(self):
@@ -120,8 +130,8 @@ class ImageNetRandaugPromptText(ImageNet):
         self.randaug = RandAugment(**self.transform.transforms[2].__dict__)
         self.post_processing = transforms.Compose(self.transform.transforms[3:])
 
-    def ra_prompt(self, idx, ra_tf, target):
-        prompt = self.augmentation_prompt[idx % self.len_prompt]
+    def ra_prompt(self, ra_tf, target):
+        prompt = random.choice(self.augmentation_prompt)
         ra_fs = ''
         ra_fs += f'{RAND_AUG_TRANSFORMS[ra_tf[0].name]} and '
         ra_fs += f'{RAND_AUG_TRANSFORMS[ra_tf[1].name]}'
@@ -129,15 +139,21 @@ class ImageNetRandaugPromptText(ImageNet):
         prompt = prompt(ra_fs, self.num2str(target))
         return prompt
 
+    def org_prompt(self, target):
+        prompt = random.choice(self.original_prompt)
+        prompt = prompt(self.num2str(target))
+        return prompt
+
     def __getitem__(self, idx):
         path, target = self.imgs[idx], self.targets[idx]
         imgs = self.loader(path)
 
         imgs = self.pre_processing(imgs)
-        imgs, ra_tf = self.randaug(imgs)
+        ra_imgs, ra_tf = self.randaug(imgs)
+        ra_imgs = self.post_processing(ra_imgs)
         imgs = self.post_processing(imgs)
 
-        return imgs, target, self.ra_prompt(idx, ra_tf, target)
+        return imgs, ra_imgs, target, self.org_prompt(target), self.ra_prompt(ra_tf, target)
 
 
 if __name__ == '__main__':

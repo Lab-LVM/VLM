@@ -6,7 +6,7 @@ from torchmetrics import Accuracy
 from .. import TaskEngine
 from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
-from ...data.dataset import ImageNetRandaugPromptV2, ImageNetRandaugPrompt, ObjectNet
+from ...data.dataset import ImageNetRandaugPromptV2, ImageNetRandaugPrompt, ObjectNet, ImageNetRandaugPromptFeaturesV2
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss, \
     SupervisedContrastiveLossMultiProcessing
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
@@ -131,6 +131,8 @@ class OurTrainEngine(TrainEngine):
 
         if isinstance(self.train_loader.dataset, ImageNetRandaugPromptV2):
             self.iterate = self.iterate_ra2
+        if isinstance(self.train_loader.dataset, ImageNetRandaugPromptFeaturesV2):
+            self.iterate = self.iterate_ra2
         if isinstance(self.train_loader.dataset, ImageNetRandaugPrompt):
             self.train_loader.dataset.setup_prompt_transform()
 
@@ -171,11 +173,11 @@ class OurTrainEngine(TrainEngine):
         return loss, outs[0], y
 
     def iterate_ra2(self, model, data, criterion):
-        x, ra_x, y, prompt, ra_prompt = map(lambda a: a.to(self.device, non_blocking=True), data)
+        x, ra_x, y, prompt, ra_prompt = data
 
-        x = torch.concat([x, ra_x])
-        y = torch.concat([y, y])
-        prompt = torch.concat([prompt, ra_prompt])
+        x = torch.concat([x, ra_x]).to(self.device, non_blocking=True)
+        y = torch.concat([y, y]).to(self.device, non_blocking=True)
+        prompt = torch.concat([prompt, ra_prompt]).to(self.device, non_blocking=True)
 
         with self.fabric.autocast():
             outs = model(x, prompt)

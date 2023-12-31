@@ -6,9 +6,9 @@ import wandb
 from omegaconf import DictConfig
 
 from src.engine import *
+from src.models import *
 from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data
-from src.models import *
 from src.utils import resume, dataset2dict, to_list
 from src.utils.registry import create_train_engine, create_task_engine
 
@@ -23,7 +23,8 @@ def main(cfg: DictConfig) -> None:
     factory = ObjectFactory(cfg, fabric)
     model, tokenizer = factory.create_model()  # model, tokenizer
 
-    train_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.train)
+    ds_backbone = cfg.model.backbone.split('-')[-1]
+    train_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.train, backbone=ds_backbone)
     loaders = create_dataloader(cfg, train_dataset, is_train=True)
 
     optimizer, scheduler, n_epochs = factory.create_optimizer_and_scheduler(model, len(loaders))
@@ -44,13 +45,13 @@ def main(cfg: DictConfig) -> None:
     train_engine()
 
     # Eval
-    del model
-    cfg.model.forward_backbone = True
+    # del model
+    # cfg.model.forward_backbone = True
     cfg.train.batch_size = 1024
-    factory = ObjectFactory(cfg, fabric)
-    model, _ = factory.create_model()  # model, tokenizer
-    state_dict = fabric.load('best.ckpt')['state_dict']
-    model.load_state_dict(state_dict, strict=True)
+    # factory = ObjectFactory(cfg, fabric)
+    # model, _ = factory.create_model()  # model, tokenizer
+    # state_dict = fabric.load('best.ckpt')['state_dict']
+    # model.load_state_dict(state_dict, strict=True)
     model.eval()
 
     df = pd.DataFrame()
@@ -58,8 +59,8 @@ def main(cfg: DictConfig) -> None:
     for k, v in dataset2dict(cfg.eval_dataset).items():
         for shot in to_list(cfg.n_shot):
             cfg.dataset = v
-            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
-            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
+            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, backbone=ds_backbone)
+            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=ds_backbone)
 
             engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
             metrics = engine(n_shots=to_list(cfg.n_shot))
