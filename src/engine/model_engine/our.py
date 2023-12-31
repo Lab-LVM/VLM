@@ -109,12 +109,60 @@ class OurTaskEngine(TaskEngine):
         self.metric.prefix = 'simple_adapter_classification'
         return self._output
 
+@register_task_engine
+class OurFullyTaskEngine(TaskEngine):
+    def __init__(self, cfg, fabric, model, tokenizer, train_dataset, val_dataset):
+        feature_engine = OurClassificationFeatureEngine(cfg, fabric, model, tokenizer, train_dataset,
+                                                        val_dataset)
+        super().__init__(feature_engine)
+
+        self.cfg = cfg
+        self.fabric = fabric
+        self.device = fabric.device
+        self.model = model
+        self.val_dataset = val_dataset
+        self.logging_interval = cfg.train.log_interval
+
+        self.metric = Accuracy('multiclass', num_classes=cfg.dataset.num_classes).to(self.device)
+        self.model.eval()
+
+    @property
+    def available_task(self):
+        return ['classification']
+
+    def classification(self, **kwargs):
+        self.feature_engine.sampling(0)
+        self.metric.reset()
+
+        text_classifier = self.feature_engine.build_text_classifier()
+        qry_features, qry_labels = self.feature_engine.build_query_set()
+
+        logits = self.model.logit_scale.exp() * qry_features @ text_classifier.mT
+
+        if self.cfg.dataset.name == 'objectnet':
+            logits = self.val_dataset.project_logits(logits)
+
+        # Classifier logits
+        try:
+            classifier_logits = self.model.classifier(qry_features)
+            if hasattr(self.val_dataset, 'project_logits'):
+                classifier_logits = self.val_dataset.project_logits(classifier_logits)
+            logits += classifier_logits
+        except:
+            pass
+
+        self.metric.update(logits, qry_labels)
+        self.metric.prefix = 'simple_adapter_classification'
+        return self._output
+
 
 @register_train_engine
 class OurTrainEngine(TrainEngine):
     def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs):
         super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
         self.crossentropy = torch.nn.CrossEntropyLoss()
+        self.train_loader.dataset.setup_prompt_transform() if hasattr(self.train_loader.dataset,
+                                                                      'setup_prompt_transform') else None
 
         if hasattr(criterion[0], 'rank'):
             criterion[0].rank = fabric.local_rank

@@ -14,6 +14,7 @@ VLZB = ['caltech101', 'eurosat', 'fgvc', 'flowers102', 'food101', 'oxfordiiitpet
         'ucf101', 'pcam', 'country211', 'imagenet', 'cifar100']
 
 IMAGENET_DS = ['imagenet', 'imagenet_r', 'imagenet_a', 'imagenet_v2', 'imagenet_sketch', 'objectnet']
+IMAGENET_DS_FULL = ['imagenet_full', 'imagenet_r_full', 'imagenet_a_full', 'imagenet_v2_full', 'imagenet_sketch_full', 'objectnet_full']
 
 
 def clean_state_dict(state_dict):
@@ -34,11 +35,13 @@ def dataset2dict(cfg):
         dataset_list = VLZB
     elif cfg.name == 'imagenet_ds':
         dataset_list = IMAGENET_DS
+    elif cfg.name == 'imagenet_ds_full':
+        dataset_list = IMAGENET_DS_FULL
     else:
         return {cfg.name: cfg}
 
     for k in dataset_list:
-        ds_dict[k] = compose(os.path.join('dataset', k)).dataset
+        ds_dict[k] = compose(os.path.join('dataset', k.replace('_full',''))).dataset
         ds_dict[k]['train_size'] = cfg.train_size
         ds_dict[k]['eval_size'] = cfg.eval_size
     return ds_dict
