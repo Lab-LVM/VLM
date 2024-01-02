@@ -4,6 +4,7 @@ from timm.data import create_transform as timm_create_transform
 from torch.utils.data import DataLoader
 
 from src.data.dataset import *
+from src.data.mixup import FastCollateMixup
 
 DATASET_DICT = {
     'imagenetra': ImageNetRandaugPromptFeatures,  # ImageNetRandaugPrompt
@@ -56,8 +57,19 @@ def create_dataset(ds_cfg, is_train, **kwargs):
 
 
 def create_dataloader(cfg, dataset, is_train):
+    aug = cfg.dataset.augmentation
+
+    collate_fn = None
+    mixup_active = aug.mixup > 0 or aug.cutmix > 0. or aug.cutmix_minmax is not None
+    if mixup_active:
+        mixup_args = dict(
+            mixup_alpha=aug.mixup, cutmix_alpha=aug.cutmix, cutmix_minmax=aug.cutmix_minmax,
+            prob=aug.mixup_prob, switch_prob=aug.mixup_switch_prob, mode=aug.mixup_mode,
+            label_smoothing=aug.smoothing, num_classes=dataset.num_classes)
+        collate_fn = FastCollateMixup(**mixup_args)
+
     loader = DataLoader(dataset, cfg.train.batch_size, shuffle=is_train, num_workers=cfg.train.num_workers,
-                        drop_last=is_train, pin_memory=True)
+                        collate_fn=collate_fn, drop_last=is_train, pin_memory=True)
     return loader
 
 
@@ -84,16 +96,30 @@ def create_transform(ds_cfg, is_train):
 
 
 if __name__ == '__main__':
-    import omegaconf
+    from hydra import initialize, compose
 
     for k, v in DATASET_DICT.items():
-        cfg = omegaconf.OmegaConf.load(f'/home/seungmin/dmount/VLM/configs/dataset/{k}.yaml')
-        cfg.root = '/data'
-        if cfg.train is not None:
-            ds = v(cfg.root, cfg.train)
-            ds_val = v(cfg.root, cfg.valid)
+        if k != 'imagenetraText':
+            continue
+        k = 'imagenet'
+        with initialize('../../configs', version_base='1.3'):
+            cfg = compose('train_config', overrides=['dataset=imagenet'])
+        ds_cfg = cfg.dataset
+        ds_cfg.root = '/data'
+        ds_cfg.augmentation.cutmix = 1.0
+        # ds_cfg.augmentation.mixup = 1.0
+        # if ds_cfg.train is not None:
+        #     ds = v(ds_cfg.root, ds_cfg.train)
+        #     ds_val = v(ds_cfg.root, ds_cfg.valid)
+        #
+        #     print(f'{ds.__class__.__name__}: {len(ds.imgs)} / {len(ds_val.imgs)}')
+        # else:
+        #     ds = v(ds_cfg.root)
+        #     print(f'NOSPLIT {ds.__class__.__name__}: {len(ds.imgs)}')
 
-            print(f'{ds.__class__.__name__}: {len(ds.imgs)} / {len(ds_val.imgs)}')
-        else:
-            ds = v(cfg.root)
-            print(f'NOSPLIT {ds.__class__.__name__}: {len(ds.imgs)}')
+        cfg.dataset.name = 'imagenetraText'
+        ds = create_dataset(cfg.dataset, is_train=True)
+        ds.setup_prompt_transform()
+        cfg.dataset = ds_cfg
+        cfg.train.batch_size = 10
+        dl = create_dataloader(cfg, ds, is_train=True)

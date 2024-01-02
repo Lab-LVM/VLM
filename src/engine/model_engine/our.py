@@ -8,7 +8,7 @@ from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
 from ...data.dataset import ImageNetRandaugPromptV2, ImageNetRandaugPrompt, ObjectNet, ImageNetRandaugPromptFeaturesV2
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss, \
-    SupervisedContrastiveLossMultiProcessing, CLIPLoss
+    SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
 
 
@@ -147,7 +147,7 @@ class OurTrainEngine(TrainEngine):
             self.criterion_forward = self.IOL_forward
         elif isinstance(criterion[0], SupervisedContrastiveLoss):
             self.criterion_forward = self.SCL_forward
-        elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss)):
+        elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss)):
             self.criterion_forward = self.SCLM_forward
         else:
             self.criterion_forward = self.CLCR_forward

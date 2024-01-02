@@ -8,7 +8,7 @@ from timm.scheduler import create_scheduler_v2, scheduler_kwargs
 from torch import nn
 
 from src.utils.loss_function import CLIPLoss, CoCaLoss, SupervisedContrastiveLoss, IndomainOutdomainContrastiveLoss, \
-    SupervisedContrastiveLossMultiProcessing
+    SupervisedContrastiveLossMultiProcessing, SoftCLIPLoss
 from src.utils.registry import create_model
 from src.utils.utils import filter_grad, EmptyScheduler
 
@@ -93,6 +93,9 @@ class ObjectFactory:
 
         elif self.train.criterion == 'SCL':
             train_loss_fn = validate_loss_fn = SupervisedContrastiveLoss()
+
+        elif self.train.criterion == 'SoftCLIPLoss':
+            train_loss_fn = validate_loss_fn = SoftCLIPLoss()
 
         elif self.train.criterion == 'IOL':
             train_loss_fn = validate_loss_fn = IndomainOutdomainContrastiveLoss()  # contextual

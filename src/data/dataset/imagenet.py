@@ -354,9 +354,10 @@ class RandAugment:
 
 
 class ImageNetRandaugPrompt(ImageNet):
-    def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0):
+    def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0, num_classes=1000):
         super().__init__(root, split, transform, target_transform, n_shot)
         self.len_prompt = len(AUG_PROMPT_TOKENS)
+        self.num_classes = num_classes
 
     def setup_prompt_transform(self):
         self.pre_processing = transforms.Compose(self.transform.transforms[:2])
