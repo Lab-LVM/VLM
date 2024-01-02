@@ -85,7 +85,7 @@ class CLIPLoss(nn.Module):
 
         return logits_per_image, logits_per_text
 
-    def forward_by_feature(self, image_features, text_features, logit_scale):
+    def forward(self, image_features, text_features, y, logit_scale):
         device = image_features.device
         logits_per_image, logits_per_text = self.get_logits(image_features, text_features, logit_scale)
 
@@ -93,7 +93,7 @@ class CLIPLoss(nn.Module):
 
         return (F.cross_entropy(logits_per_image, labels) + F.cross_entropy(logits_per_text, labels)) / 2
 
-    def forward(self, logits_per_image, logits_per_text):
+    def forward_by_logits(self, logits_per_image, logits_per_text):
         device = logits_per_image.device
         labels = self.get_ground_truth(device, logits_per_image.shape[0])
 

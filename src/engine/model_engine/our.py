@@ -8,7 +8,7 @@ from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
 from ...data.dataset import ImageNetRandaugPromptV2, ImageNetRandaugPrompt, ObjectNet, ImageNetRandaugPromptFeaturesV2
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss, \
-    SupervisedContrastiveLossMultiProcessing
+    SupervisedContrastiveLossMultiProcessing, CLIPLoss
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
 
 
@@ -84,31 +84,6 @@ class OurTaskEngine(TaskEngine):
         self.metric.prefix = 'simple_adapter_classification'
         return self._output
 
-    def classification0(self, **kwargs):
-        self.feature_engine.sampling(0)
-        self.metric.reset()
-
-        text_classifier = self.feature_engine.build_text_classifier()
-        qry_features, qry_labels = self.feature_engine.build_query_set()
-
-        logits = self.model.logit_scale.exp() * qry_features @ text_classifier.mT
-
-        if self.cfg.dataset.name == 'objectnet':
-            logits = self.val_dataset.project_logits(logits)
-
-        # Classifier logits
-        try:
-            classifier_logits = self.model.classifier(qry_features)
-            if hasattr(self.val_dataset, 'project_logits'):
-                classifier_logits = self.val_dataset.project_logits(classifier_logits)
-            logits += classifier_logits
-        except:
-            pass
-
-        self.metric.update(logits, qry_labels)
-        self.metric.prefix = 'simple_adapter_classification'
-        return self._output
-
 @register_task_engine
 class OurFullyTaskEngine(TaskEngine):
     def __init__(self, cfg, fabric, model, tokenizer, train_dataset, val_dataset):
@@ -139,7 +114,7 @@ class OurFullyTaskEngine(TaskEngine):
 
         logits = self.model.logit_scale.exp() * qry_features @ text_classifier.mT
 
-        if self.cfg.dataset.name == 'objectnet':
+        if 'objectnet' in self.cfg.dataset.name:
             logits = self.val_dataset.project_logits(logits)
 
         # Classifier logits
@@ -172,7 +147,7 @@ class OurTrainEngine(TrainEngine):
             self.criterion_forward = self.IOL_forward
         elif isinstance(criterion[0], SupervisedContrastiveLoss):
             self.criterion_forward = self.SCL_forward
-        elif isinstance(criterion[0], SupervisedContrastiveLossMultiProcessing):
+        elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss)):
             self.criterion_forward = self.SCLM_forward
         else:
             self.criterion_forward = self.CLCR_forward

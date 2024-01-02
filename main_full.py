@@ -16,9 +16,6 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
 
 def check_environment(cfg):
-    if 'full' not in cfg.eval_dataset.name:
-        print(f'{cfg.eval_dataset.name} is not fully dataset. Changed')
-        cfg.eval_dataset.name = 'imagenet_ds_full'
     if cfg.model.forward_backbone == False:
         print(f'Model\'s backbone is not forwarded. Changed')
         cfg.model.forward_backbone = True
@@ -27,12 +24,14 @@ def check_environment(cfg):
         cfg.dataset.name = 'imagenetraText'
 
     # Model setting
-    print("==== Major Setting ====")
-    print(f"Language Adapter: {cfg.model.language_adapter}")
-    print(f"Visual Adapter: {cfg.model.vision_adapter}")
-    print(f"Forward Backbone: {cfg.model.forward_backbone}")
-    print(f"Train Dataset: {cfg.dataset.name}")
-    print(f"Eval Dataset: {cfg.eval_dataset.name}")
+    if cfg.is_master:
+        print("==== Major Setting ====")
+        print(f"Language Adapter: {cfg.model.language_adapter}")
+        print(f"Visual Adapter: {cfg.model.vision_adapter}")
+        print(f"Forward Backbone: {cfg.model.forward_backbone}")
+        print(f"Return Feature: {cfg.model.return_feature}")
+        print(f"Train Dataset: {cfg.dataset.name}")
+        print(f"Eval Dataset: {cfg.eval_dataset.name}")
     return cfg
 
 
@@ -63,35 +62,33 @@ def main(cfg: DictConfig) -> None:
     # Train
     train_engine = create_train_engine(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler,
                                        (start_epoch, n_epochs))
-
     train_engine()
-    #
-    # # Eval
-    # cfg.train.batch_size = 1024
-    # model.eval()
-    #
-    # df = pd.DataFrame()
-    #
-    # for k, v in dataset2dict(cfg.eval_dataset).items():
-    #     for shot in to_list(cfg.n_shot):
-    #         v.name = v.name+'_full'
-    #         cfg.dataset = v
-    #         train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
-    #         test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
-    #
-    #         engine = OurFullyTaskEngine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
-    #         metrics = engine(n_shots=to_list(cfg.n_shot))
-    #
-    #         row = dict(Data=test_dataset.name, shot=shot, **metrics)
-    #         print(f'{row}\n')
-    #         df = pd.concat([df, pd.DataFrame(row, index=[0])])
-    #
-    # df.to_csv(f'result_{cfg.name}.csv', index=False)
-    #
-    # if cfg.is_master:
-    #     torch.cuda.empty_cache()
-    #     gc.collect()
-    #     wandb.finish(quiet=True)
+
+    # Eval
+    cfg.train.batch_size = 1024
+    model.eval()
+
+    df = pd.DataFrame()
+
+    for k, v in dataset2dict(cfg.eval_dataset).items():
+        v.name = v.name + '_full'
+        cfg.dataset = v
+        train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
+        test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
+
+        engine = OurFullyTaskEngine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+        metrics = engine(n_shots=to_list(cfg.n_shot))
+
+        row = dict(Data=test_dataset.name, shot=0, **metrics)
+        if fabric.is_global_zero:
+            print(f'{row}\n')
+        df = pd.concat([df, pd.DataFrame(row, index=[0])])
+
+    if fabric.is_global_zero:
+        df.to_csv(f'result_{cfg.name}.csv', index=False)
+        torch.cuda.empty_cache()
+        gc.collect()
+        wandb.finish(quiet=True)
 
 
 if __name__ == "__main__":
