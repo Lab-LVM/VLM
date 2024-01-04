@@ -19,9 +19,9 @@ def check_environment(cfg):
     if cfg.model.forward_backbone == False:
         print(f'Model\'s backbone is not forwarded. Changed')
         cfg.model.forward_backbone = True
-    if cfg.dataset.name != 'imagenetraText':
-        print(f'Dataset need to fully forwarded.')
-        cfg.dataset.name = 'imagenetraText'
+    # if cfg.dataset.name != 'imagenetraText':
+    #     print(f'Dataset need to fully forwarded.')
+    #     cfg.dataset.name = 'imagenetraText'
 
     # Model setting
     if cfg.is_master:
