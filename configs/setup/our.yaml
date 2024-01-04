@@ -14,7 +14,7 @@ train:
   batch_size: 4096
   total_batch: 4096
   num_workers: 4
-  criterion: SCL
+  criterion: IOL
 
   scheduler:
     sched: cosine
