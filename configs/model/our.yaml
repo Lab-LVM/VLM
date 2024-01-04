@@ -6,6 +6,7 @@ finetune: True
 
 language_adapter: True
 vision_adapter: True
+vision_adapter2: False
 classifier: False
 
 forward_backbone: False
