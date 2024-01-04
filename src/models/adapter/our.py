@@ -1,7 +1,40 @@
 import torch
+from einops.layers.torch import Rearrange
 
 import src.models.clip as clip
 from src.utils.registry import register_model
+
+
+def ViT_feature_map_forward(self, x: torch.Tensor):
+    x = self.conv1(x)  # shape = [*, width, grid, grid]
+    x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
+    x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
+    x = torch.cat(
+        [self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x],
+        dim=1)  # shape = [*, grid ** 2 + 1, width]
+    x = x + self.positional_embedding.to(x.dtype)
+    x = self.ln_pre(x)
+
+    x = x.permute(1, 0, 2)  # NLD -> LND
+    x = self.transformer(x)
+    x = x.permute(1, 0, 2)  # LND -> NLD
+
+    token = self.ln_post(x[:, 0, :])
+
+    if self.proj is not None:
+        token = token @ self.proj
+
+    return token, x[:, 1:, :]
+
+
+def ViT_feature_map_encode_image(self, image):
+    x, feature_map = self.visual(image.type(self.dtype))
+    return self.vision_token_adapter(x) + self.vision_feature_adapter(feature_map) + x
+
+
+def ViT_feature_map_encode_image_train(self, image):
+    x, feature_map = image
+    return self.vision_token_adapter(x) + self.vision_feature_adapter(feature_map) + x
 
 
 def encode_image(self, image):
@@ -80,10 +113,37 @@ def mlp(dim=512):
     )
 
 
+def dw_conv(dim):
+    return torch.nn.Sequential(
+        torch.nn.Conv2d(dim, dim, (3, 3), padding=1, groups=dim, bias=False),
+        torch.nn.BatchNorm2d(dim),
+        torch.nn.GELU(),
+    )
+
+
+def pw_conv(dim, hidden):
+    group = dim if hidden>dim else hidden
+    return torch.nn.Sequential(
+        torch.nn.Conv2d(dim, hidden, (1, 1), groups=group, bias=False),
+        torch.nn.BatchNorm2d(hidden),
+        torch.nn.GELU(),
+    )
+
+
+def conv(dim, out_dim):
+    return torch.nn.Sequential(
+        Rearrange('b (h w) c -> b c h w', h=14, w=14),
+        dw_conv(dim),
+        pw_conv(dim, int(dim*4)),
+        pw_conv(int(dim*4), out_dim),
+        torch.nn.AdaptiveAvgPool2d(1),
+        torch.nn.Flatten(),
+    )
+
+
 @register_model
 def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
-        classifier=False, **kwargs):
-    assert finetune
+        classifier=False, vision_adapter2=False, **kwargs):
     model, _ = clip.load(backbone)
     if 'B16' in backbone or 'B32' in backbone:
         dim = 512
@@ -98,8 +158,6 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
             param.requires_grad = True
 
     if finetune:
-        # assert language_adapter or vision_adapter
-
         if language_adapter:
             model.__setattr__('language_adapter', mlp(dim=dim))
             if kwargs.get('forward_backbone', False):
@@ -108,7 +166,19 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
                 encode_text_bound_method = encode_text_train.__get__(model, model.__class__)
             setattr(model, 'encode_text', encode_text_bound_method)
 
-        if vision_adapter:
+        if vision_adapter2:
+            model.__setattr__('vision_token_adapter', mlp(dim=dim))
+            model.__setattr__('vision_feature_adapter', conv(768,dim))
+
+            setattr(model.visual, 'forward', ViT_feature_map_forward.__get__(model.visual, model.visual.__class__))
+
+            if kwargs.get('forward_backbone', False):
+                encode_image_bound_method = ViT_feature_map_encode_image.__get__(model, model.__class__)
+            else:
+                encode_image_bound_method = ViT_feature_map_encode_image_train.__get__(model, model.__class__)
+            setattr(model, 'encode_image', encode_image_bound_method)
+
+        elif vision_adapter:
             model.__setattr__('vision_adapter', mlp(dim=dim))
             if kwargs.get('forward_backbone', False):
                 encode_image_bound_method = encode_image.__get__(model, model.__class__)
@@ -139,7 +209,9 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
 
 
 if __name__ == '__main__':
-    model = Our(eval=True, alpha=False, finetune=True, freeze=True, language_adapter=True, vision_adapter=True)
+    model = Our(eval=True, alpha=False, finetune=True, freeze=True, language_adapter=True, vision_adapter2=True,
+                forward_backbone=True)
 
     o = model(torch.rand(2, 3, 224, 224), torch.ones(2, 77, dtype=torch.long))
-    print(o.shape)
+    print(len(o))
+    print(o[0].shape)

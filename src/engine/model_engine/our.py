@@ -163,8 +163,12 @@ class OurTrainEngine(TrainEngine):
         logit_scale = self.model.logit_scale.exp()
         logits_per_image = logit_scale * torch.mm(image_feature, text_feature.t())
         logits_per_text = logits_per_image.t()
-        logits_image_self = logit_scale * torch.mm(image_feature, image_feature.t())
-        logits_text_self = logit_scale * torch.mm(text_feature, text_feature.t())
+
+        half = image_feature.size(0) // 2
+        logits_image_self = logit_scale * torch.mm(image_feature[:half], image_feature[half:].t())
+        logits_text_self = logit_scale * torch.mm(text_feature[:half], text_feature[half:].t())
+        # logits_image_self = logit_scale * torch.mm(image_feature, image_feature.t())
+        # logits_text_self = logit_scale * torch.mm(text_feature, text_feature.t())
 
         loss = criterion(logits_per_image, logits_per_text, logits_image_self, logits_text_self, y)
         if image_prob is not None:
