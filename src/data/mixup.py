@@ -26,6 +26,15 @@ def mixup_target(target, num_classes, lam=1., smoothing=0.0):
     y2 = one_hot(target.flip(0), num_classes, on_value=on_value, off_value=off_value)
     return y1 * lam + y2 * (1. - lam)
 
+
+def mixup_target_contrastive(target, lam=1.):
+    y1 = target
+    y2 = y1.flip(0)
+
+    y1 = (y1.unsqueeze(-1) == y1.unsqueeze(0)).float()
+    y2 = (y2.unsqueeze(-1) == y2.unsqueeze(0)).float()
+    return y1 * lam + y2 * (1. - lam)
+
 def mixup_prompt(prompts):
     EOS = torch.tensor([49407])
     AND = torch.tensor([537])
@@ -319,7 +328,7 @@ class FastCollateMixup(Mixup):
         else:
             lam = self._mix_batch_collate(output, batch)
         target = torch.tensor([b[1] for b in batch], dtype=torch.int64)
-        target = mixup_target(target, self.num_classes, lam, self.label_smoothing)
+        target = mixup_target_contrastive(target, lam)
 
         prompt = torch.stack([b[2] for b in batch])
         prompt = mixup_prompt(prompt)
