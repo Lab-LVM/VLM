@@ -7,6 +7,9 @@ from src.data.dataset import *
 from src.data.mixup import FastCollateMixup
 
 DATASET_DICT = {
+    'sa5': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug5'),
+    'sa7': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug7'),
+
     'imagenetra': ImageNetRandaugPromptFeatures,  # ImageNetRandaugPrompt
     'imagenetraV2': ImageNetRandaugPromptFeaturesV2,
     'imagenetram9': partial(ImageNetRandaugPromptFeatures, dataset_path='m9_imageNet_train'),
