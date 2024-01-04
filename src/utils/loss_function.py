@@ -228,10 +228,11 @@ class SoftCLIPLoss(nn.Module):
         return logits_per_image, logits_per_text
 
     def forward(self, image_features, text_features, targets, logit_scale):
-        logits_per_image, logits_per_text = self.get_logits(image_features, text_features, logit_scale)
-
-        if self.world_size > 1:
-            targets = all_gather(targets)
+        # logits_per_image, logits_per_text = self.get_logits(image_features, text_features, logit_scale)
+        # if self.world_size > 1:
+        #     targets = all_gather(targets)
+        logits_per_image = logit_scale * image_features @ text_features.T
+        logits_per_text = logit_scale * text_features @ image_features.T
 
         return (soft_cross_entropy(logits_per_image, targets) + soft_cross_entropy(logits_per_text, targets)) / 2
 
@@ -239,10 +240,15 @@ class SoftCLIPLoss(nn.Module):
 class IndomainOutdomainContrastiveLoss(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.smoothing = 0.0
+        self.target_threshold = 0.3
 
-    def two_domain(self, logits, targets):
+    def SCL(self, logits, targets, half=False):
         mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         mask_inverse = 1 - mask_same_class
+        if half:
+            mask_inverse = mask_inverse + mask_same_class * 0.5
+            mask_same_class = mask_same_class * 0.5
         cardinality = torch.sum(mask_same_class, dim=1)
 
         exp_logits = torch.exp(logits - torch.max(logits, dim=1, keepdim=True)[0]) + 1e-5
@@ -251,15 +257,23 @@ class IndomainOutdomainContrastiveLoss(nn.Module):
 
         return torch.mean(sample_wise_loss)
 
-    def one_domain(self, logits, targets):
-        mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
-        loss = F.cross_entropy(logits, mask_same_class)
-        return loss
+    def CrossEntropy(self, logits):
+        targets = torch.arange(logits.size(0), device=logits.device, dtype=torch.long)
+        return F.cross_entropy(logits, targets)
 
-    # Todo: self-logit은 infoNCE나 SimCLR Loss
+    def BCE(self, logits, targets):
+        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
+        return F.binary_cross_entropy_with_logits(logits, targets)
+
+    def Soft(self, logits, targets):
+        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
+        return soft_cross_entropy(logits, targets)
+
     def forward(self, logits_per_image, logits_per_text, logits_image_self, logits_text_self, targets):
-        loss = (self.two_domain(logits_per_image, targets) + self.two_domain(logits_per_text, targets)) / 2
-        loss = loss + self.two_domain(logits_image_self, targets) * 0.1
+        self_targets = torch.arange(logits_image_self.size(0), device=logits_image_self.device, dtype=torch.long)
+
+        loss = (self.SCL(logits_per_image, targets) + self.SCL(logits_per_text, targets)
+                + self.SCL(logits_image_self, self_targets)) / 3
         return loss
 
 
