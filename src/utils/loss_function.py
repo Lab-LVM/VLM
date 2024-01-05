@@ -240,8 +240,8 @@ class SoftCLIPLoss(nn.Module):
 class IndomainOutdomainContrastiveLoss(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.smoothing = 0.0
-        self.target_threshold = 0.3
+        self.rank = 0
+        self.world_size = 1
 
     def SCL(self, logits, targets, half=False):
         mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
@@ -257,19 +257,22 @@ class IndomainOutdomainContrastiveLoss(nn.Module):
 
         return torch.mean(sample_wise_loss)
 
-    def CrossEntropy(self, logits):
-        targets = torch.arange(logits.size(0), device=logits.device, dtype=torch.long)
-        return F.cross_entropy(logits, targets)
+    def generate_logits(self, image_feature, text_feature, logit_scale):
+        logits_per_image = logit_scale * torch.mm(image_feature, text_feature.t())
+        logits_per_text = logits_per_image.t()
 
-    def BCE(self, logits, targets):
-        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
-        return F.binary_cross_entropy_with_logits(logits, targets)
+        half = image_feature.size(0) // 2
+        logits_image_self = logit_scale * torch.mm(image_feature[:half], image_feature[half:].t())
 
-    def Soft(self, logits, targets):
-        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
-        return soft_cross_entropy(logits, targets)
+        return logits_per_image, logits_per_text, logits_image_self
 
-    def forward(self, logits_per_image, logits_per_text, logits_image_self, logits_text_self, targets):
+    def forward(self, image_features, text_features, targets, logit_scale):
+        if self.world_size > 1:
+            image_features, text_features, targets = gather_all_features(image_features, text_features, targets)
+
+        logits_per_image, logits_per_text, logits_image_self = self.generate_logits(image_features, text_features,
+                                                                                    logit_scale)
+
         self_targets = torch.arange(logits_image_self.size(0), device=logits_image_self.device, dtype=torch.long)
 
         loss = (self.SCL(logits_per_image, targets) + self.SCL(logits_per_text, targets)

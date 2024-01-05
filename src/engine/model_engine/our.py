@@ -84,6 +84,7 @@ class OurTaskEngine(TaskEngine):
         self.metric.prefix = 'simple_adapter_classification'
         return self._output
 
+
 @register_task_engine
 class OurFullyTaskEngine(TaskEngine):
     def __init__(self, cfg, fabric, model, tokenizer, train_dataset, val_dataset):
@@ -159,21 +160,9 @@ class OurTrainEngine(TrainEngine):
         if isinstance(self.train_loader.dataset, ImageNetRandaugPrompt):
             self.train_loader.dataset.setup_prompt_transform()
 
-    def IOL_forward(self, criterion, y, image_feature, text_feature, image_prob=None):
+    def IOL_forward(self, criterion, y, image_feature, text_feature):
         logit_scale = self.model.logit_scale.exp()
-        logits_per_image = logit_scale * torch.mm(image_feature, text_feature.t())
-        logits_per_text = logits_per_image.t()
-
-        half = image_feature.size(0) // 2
-        logits_image_self = logit_scale * torch.mm(image_feature[:half], image_feature[half:].t())
-        logits_text_self = logit_scale * torch.mm(text_feature[:half], text_feature[half:].t())
-        # logits_image_self = logit_scale * torch.mm(image_feature, image_feature.t())
-        # logits_text_self = logit_scale * torch.mm(text_feature, text_feature.t())
-
-        loss = criterion(logits_per_image, logits_per_text, logits_image_self, logits_text_self, y)
-        if image_prob is not None:
-            loss = loss + self.crossentropy(image_prob, y) * 0.2
-
+        loss = criterion(image_feature, text_feature, y, logit_scale)
         return loss
 
     def SCLM_forward(self, criterion, y, image_feature, text_feature, image_prob=None):

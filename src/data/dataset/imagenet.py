@@ -486,7 +486,7 @@ class ImageNetRandaugPromptV2(ImageNet):
         ra_img = self.post_processing(ra_img)
         img = self.post_processing(img)
 
-        return img, ra_img, target, self.original_prompt(idx, target), self.ra_prompt(idx, ra_tf, target)
+        return img, ra_img, target, torch.tensor(self.original_prompt(idx, target), dtype=torch.int64), torch.tensor(self.ra_prompt(idx, ra_tf, target), dtype=torch.int64)
 
 
 class ImageNetSimplePrompt(ImageNet):

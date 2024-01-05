@@ -45,13 +45,6 @@ def main(cfg: DictConfig) -> None:
     train_engine()
 
     # Eval
-    # del model
-    # cfg.model.forward_backbone = True
-    cfg.train.batch_size = 1024
-    # factory = ObjectFactory(cfg, fabric)
-    # model, _ = factory.create_model()  # model, tokenizer
-    # state_dict = fabric.load('best.ckpt')['state_dict']
-    # model.load_state_dict(state_dict, strict=True)
     model.eval()
 
     df = pd.DataFrame()

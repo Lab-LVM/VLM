@@ -7,14 +7,17 @@ from src.data.dataset import *
 from src.data.mixup import FastCollateMixup
 
 DATASET_DICT = {
+    'sa3': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug3'),
     'sa5': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug5'),
     'sa7': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug7'),
+    'sa9': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug9'),
+    'sa13': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug13'),
 
     'imagenetra': ImageNetRandaugPromptFeatures,  # ImageNetRandaugPrompt
     'imagenetraV2': ImageNetRandaugPromptFeaturesV2,
     'imagenetram9': partial(ImageNetRandaugPromptFeatures, dataset_path='m9_imageNet_train'),
     'imagenetraText': ImageNetRandaugPrompt,
-    'imagenetra2': ImageNetRandaugPromptV2,
+    'imagenetraTextV2': ImageNetRandaugPromptV2,
     'imagenetsim': ImageNetSimplePrompt,
     'imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),
     'imagenet_a': partial(ImageNetEvalFeatures, dataset_name='imagenet_a'),

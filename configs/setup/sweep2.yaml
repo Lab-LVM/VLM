@@ -1,5 +1,5 @@
 project: VLM
-name: IOL_B16_epo50
+name: IOL_B16_SA9Sched
 description: The sweep of our methods on ViT-B/16 backbone with freezing this.
 entity: SoongE
 
@@ -10,23 +10,21 @@ metric:
   goal: maximize
 parameters:
   gpu:
-    value: 5
+    value: 4
   model.backbone:
     value: ViT-B16
   dataset.name:
-    value: sa7
+    value: sa9
   train.batch_size:
-    values: [ 4096, 8192 ]
+    value: 4096
   train/optimizer:
     value: 'adamw'
   train.optimizer.lr:
     distribution: uniform
-    min: 1e-5
+    min: 1e-4
     max: 1e-1
   train.optimizer.weight_decay:
-    values: [ 5e-2, 1e-1 ]
-  train.scheduler.min_lr:
-    value: 1e-6
+    value: 1e-1
 
 command:
   - ${env}
@@ -35,5 +33,5 @@ command:
   - ${args_no_hyphens}
   - +setup=our
   - train.criterion=IOL
-  - train.epochs=50
+  - train.epochs=10
   - model.return_feature=True
