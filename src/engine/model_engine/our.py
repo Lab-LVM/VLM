@@ -6,7 +6,8 @@ from torchmetrics import Accuracy
 from .. import TaskEngine
 from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
-from ...data.dataset import ImageNetRandaugPromptV2, ImageNetRandaugPrompt, ObjectNet, ImageNetRandaugPromptFeaturesV2
+from ...data.dataset import ImageNetRandaugPromptV2, ImageNetRandaugPrompt, ObjectNet, ImageNetRandaugPromptFeaturesV2, \
+    ImageNetRandaugPromptText
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss, \
     SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
@@ -153,10 +154,12 @@ class OurTrainEngine(TrainEngine):
         else:
             self.criterion_forward = self.CLCR_forward
 
-        if isinstance(self.train_loader.dataset, ImageNetRandaugPromptV2):
+        if isinstance(self.train_loader.dataset, (ImageNetRandaugPromptV2,ImageNetRandaugPromptFeaturesV2)):
             self.iterate = self.iterate_ra2
-        if isinstance(self.train_loader.dataset, ImageNetRandaugPromptFeaturesV2):
-            self.iterate = self.iterate_ra2
+        elif isinstance(self.train_loader.dataset, ImageNetRandaugPromptText):
+            self.iterate = self.iterate_ra2_text
+        else:
+            self.iterate = self.iterate
         if isinstance(self.train_loader.dataset, ImageNetRandaugPrompt):
             self.train_loader.dataset.setup_prompt_transform()
 
@@ -190,6 +193,23 @@ class OurTrainEngine(TrainEngine):
 
     def iterate_ra2(self, model, data, criterion):
         x, ra_x, y, prompt, ra_prompt = data
+
+        x = torch.concat([x, ra_x]).to(self.device, non_blocking=True)
+        y = torch.concat([y, y]).to(self.device, non_blocking=True)
+        prompt = torch.concat([prompt, ra_prompt]).to(self.device, non_blocking=True)
+
+        with self.fabric.autocast():
+            outs = model(x, prompt)
+            loss = self.criterion_forward(criterion, y, *outs)
+
+        return loss, outs[0], y
+
+    def iterate_ra2_text(self, model, data, criterion):
+        x, ra_x, y, prompt, ra_prompt = data
+        prompt = self.tokenizer(prompt, padding='max_length', return_attention_mask=False, return_tensors='pt')[
+            'input_ids']
+        ra_prompt = self.tokenizer(ra_prompt, padding='max_length', return_attention_mask=False, return_tensors='pt')[
+            'input_ids']
 
         x = torch.concat([x, ra_x]).to(self.device, non_blocking=True)
         y = torch.concat([y, y]).to(self.device, non_blocking=True)

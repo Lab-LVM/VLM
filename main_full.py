@@ -38,9 +38,8 @@ def check_environment(cfg):
 @hydra.main(config_path="configs", config_name="train_config", version_base="1.3")
 def main(cfg: DictConfig) -> None:
     cfg.wandb = False
-    cfg = check_environment(cfg)
-
     fabric = setup_fabric(cfg)
+    cfg = check_environment(cfg)
 
     factory = ObjectFactory(cfg, fabric)
     model, tokenizer = factory.create_model()  # model, tokenizer

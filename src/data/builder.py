@@ -15,9 +15,8 @@ DATASET_DICT = {
 
     'imagenetra': ImageNetRandaugPromptFeatures,  # ImageNetRandaugPrompt
     'imagenetraV2': ImageNetRandaugPromptFeaturesV2,
-    'imagenetram9': partial(ImageNetRandaugPromptFeatures, dataset_path='m9_imageNet_train'),
-    'imagenetraText': ImageNetRandaugPrompt,
-    'imagenetraTextV2': ImageNetRandaugPromptV2,
+    'imagenetraText': ImageNetRandaugPromptText,
+
     'imagenetsim': ImageNetSimplePrompt,
     'imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),
     'imagenet_a': partial(ImageNetEvalFeatures, dataset_name='imagenet_a'),

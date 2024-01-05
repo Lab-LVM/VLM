@@ -38,3 +38,4 @@ dataset:
   name: sa7
   augmentation:
     train_interpolation: bicubic
+    auto_aug: rand-m9-mstd0.5-inc1

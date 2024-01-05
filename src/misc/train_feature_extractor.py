@@ -53,7 +53,7 @@ if __name__ == '__main__':
         cfg = compose('train_config', overrides=['model.backbone=ViT-B16', '+setup=our',
                                                  'dataset.augmentation.prefetcher=False'])
     cfg.train.batch_size = 1024
-    cfg.dataset.augmentation.auto_aug = 'rand-m7-mstd0.5-inc1'
+    cfg.dataset.augmentation.auto_aug = 'rand-m9-mstd0.5-inc1'
     cfg.dataset.augmentation.scale = [0.9, 1.0]
     # cfg.dataset.train_size = [3, 336, 336]
     # cfg.dataset.eval_size = [3, 336, 336]
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     ds = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=0, is_train=True)
     dl = create_dataloader(cfg, ds, is_train=True)
     dl.dataset.setup_prompt_transform()
-    root = Path(f'/home/seungmin/dmount/feature_data/B16_imageNet_train_with_scaleAug7')
+    root = Path(f'/home/seungmin/dmount/feature_data/B16_imageNet_train_with_scaleAug9')
     root.mkdir(exist_ok=True, parents=True)
 
     keys = ('vision_features', 'language_features', 'vision_features_aug', 'language_features_aug', 'targets')
