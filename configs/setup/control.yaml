@@ -1,0 +1,47 @@
+# @package _global_
+
+defaults:
+  - override /train/optimizer: adamw
+  - override /dataset: imagenet
+  - override /model: our
+
+gpu: 0
+name: ${model.model_name}
+n_shot: 0
+
+train:
+  epochs: 10
+  batch_size: 512
+  total_batch: 512
+  num_workers: 4
+  criterion: CLIPLoss
+
+  scheduler:
+    sched: cosine
+    warmup_epochs: 0
+    cooldown_epochs: 0
+    warmup_lr: 0.0
+    min_lr: 0.0
+    sched_on_updates: True
+
+  optimizer:
+    lr: 3e-5
+    weight_decay: 1e-1
+
+model:
+  model_name: Our
+  backbone: ViT-B16
+  freeze: False
+  finetune: True
+  return_feature: True
+  forward_backbone: True
+  language_adapter: False
+  vision_adapter: False
+
+dataset:
+  name: imagenetsim
+  augmentation:
+    train_interpolation: bicubic
+    auto_aug:
+    hflip: 0.0
+    scale: [0.9, 1.0]
