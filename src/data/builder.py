@@ -16,14 +16,15 @@ DATASET_DICT = {
     'imagenetra': ImageNetRandaugPromptFeatures,  # ImageNetRandaugPrompt
     'imagenetraV2': ImageNetRandaugPromptFeaturesV2,
     'imagenetraText': ImageNetRandaugPromptText,
+    'imagenetsimText': ImageNetSimplePromptText,
 
-    'imagenetsim': ImageNetSimplePrompt,
     'imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),
     'imagenet_a': partial(ImageNetEvalFeatures, dataset_name='imagenet_a'),
     'imagenet_r': partial(ImageNetEvalFeatures, dataset_name='imagenet_r'),
     'imagenet_v2': partial(ImageNetEvalFeatures, dataset_name='imagenet_v2'),
     'imagenet_sketch': partial(ImageNetEvalFeatures, dataset_name='imagenet_sketch'),
     'objectnet': partial(ImageNetEvalFeatures, dataset_name='objectnet'),
+
     'imagenet_full': ImageNet,
     'imagenet_a_full': ImageNetA,
     'imagenet_r_full': ImageNetR,

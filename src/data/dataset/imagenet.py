@@ -489,24 +489,6 @@ class ImageNetRandaugPromptV2(ImageNet):
         return img, ra_img, target, torch.tensor(self.original_prompt(idx, target), dtype=torch.int64), torch.tensor(self.ra_prompt(idx, ra_tf, target), dtype=torch.int64)
 
 
-class ImageNetSimplePrompt(ImageNet):
-    def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0):
-        super().__init__(root, split, transform, target_transform, n_shot)
-
-    def setup_prompt_transform(self):
-        pass
-
-    def ra_prompt(self, target):
-        prompt = [49406, 320, 3117, 1125, 539, 518] + IMAGENET_CLASS_NAME_TOKEN[target] + [269]
-        return prompt + [49407] * (MAX_LENGTH - len(prompt))
-
-    def __getitem__(self, idx):
-        path, target = self.imgs[idx], self.targets[idx]
-        img = self.loader(path)
-        img = self.transform(img)
-
-        return img, target, torch.tensor(self.ra_prompt(target), dtype=torch.int64)
-
 
 if __name__ == '__main__':
     ds = ImageNetRandaugPrompt('/data', transform=transforms.ToTensor(), n_shot=0)

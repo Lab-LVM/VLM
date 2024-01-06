@@ -18,9 +18,9 @@ train:
 
   scheduler:
     sched: cosine
-    warmup_epochs: 0
-    cooldown_epochs: 0
-    warmup_lr: 0
+    warmup_epochs: 1
+    cooldown_epochs: 1
+    warmup_lr: 0.0
     min_lr: 0.0
     sched_on_updates: True
 
@@ -35,7 +35,7 @@ model:
   return_feature: True
 
 dataset:
-  name: sa7
+  name: sa9
   augmentation:
     train_interpolation: bicubic
     auto_aug: rand-m9-mstd0.5-inc1

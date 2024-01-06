@@ -17,15 +17,9 @@ train:
   criterion: CLIPLoss
 
   scheduler:
-    sched: cosine
-    warmup_epochs: 0
-    cooldown_epochs: 0
-    warmup_lr: 0.0
-    min_lr: 0.0
-    sched_on_updates: True
-
+    sched:
   optimizer:
-    lr: 3e-5
+    lr: 1e-5
     weight_decay: 1e-1
 
 model:
@@ -39,7 +33,7 @@ model:
   vision_adapter: False
 
 dataset:
-  name: imagenetsim
+  name: imagenetsimText
   augmentation:
     train_interpolation: bicubic
     auto_aug:

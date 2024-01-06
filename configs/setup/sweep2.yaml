@@ -1,5 +1,5 @@
 project: VLM
-name: IOL_B16_SA9Sched
+name: IOL_B32_SA9_Final
 description: The sweep of our methods on ViT-B/16 backbone with freezing this.
 entity: SoongE
 
@@ -10,9 +10,9 @@ metric:
   goal: maximize
 parameters:
   gpu:
-    value: 4
+    value: 7
   model.backbone:
-    value: ViT-B16
+    value: ViT-B32
   dataset.name:
     value: sa9
   train.batch_size:
@@ -25,6 +25,8 @@ parameters:
     max: 1e-1
   train.optimizer.weight_decay:
     value: 1e-1
+  train.scheduler.sched_on_updates:
+    values: [True, False]
 
 command:
   - ${env}

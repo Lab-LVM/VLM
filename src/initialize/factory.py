@@ -10,7 +10,8 @@ from torch import nn
 from src.utils.loss_function import CLIPLoss, CoCaLoss, SupervisedContrastiveLoss, IndomainOutdomainContrastiveLoss, \
     SupervisedContrastiveLossMultiProcessing, SoftCLIPLoss
 from src.utils.registry import create_model
-from src.utils.utils import filter_grad, EmptyScheduler
+from src.utils.scheduler import CosineLR
+from src.utils.utils import filter_grad
 
 
 class ObjectFactory:
@@ -76,7 +77,8 @@ class ObjectFactory:
                 updates_per_epoch=updates_per_epoch,
             )
         else:
-            scheduler = EmptyScheduler()
+            # scheduler = EmptyScheduler()
+            scheduler = CosineLR(optimizer, self.optim.lr, 500, self.train.epochs * iter_per_epoch)
             num_epochs = self.train.epochs
 
         if self.optim.get('clip_grad', None) is not None:

@@ -5,9 +5,9 @@ from .eurosat import EuroSAT
 from .fgvc import FGVCAircraft
 from .flowers102 import Flowers102
 from .food101 import Food101
-from .imagenet import ImageNet, ImageNetRandaugPrompt, ImageNetRandaugPromptV2, ImageNetSimplePrompt
+from .imagenet import ImageNet, ImageNetRandaugPrompt, ImageNetRandaugPromptV2
 from .imagenet_features import ImageNetRandaugPromptFeatures, ImageNetRandaugPromptFeaturesV2, ImageNetEvalFeatures
-from .imagenet_text import ImageNetRandaugPromptText
+from .imagenet_text import ImageNetRandaugPromptText, ImageNetSimplePromptText
 from .imagenet_x import ImageNetA, ImageNetR, ImageNetSketch, ImageNetV2, ObjectNet
 from .oxfordiiitpet import OxfordIIITPet
 from .stanfordcars import StanfordCars
