@@ -150,7 +150,7 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
                 encode_text_bound_method = encode_text_train.__get__(model, model.__class__)
             setattr(model, 'encode_text', encode_text_bound_method)
 
-        elif vision_adapter:
+        if vision_adapter:
             model.__setattr__('vision_adapter', mlp(dim=dim))
             if kwargs.get('forward_backbone', False):
                 encode_image_bound_method = encode_image.__get__(model, model.__class__)
