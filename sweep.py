@@ -43,28 +43,39 @@ def main(cfg: DictConfig) -> None:
         train_engine = create_train_engine(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler,
                                            (start_epoch, n_epochs))
 
-        train_engine()
+        df = train_engine()
+
+        df = pd.concat(
+            [df, pd.DataFrame({'Data': 'ODDAccuracy', 'Acc': df[~df.Data.isin(['imagenet', 'Mean'])]['Acc'].mean()},
+                              index=[0])])
+        df.loc[df['Data'] == 'Mean', 'Data'] = 'EvalAccuracy'
+
+        df = df.to_dict(orient='list')
+        _log = dict()
+        for k, v in zip(df['Data'], df['Acc']):
+            _log[k] = v
+        wandb.log(_log)
 
         # Eval
-        cfg.train.batch_size = 4096
-        model.eval()
-
-        cfg.dataset.name = 'imagenet_ds'
-        acc_list = list()
-        for k, v in dataset2dict(cfg.dataset).items():
-            cfg.dataset = v
-            ds_backbone = cfg.model.backbone.split('-')[-1]
-            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, backbone=ds_backbone)
-            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=ds_backbone)
-
-            engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
-            metrics = engine(n_shots=to_list(cfg.n_shot))
-            acc = float(metrics['simple_adapter_classification'])
-            acc_list.append(acc)
-            wandb.log({f'{k}_acc': acc})
-
-        wandb.log({'OODAccuracy': sum(acc_list[1:]) / len(acc_list[1:])})
-        wandb.log({'EvalAccuracy': sum(acc_list) / len(acc_list)})
+        # cfg.train.batch_size = 4096
+        # model.eval()
+        #
+        # cfg.dataset.name = 'imagenet_ds'
+        # acc_list = list()
+        # for k, v in dataset2dict(cfg.dataset).items():
+        #     cfg.dataset = v
+        #     ds_backbone = cfg.model.backbone.split('-')[-1]
+        #     train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, backbone=ds_backbone)
+        #     test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=ds_backbone)
+        #
+        #     engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+        #     metrics = engine(n_shots=to_list(cfg.n_shot))
+        #     acc = float(metrics['simple_adapter_classification'])
+        #     acc_list.append(acc)
+        #     wandb.log({f'{k}_acc': acc})
+        #
+        # wandb.log({'OODAccuracy': sum(acc_list[1:]) / len(acc_list[1:])})
+        # wandb.log({'EvalAccuracy': sum(acc_list) / len(acc_list)})
 
 
 if __name__ == "__main__":

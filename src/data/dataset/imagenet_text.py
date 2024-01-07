@@ -301,6 +301,43 @@ class ImageNetRandaugPromptText(ImageNet):
         return imgs, ra_imgs, target, self.org_prompt(target), self.ra_prompt(ra_tf, target)
 
 
+class ImageNetRandaugPromptOriginalText(ImageNet):
+    def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0):
+        super().__init__(root, split, transform, target_transform, n_shot)
+        self.augmentation_prompt = AUGMENT_PROMPT
+        self.original_prompt = ORIGINAL_PROMPT
+
+    def setup_prompt_transform(self):
+        self.pre_processing = transforms.Compose(self.transform.transforms[:2])
+        self.randaug = RandAugment(**self.transform.transforms[2].__dict__)
+        self.post_processing = transforms.Compose(self.transform.transforms[3:])
+
+    def ra_prompt(self, ra_tf, target):
+        prompt = random.choice(self.augmentation_prompt)
+        ra_fs = ''
+        ra_fs += f'{RAND_AUG_TRANSFORMS[ra_tf[0].name]} and '
+        ra_fs += f'{RAND_AUG_TRANSFORMS[ra_tf[1].name]}'
+
+        prompt = prompt(ra_fs, self.num2str(target))
+        return prompt
+
+    def org_prompt(self, target):
+        prompt = random.choice(self.augmentation_prompt)
+        prompt = prompt('original', self.num2str(target))
+        return prompt
+
+    def __getitem__(self, idx):
+        path, target = self.imgs[idx], self.targets[idx]
+        imgs = self.loader(path)
+
+        imgs = self.pre_processing(imgs)
+        ra_imgs, ra_tf = self.randaug(imgs)
+        ra_imgs = self.post_processing(ra_imgs)
+        imgs = self.post_processing(imgs)
+
+        return imgs, ra_imgs, target, self.org_prompt(target), self.ra_prompt(ra_tf, target)
+
+
 class ImageNetSimplePromptText(ImageNet):
     def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0):
         super().__init__(root, split, transform, target_transform, n_shot)

@@ -32,14 +32,9 @@ def ViT_feature_map_encode_image(self, image):
     return self.vision_token_adapter(x) + self.vision_feature_adapter(feature_map) + x
 
 
-def ViT_feature_map_encode_image_train(self, image):
-    x, feature_map = image
-    return self.vision_token_adapter(x) + self.vision_feature_adapter(feature_map) + x
-
-
 def encode_image(self, image):
     x = self.visual(image.type(self.dtype))
-    return self.vision_adapter(x) + x * self.alpha
+    return self.vision_adapter(x) + x
 
 
 def encode_text(self, text):
@@ -54,7 +49,7 @@ def encode_text(self, text):
     # x.shape = [batch_size, n_ctx, transformer.width]
     # take features from the eot embedding (eot_token is the highest number in each sequence)
     x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
-    return self.language_adapter(x) + x * self.alpha
+    return self.language_adapter(x) + x
 
 
 def encode_image_train(self, x):
@@ -93,17 +88,6 @@ def forward_features(self, image, text):
     return image_features, text_features
 
 
-def forward_features_prob(self, image, text):
-    image_features = self.encode_image(image)
-    text_features = self.encode_text(text)
-
-    # normalized features
-    image_features = image_features / image_features.norm(dim=1, keepdim=True)
-    text_features = text_features / text_features.norm(dim=1, keepdim=True)
-
-    return image_features, text_features, self.classifier(image_features)
-
-
 def mlp(dim=512):
     return torch.nn.Sequential(
         torch.nn.Linear(dim, dim * 4),
@@ -122,7 +106,7 @@ def dw_conv(dim):
 
 
 def pw_conv(dim, hidden):
-    group = dim if hidden>dim else hidden
+    group = dim if hidden > dim else hidden
     return torch.nn.Sequential(
         torch.nn.Conv2d(dim, hidden, (1, 1), groups=group, bias=False),
         torch.nn.BatchNorm2d(hidden),
@@ -134,8 +118,8 @@ def conv(dim, out_dim):
     return torch.nn.Sequential(
         Rearrange('b (h w) c -> b c h w', h=14, w=14),
         dw_conv(dim),
-        pw_conv(dim, int(dim*4)),
-        pw_conv(int(dim*4), out_dim),
+        pw_conv(dim, int(dim * 4)),
+        pw_conv(int(dim * 4), out_dim),
         torch.nn.AdaptiveAvgPool2d(1),
         torch.nn.Flatten(),
     )
@@ -143,7 +127,7 @@ def conv(dim, out_dim):
 
 @register_model
 def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False, vision_adapter=False,
-        classifier=False, vision_adapter2=False, **kwargs):
+        classifier=False, **kwargs):
     model, _ = clip.load(backbone)
     if 'B16' in backbone or 'B32' in backbone:
         dim = 512
@@ -166,18 +150,6 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
                 encode_text_bound_method = encode_text_train.__get__(model, model.__class__)
             setattr(model, 'encode_text', encode_text_bound_method)
 
-        if vision_adapter2:
-            model.__setattr__('vision_token_adapter', mlp(dim=dim))
-            model.__setattr__('vision_feature_adapter', conv(768,dim))
-
-            setattr(model.visual, 'forward', ViT_feature_map_forward.__get__(model.visual, model.visual.__class__))
-
-            if kwargs.get('forward_backbone', False):
-                encode_image_bound_method = ViT_feature_map_encode_image.__get__(model, model.__class__)
-            else:
-                encode_image_bound_method = ViT_feature_map_encode_image_train.__get__(model, model.__class__)
-            setattr(model, 'encode_image', encode_image_bound_method)
-
         elif vision_adapter:
             model.__setattr__('vision_adapter', mlp(dim=dim))
             if kwargs.get('forward_backbone', False):
@@ -198,19 +170,45 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
             model.__setattr__('alpha', 1)
 
         if kwargs.get('return_feature', False):
-            if classifier:
-                forward_bound_method = forward_features_prob.__get__(model, model.__class__)
-                setattr(model, 'forward', forward_bound_method)
-            else:
-                forward_bound_method = forward_features.__get__(model, model.__class__)
+            forward_bound_method = forward_features.__get__(model, model.__class__)
             setattr(model, 'forward', forward_bound_method)
 
     return model
 
 
+@register_model
+def OurConv(backbone='ViT-B16', freeze=False, finetune=False, **kwargs):
+    model, _ = clip.load(backbone)
+    if 'B16' in backbone or 'B32' in backbone:
+        dim = 512
+    else:
+        dim = 768
+
+    if freeze:
+        for name, param in model.named_parameters():
+            param.requires_grad = False
+    else:
+        for name, param in model.named_parameters():
+            param.requires_grad = True
+
+    if finetune:
+        model.__setattr__('language_adapter', mlp(dim=dim))
+        setattr(model, 'encode_text', encode_text.__get__(model, model.__class__))
+
+        model.__setattr__('vision_token_adapter', mlp(dim=dim))
+        model.__setattr__('vision_feature_adapter', conv(768, dim))
+
+        setattr(model, 'encode_image', ViT_feature_map_encode_image.__get__(model, model.__class__))
+        setattr(model.visual, 'forward', ViT_feature_map_forward.__get__(model.visual, model.visual.__class__))
+
+        forward_bound_method = forward_features.__get__(model, model.__class__)
+        setattr(model, 'forward', forward_bound_method)
+
+    return model
+
+
 if __name__ == '__main__':
-    model = Our(eval=True, alpha=False, finetune=True, freeze=True, language_adapter=True, vision_adapter2=True,
-                forward_backbone=True)
+    model = OurConv(freeze=True, finetune=True)
 
     o = model(torch.rand(2, 3, 224, 224), torch.ones(2, 77, dtype=torch.long))
     print(len(o))
