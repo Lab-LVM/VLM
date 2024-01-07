@@ -1,0 +1,12 @@
+defaults:
+  - base_model
+
+model_name: Our2
+finetune: True
+
+language_adapter: True
+vision_adapter: True
+adapter:
+
+forward_backbone: False
+return_feature: True
