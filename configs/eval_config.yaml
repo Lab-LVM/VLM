@@ -7,7 +7,7 @@ defaults:
 
 name: ${dataset.name}_${model.model_name}_${model.backbone}_${gpu}
 
-n_shot: [ 0,1,2 ]
+n_shot: [ 0 ]
 checkpoint:
 import_cfg: True
 cache: False
