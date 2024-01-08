@@ -1,5 +1,5 @@
 project: VLM
-name: IOL_B16_Adtr_MLPNorm
+name: IOL_B32_SA9
 description: The sweep of our methods on ViT-B/16 backbone with freezing this.
 entity: SoongE
 
@@ -10,9 +10,9 @@ metric:
   goal: maximize
 parameters:
   gpu:
-    value: 1
+    value: 6
   model.backbone:
-    value: ViT-B16
+    value: ViT-B32
   dataset.name:
     value: sa9
   train.batch_size:
@@ -31,8 +31,7 @@ command:
   - python
   - ${program}
   - ${args_no_hyphens}
-  - +setup=our2
+  - +setup=our
   - train.criterion=IOL
   - train.epochs=10
   - model.return_feature=True
-  - model.adapter=MLPNorm

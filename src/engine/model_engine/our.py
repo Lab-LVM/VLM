@@ -1,3 +1,7 @@
+import copy
+import gc
+
+import pandas as pd
 import torch
 from torch.nn.functional import normalize
 from torch.utils.data import DataLoader
@@ -6,11 +10,14 @@ from torchmetrics import Accuracy
 from .. import TaskEngine
 from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
-from ...data.dataset import ImageNetRandaugPromptV2, ImageNetRandaugPrompt, ObjectNet, ImageNetRandaugPromptText
+from ...data import create_dataset
+from ...data.dataset import ImageNetRandaugPrompt, ImageNetRandaugPromptText
+from ...data.dataset import ObjectNet
 from ...data.dataset.imagenet_text import ImageNetSimplePromptText
+from ...utils import dataset2dict, to_list
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss, \
     SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss
-from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
+from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine, create_task_engine
 
 
 @register_feature_engine
@@ -235,6 +242,27 @@ class OurTrainEngine(TrainEngine):
 
         return loss, outs[0], y
 
+    def eval(self):
+        self.model.eval()
+        with torch.no_grad():
+            df = pd.DataFrame()
+            cfg = copy.deepcopy(self.cfg)
+            ds_backbone = cfg.model.backbone.split('-')[-1]
+            for k, v in dataset2dict(cfg.eval_dataset).items():
+                cfg.dataset = v
+                test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=ds_backbone)
+
+                engine = create_task_engine(cfg, self.fabric, self.model, self.tokenizer, test_dataset, test_dataset)
+                metrics = engine(n_shots=to_list(cfg.n_shot))
+
+                row = dict(Data=test_dataset.name, Acc=float(metrics['simple_adapter_classification']))
+                df = pd.concat([df, pd.DataFrame(row, index=[0])])
+            df = pd.concat([df, pd.DataFrame({'Data': 'Mean', 'Acc': df['Acc'].mean()}, index=[0])])
+        del test_dataset
+        torch.cuda.empty_cache()
+        gc.collect()
+        return df
+
     def __call__(self, *args, **kwargs):
         for epoch in range(self.start_epoch, self.num_epochs):
             self.train_loader.sampler.set_epoch(epoch) if self.distributed else None
@@ -247,3 +275,5 @@ class OurTrainEngine(TrainEngine):
             self._save(epoch, train_metrics[self.cm])
             self._log(train_metrics, {}, epoch)
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)
+
+        return self.eval()

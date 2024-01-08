@@ -6,7 +6,7 @@ epochs: 10
 iter_per_epoch:
 batch_size: 512
 total_batch: 4096
-adapter_lr: 0.001
+adapter_lr: null
 
 num_workers: 4
 seed: 42
