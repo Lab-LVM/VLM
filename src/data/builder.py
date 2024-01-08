@@ -1,3 +1,5 @@
+import random
+import torch
 from functools import partial
 
 from timm.data import create_transform as timm_create_transform
@@ -57,9 +59,28 @@ def create_dataset(ds_cfg, is_train, **kwargs):
 
     return DATASET_DICT[ds_cfg.name](**ds_kwargs)
 
+def fill_drop_last(dataset, batch_size, world_size):
+    total_batch_size = batch_size * world_size
+    fill_size = total_batch_size - (len(dataset) % total_batch_size)
 
-def create_dataloader(cfg, dataset, is_train):
+    if isinstance(dataset.imgs, torch.Tensor):
+        rand_idx = torch.randperm(len(dataset))[:fill_size]
+        fill_img, fill_target = dataset.imgs[rand_idx], dataset.targets[rand_idx]
+        dataset.imgs = torch.cat([dataset.imgs, fill_img])
+        dataset.targets = torch.cat([dataset.targets, fill_target])
+    else:
+        fill_img, fill_target = zip(*random.sample(list(zip(dataset.imgs, dataset.targets)), fill_size))
+        dataset.imgs.extend(fill_img)
+        dataset.targets.extend(fill_target)
+
+    return dataset
+
+
+def create_dataloader(cfg, dataset, is_train, fill_last=True):
     aug = cfg.dataset.augmentation
+
+    if is_train and fill_last:
+        dataset = fill_drop_last(dataset, cfg.train.batch_size, cfg.world_size)
 
     collate_fn = None
     mixup_active = aug.mixup > 0 or aug.cutmix > 0. or aug.cutmix_minmax is not None
