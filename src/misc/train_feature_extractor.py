@@ -45,20 +45,20 @@ def create_dataset(ds_cfg, **kwargs):
     if kwargs.get('split', None):
         ds_kwargs['split'] = kwargs['split']
 
-    return ImageNetRandaugPromptOriginalText(**ds_kwargs)
+    return ImageNetRandaugPromptText(**ds_kwargs)
 
 
 if __name__ == '__main__':
     with initialize('../../configs', version_base='1.3'):
-        cfg = compose('train_config', overrides=['model.backbone=ViT-L14', '+setup=our',
+        cfg = compose('train_config', overrides=['model.backbone=ViT-B32', '+setup=our',
                                                  'dataset.augmentation.prefetcher=False'])
-    cfg.train.batch_size = 512
+    cfg.train.batch_size = 4096
     cfg.dataset.augmentation.auto_aug = 'rand-m9-mstd0.5-inc1'
     # cfg.dataset.train_size = [3, 336, 336]
     # cfg.dataset.eval_size = [3, 336, 336]
     print(cfg.model.backbone)
 
-    device = torch.device('cuda:4')
+    device = torch.device('cuda:5')
 
     clip = CLIPTMP(cfg.model.backbone)
     clip.train()
@@ -69,13 +69,13 @@ if __name__ == '__main__':
     ds = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=0, is_train=True)
     dl = create_dataloader(cfg, ds, is_train=True)
     dl.dataset.setup_prompt_transform()
-    root = Path(f'/home/seungmin/dmount/feature_data/{cfg.model.backbone.split("-")[-1]}_imageNet_train_with_scaleAug9_withOrigin')
+    root = Path(f'/home/seungmin/dmount/feature_data/{cfg.model.backbone.split("-")[-1]}_imageNet_train_with_scaleAug9')
     root.mkdir(exist_ok=True, parents=True)
 
     keys = ('vision_features', 'language_features', 'vision_features_aug', 'language_features_aug', 'targets')
 
     with torch.cuda.amp.autocast():
-        for i in range(3, 11):
+        for i in range(11, 71):
             print(f'EPOCH: {i}')
             obj = {k: list() for k in keys}
 

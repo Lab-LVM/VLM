@@ -42,7 +42,7 @@ class CLIPTaskEngine(TaskEngine):
 
         logits = self.model.logit_scale.exp() * qry_features @ text_classifier.mT
 
-        if self.cfg.dataset.name == 'objectnet':
+        if 'objectnet' in self.cfg.dataset.name:
             logits = self.val_dataset.project_logits(logits)
 
         # Classifier logits
