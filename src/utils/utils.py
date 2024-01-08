@@ -15,6 +15,7 @@ VLZB = ['caltech101', 'eurosat', 'fgvc', 'flowers102', 'food101', 'oxfordiiitpet
 
 IMAGENET_DS = ['imagenet', 'imagenet_r', 'imagenet_a', 'imagenet_v2', 'imagenet_sketch', 'objectnet']
 
+
 def clean_state_dict(state_dict):
     # 'clean' checkpoint by removing .module prefix from state dict if it exists from parallel training
     cleaned_state_dict = OrderedDict()
@@ -37,7 +38,7 @@ def dataset2dict(cfg):
         return {cfg.name: cfg}
 
     for k in dataset_list:
-        ds_dict[k] = compose(os.path.join('dataset', k.replace('_full',''))).dataset
+        ds_dict[k] = compose(os.path.join('dataset', k.replace('_full', ''))).dataset
         ds_dict[k]['train_size'] = cfg.train_size
         ds_dict[k]['eval_size'] = cfg.eval_size
     return ds_dict
@@ -49,8 +50,25 @@ def to_list(item):
     return [item]
 
 
-def filter_grad(model):
-    return filter(lambda p: p.requires_grad, model.parameters())
+def filter_grad(model, adapter_lr=None):
+    backbone = []
+    adapter = []
+    adapter_name = []
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+
+        if 'adapter' in name:
+            adapter_name.append(name)
+            adapter.append(param)
+        else:
+            backbone.append(param)
+    params = [{'params': adapter}, {'params': backbone}]
+    if adapter_lr is not None:
+        params[0]['lr'] = adapter_lr
+    return params
+
+    # return filter(lambda p: p.requires_grad, model.parameters())
 
 
 def import_config(cfg):

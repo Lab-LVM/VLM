@@ -19,9 +19,6 @@ def check_environment(cfg):
     if cfg.model.forward_backbone == False:
         print(f'Model\'s backbone is not forwarded. Changed')
         cfg.model.forward_backbone = True
-    # if cfg.dataset.name != 'imagenetraText':
-    #     print(f'Dataset need to fully forwarded.')
-    #     cfg.dataset.name = 'imagenetraText'
 
     # Model setting
     if cfg.is_master:
@@ -64,7 +61,7 @@ def main(cfg: DictConfig) -> None:
     train_engine()
 
     # Eval
-    cfg.train.batch_size = 1024
+    cfg.train.batch_size = 512
     model.eval()
 
     df = pd.DataFrame()

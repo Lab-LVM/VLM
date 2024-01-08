@@ -7,14 +7,13 @@ from src.data.dataset import *
 from src.data.mixup import FastCollateMixup
 
 DATASET_DICT = {
-    'sa3': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug3'),
-    'sa5': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug5'),
-    'sa7': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug7'),
-    'sa9': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug9'),
-    'sa13': partial(ImageNetRandaugPromptFeaturesV2, dataset_path='imageNet_train_with_scaleAug13'),
+    'sa3': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_with_scaleAug3'),
+    'sa5': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_with_scaleAug5'),
+    'sa7': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_with_scaleAug7'),
+    'sa9': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_with_scaleAug9'),
+    'sa13': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_with_scaleAug13'),
 
     'imagenetra': ImageNetRandaugPromptFeatures,  # ImageNetRandaugPrompt
-    'imagenetraV2': ImageNetRandaugPromptFeaturesV2,
     'imagenetraText': ImageNetRandaugPromptText,
     'imagenetsimText': ImageNetSimplePromptText,
 
@@ -75,7 +74,7 @@ def create_dataloader(cfg, dataset, is_train):
         collate_fn = FastCollateMixup(**mixup_args)
 
     loader = DataLoader(dataset, cfg.train.batch_size, shuffle=is_train, num_workers=cfg.train.num_workers,
-                        collate_fn=collate_fn, drop_last=is_train, pin_memory=True)
+                        collate_fn=collate_fn, drop_last=False, pin_memory=True)
     return loader
 
 

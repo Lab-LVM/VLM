@@ -65,7 +65,7 @@ class ObjectFactory:
             lbfgs_kwargs.__delattr__('grad_accumulation')
             optimizer = torch.optim.LBFGS(filter_grad(model), **lbfgs_kwargs)
         else:
-            optimizer = create_optimizer_v2(filter_grad(model), **optimizer_kwargs(cfg=self.optim))
+            optimizer = create_optimizer_v2(filter_grad(model, self.train.adapter_lr), **optimizer_kwargs(cfg=self.optim))
 
         if self.scheduler.sched is not None:
             updates_per_epoch = \
