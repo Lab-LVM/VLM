@@ -5,5 +5,5 @@ opt: adamw
 
 lr: 1e-3
 opt_betas: [ 0.9, 0.999 ]
-opt_eps: 1e-6
+opt_eps: 1e-8
 weight_decay: 1e-1
