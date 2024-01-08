@@ -276,4 +276,6 @@ class OurTrainEngine(TrainEngine):
             self._log(train_metrics, {}, epoch)
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)
 
+        if kwargs.get('pass_eval', None):
+            return None
         return self.eval()

@@ -9,12 +9,13 @@ from tqdm import tqdm
 import src.models.clip as clip
 from src.data import create_dataloader
 from src.data.builder import create_transform
-from src.data.dataset import ImageNetRandaugPromptText
 from src.data.dataset.imagenet_text import ImageNetRandaugPromptOriginalText
 from src.models import CLIP_tokenizer
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+
+import argparse
 
 
 def forward_for_feature_extraction(self, image, text):
@@ -45,20 +46,30 @@ def create_dataset(ds_cfg, **kwargs):
     if kwargs.get('split', None):
         ds_kwargs['split'] = kwargs['split']
 
-    return ImageNetRandaugPromptText(**ds_kwargs)
+    return ImageNetRandaugPromptOriginalText(**ds_kwargs)
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Train feature extractor')
+
+    parser.add_argument('-b', '--backbone', type=str, required=True, help='B32, B16, L14, L14@336px')
+    parser.add_argument('-g', '--gpu', type=int, required=True, help='Number of GPU')
+    parser.add_argument('-s', '--start', type=int, default=0)
+    parser.add_argument('-e', '--end', type=int, default=11)
+
+    args = parser.parse_args()
+
     with initialize('../../configs', version_base='1.3'):
-        cfg = compose('train_config', overrides=['model.backbone=ViT-B32', '+setup=our',
-                                                 'dataset.augmentation.prefetcher=False'])
-    cfg.train.batch_size = 4096
+        cfg = compose('train_config', overrides=['+setup=our', 'dataset.augmentation.prefetcher=False'])
+
+    cfg.model.backbone = f'ViT-{args.backbone}'
+    device = torch.device(f'cuda:{args.gpu}')
+
+    cfg.train.batch_size = 2048
     cfg.dataset.augmentation.auto_aug = 'rand-m9-mstd0.5-inc1'
     # cfg.dataset.train_size = [3, 336, 336]
     # cfg.dataset.eval_size = [3, 336, 336]
     print(cfg.model.backbone)
-
-    device = torch.device('cuda:5')
 
     clip = CLIPTMP(cfg.model.backbone)
     clip.train()
@@ -69,13 +80,14 @@ if __name__ == '__main__':
     ds = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=0, is_train=True)
     dl = create_dataloader(cfg, ds, is_train=True)
     dl.dataset.setup_prompt_transform()
-    root = Path(f'/home/seungmin/dmount/feature_data/{cfg.model.backbone.split("-")[-1]}_imageNet_train_with_scaleAug9')
+    root = Path(
+        f'/home/seungmin/dmount/feature_data/{cfg.model.backbone.split("-")[-1]}_imageNet_train_with_scaleAug9_withOriginal')
     root.mkdir(exist_ok=True, parents=True)
 
     keys = ('vision_features', 'language_features', 'vision_features_aug', 'language_features_aug', 'targets')
 
     with torch.cuda.amp.autocast():
-        for i in range(11, 71):
+        for i in range(args.start, args.end):
             print(f'EPOCH: {i}')
             obj = {k: list() for k in keys}
 
@@ -87,8 +99,8 @@ if __name__ == '__main__':
                     prompt = tokenizer(prompt, padding='max_length', return_attention_mask=False, return_tensors='pt')[
                         'input_ids'].to(device)
                     prompt_aug = \
-                    tokenizer(prompt_aug, padding='max_length', return_attention_mask=False, return_tensors='pt')[
-                        'input_ids'].to(device)
+                        tokenizer(prompt_aug, padding='max_length', return_attention_mask=False, return_tensors='pt')[
+                            'input_ids'].to(device)
 
                     im, te = clip(x, prompt)
                     im_aug, te_aug = clip(x_aug, prompt_aug)

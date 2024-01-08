@@ -42,7 +42,7 @@ def main(cfg: DictConfig) -> None:
     model, tokenizer = factory.create_model()  # model, tokenizer
 
     train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
-    loaders = create_dataloader(cfg, train_dataset, is_train=True)
+    loaders = create_dataloader(cfg, train_dataset, is_train=True, fill_last=True)
 
     optimizer, scheduler, n_epochs = factory.create_optimizer_and_scheduler(model, len(loaders))
     criterion = factory.create_criterion()
@@ -58,7 +58,7 @@ def main(cfg: DictConfig) -> None:
     # Train
     train_engine = create_train_engine(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler,
                                        (start_epoch, n_epochs))
-    train_engine()
+    train_engine(pass_eval=True)
 
     # Eval
     cfg.train.batch_size = 512
