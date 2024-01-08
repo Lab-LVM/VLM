@@ -10,6 +10,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 
+from src.data.dataset.imagenet import OPENAI_IMAGENET_PROMPT
 from . import VLMDataset, IMAGENET_CLASS_NAME
 
 imagenet_a_class_number = [
@@ -56,15 +57,7 @@ class ImageNetX(VLMDataset, Dataset, ABC):
 
     @property
     def prompt(self):
-        return [
-            lambda c: f'itap of a {c}.',
-            lambda c: f'a bad photo of the {c}.',
-            lambda c: f'a origami {c}.',
-            lambda c: f'a photo of the large {c}.',
-            lambda c: f'a {c} in a video game.',
-            lambda c: f'art of the {c}.',
-            lambda c: f'a photo of the small {c}.',
-        ]
+        return OPENAI_IMAGENET_PROMPT
 
     def project_logits(self, logits):
         if logits.shape[-1] == self.n_class:
@@ -106,15 +99,7 @@ class ImageNetV2(VLMDataset, Dataset):
 
     @property
     def prompt(self):
-        return [
-            lambda c: f'itap of a {c}.',
-            lambda c: f'a bad photo of the {c}.',
-            lambda c: f'a origami {c}.',
-            lambda c: f'a photo of the large {c}.',
-            lambda c: f'a {c} in a video game.',
-            lambda c: f'art of the {c}.',
-            lambda c: f'a photo of the small {c}.',
-        ]
+        return OPENAI_IMAGENET_PROMPT
 
 
 class ObjectNet(VLMDataset, Dataset):
@@ -174,15 +159,7 @@ class ObjectNet(VLMDataset, Dataset):
 
     @property
     def prompt(self):
-        return [
-            lambda c: f'itap of a {c}.',
-            lambda c: f'a bad photo of the {c}.',
-            lambda c: f'a origami {c}.',
-            lambda c: f'a photo of the large {c}.',
-            lambda c: f'a {c} in a video game.',
-            lambda c: f'art of the {c}.',
-            lambda c: f'a photo of the small {c}.',
-        ]
+        return OPENAI_IMAGENET_PROMPT
 
     def project_logits(self, logits):
         device = logits.device
