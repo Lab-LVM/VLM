@@ -1,6 +1,7 @@
 import os
 import pickle
 
+import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import transforms
 
@@ -41,6 +42,23 @@ class ImageNetEvalFeatures(Dataset):
         self.imgs = data['vision_features']
         self.text = data['language_features']
         self.targets = data['targets']
+
+        # language_type = kwargs.get('language_type', None)
+        #
+        # if language_type == 'original':
+        #     self.text = data['origin_language_features']
+        # elif language_type == 'modified':
+        #     self.text = data['modified_language_features']
+        # elif language_type == 'distorted':
+        #     self.text = data['distorted_language_features']
+        # elif language_type == 'ood': # out of distribution
+        #     self.text = data['ood_language_features']
+        # elif language_type == 'dko': # different kinds of
+        #     self.text = data['dko_language_features']
+        # elif language_type == 'na+ori': # natural+origin
+        #     self.text = torch.cat([data['origin_language_features'], data['language_features']], dim=1)
+        # elif language_type == 'ood+':
+        #     self.text = torch.cat([data['ood_language_features'], data['dko_language_features']], dim=1)
 
     def __getitem__(self, idx):
         return self.imgs[idx], self.targets[idx]
