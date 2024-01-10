@@ -7,7 +7,7 @@ from .flowers102 import Flowers102
 from .food101 import Food101
 from .imagenet import ImageNet, ImageNetRandaugPrompt, ImageNetRandaugPromptV2
 from .imagenet_features import ImageNetRandaugPromptFeatures, ImageNetEvalFeatures
-from .imagenet_text import ImageNetRandaugPromptText, ImageNetSimplePromptText
+from .imagenet_text import ImageNetRandaugPromptText, ImageNetSimplePromptText, ImageNetRandaugPromptOriginalText
 from .imagenet_x import ImageNetA, ImageNetR, ImageNetSketch, ImageNetV2, ObjectNet
 from .oxfordiiitpet import OxfordIIITPet
 from .stanfordcars import StanfordCars
