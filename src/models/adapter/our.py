@@ -53,11 +53,11 @@ def encode_text(self, text):
 
 
 def encode_image_train(self, x):
-    return self.vision_adapter(x) + x * self.alpha
+    return self.vision_adapter(x) + x
 
 
 def encode_text_train(self, x):
-    return self.language_adapter(x) + x * self.alpha
+    return self.language_adapter(x) + x
 
 
 def forward(self, image, text):
@@ -163,11 +163,6 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
             model.__setattr__('classifier', torch.nn.Linear(dim, 1000))
             forward_bound_method = forward.__get__(model, model.__class__)
             setattr(model, 'forward', forward_bound_method)
-
-        if kwargs.get('alpha', False):
-            model.__setattr__('alpha', torch.nn.Parameter(torch.rand(1)))
-        else:
-            model.__setattr__('alpha', 1)
 
         if kwargs.get('return_feature', False):
             forward_bound_method = forward_features.__get__(model, model.__class__)

@@ -42,7 +42,8 @@ def main(cfg: DictConfig) -> None:
     train_engine = create_train_engine(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler,
                                        (start_epoch, n_epochs))
 
-    train_engine()
+    df = train_engine()
+    print(df)
 
     # # Eval
     # model.eval()
@@ -62,7 +63,7 @@ def main(cfg: DictConfig) -> None:
     #         print(f'{row}\n')
     #         df = pd.concat([df, pd.DataFrame(row, index=[0])])
     #
-    # df.to_csv(f'result_{cfg.name}.csv', index=False)
+    df.to_csv(f'result_{cfg.name}.csv', index=False)
 
     if cfg.is_master:
         torch.cuda.empty_cache()

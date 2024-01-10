@@ -13,7 +13,7 @@ from ..train_engine import TrainEngine
 from ...data import create_dataset
 from ...data.dataset import ImageNetRandaugPrompt, ImageNetRandaugPromptText
 from ...data.dataset import ObjectNet
-from ...data.dataset.imagenet_text import ImageNetSimplePromptText
+from ...data.dataset.imagenet_text import ImageNetSimplePromptText, ImageNetRandaugPromptOriginalText
 from ...utils import dataset2dict, to_list
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss, \
     SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss
@@ -161,7 +161,7 @@ class OurTrainEngine(TrainEngine):
         else:
             self.criterion_forward = self.CLCR_forward
 
-        if isinstance(self.train_loader.dataset, ImageNetRandaugPromptText):
+        if isinstance(self.train_loader.dataset, (ImageNetRandaugPromptText, ImageNetRandaugPromptOriginalText)):
             self.iterate = self.iterate_text
         elif isinstance(self.train_loader.dataset, ImageNetSimplePromptText):
             self.iterate = self.iterate_simple_text
@@ -265,8 +265,8 @@ class OurTrainEngine(TrainEngine):
 
     def __call__(self, *args, **kwargs):
         for epoch in range(self.start_epoch, self.num_epochs):
-            self.train_loader.sampler.set_epoch(epoch) if self.distributed else None
             self.train_loader.dataset.set_feature(epoch) if hasattr(self.train_loader.dataset, 'set_feature') else None
+            self.train_loader.sampler.set_epoch(epoch) if self.distributed else None
 
             train_metrics = self.train(epoch)
             self._distribute_bn()

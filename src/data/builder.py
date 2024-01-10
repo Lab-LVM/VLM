@@ -14,6 +14,7 @@ DATASET_DICT = {
 
     'imagenetra': ImageNetRandaugPromptFeatures,
     'imagenetraText': ImageNetRandaugPromptText,
+    'imagenetraTextOri': ImageNetRandaugPromptOriginalText,
     'imagenetsimText': ImageNetSimplePromptText,
 
     'imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),

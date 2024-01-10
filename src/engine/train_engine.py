@@ -82,8 +82,6 @@ class TrainEngine:
 
             with self.fabric.no_backward_sync(self.model, enabled=is_accumulating):
                 loss, prob, target = self.iterate(self.model, data, self.train_criterion)
-                if torch.isnan(loss):
-                    loss = torch.tensor(1e-1, device=self.device)
                 self.fabric.backward(loss)
 
             self.losses.update(loss)
