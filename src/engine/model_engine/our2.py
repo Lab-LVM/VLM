@@ -59,7 +59,7 @@ class Our2TaskEngine(TaskEngine):
 
         if hasattr(self.val_dataset, 'project_logits'):
             logits = self.val_dataset.project_logits(logits)
-        print(logits.shape, qry_labels.shape)
+
         self.metric.update(logits, qry_labels)
         self.metric.prefix = 'simple_adapter_classification'
         return self._output
