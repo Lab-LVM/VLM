@@ -43,7 +43,7 @@ class ImageNetX(VLMDataset, Dataset, ABC):
     n_class = 1000
     class_number = range(0, 1000)
 
-    def __init__(self, root, split=None, transform=None, target_transform=None, n_shot=0):
+    def __init__(self, root, split=None, transform=None, target_transform=None, n_shot=0, is_train=False):
         self._split_warning(self.__class__.__name__, split, None)
         dataset = ImageFolder(os.path.join(root, self.dataset_path))
         class_name_list = [IMAGENET_CLASS_NAME[i] for i in self.class_number]
@@ -88,7 +88,7 @@ class ImageNetV2(VLMDataset, Dataset):
     dataset_path = 'imageNet-V2'
     n_class = 1000
 
-    def __init__(self, root, split=None, transform=None, target_transform=None, n_shot=0):
+    def __init__(self, root, split=None, transform=None, target_transform=None, n_shot=0, is_train=False):
         self._split_warning(self.__class__.__name__, split, None)
         imgs, targets = list(), list()
         for sample in glob(os.path.join(root, self.dataset_path, '*/*')):
@@ -106,7 +106,7 @@ class ObjectNet(VLMDataset, Dataset):
     dataset_path = 'objectnet-1.0'
     n_class = 113
 
-    def __init__(self, root, split=None, transform=None, target_transform=None, n_shot=0):
+    def __init__(self, root, split=None, transform=None, target_transform=None, n_shot=0, is_train=False):
         self._split_warning(self.__class__.__name__, split, None)
         _, _, self.folders_to_ids, self.classname_map = self.get_metadata(root)
 

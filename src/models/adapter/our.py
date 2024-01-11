@@ -85,7 +85,7 @@ def forward_features(self, image, text):
     image_features = image_features / image_features.norm(dim=1, keepdim=True)
     text_features = text_features / text_features.norm(dim=1, keepdim=True)
 
-    return image_features, text_features
+    return image_features, text_features, self.logit_scale.exp()
 
 
 def mlp(dim=512):

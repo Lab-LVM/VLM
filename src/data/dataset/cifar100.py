@@ -82,12 +82,14 @@ class CIFAR100Text(VLMDataset, Dataset):
     dataset_path = 'cifar-100-python'
     n_class = 100
 
-    def __init__(self, root, split='test', transform=None, target_transform=None, n_shot=0):
+    def __init__(self, root, split='test', transform=None, target_transform=None, n_shot=0, is_train=False):
         dataset = TorchCIFAR100(root, train=split == 'train')
         class_name_list = CIFAR100_CLASS_NAME
         super().__init__(root, dataset.data, dataset.targets, class_name_list, transform, target_transform, n_shot)
         self.targets = np.array(self.targets)
         self.augmentation_prompt = AUGMENT_PROMPT
+        if is_train:
+            self.__getitem_fn = self.__getitem_train
 
     @property
     def prompt(self):
@@ -123,7 +125,7 @@ class CIFAR100Text(VLMDataset, Dataset):
         prompt = prompt('original', self.num2str(target))
         return prompt
 
-    def __getitem__(self, idx):
+    def __getitem__train(self, idx):
         path, target = self.imgs[idx], self.targets[idx]
         imgs = self.loader(path)
 
@@ -133,6 +135,27 @@ class CIFAR100Text(VLMDataset, Dataset):
         imgs = self.post_processing(imgs)
 
         return imgs, ra_imgs, target, self.org_prompt(target), self.ra_prompt(ra_tf, target)
+
+    def __getitem_train(self, idx):
+        path, target = self.imgs[idx], self.targets[idx]
+        imgs = self.loader(path)
+
+        imgs = self.pre_processing(imgs)
+        ra_imgs, ra_tf = self.randaug(imgs)
+        ra_imgs = self.post_processing(ra_imgs)
+        imgs = self.post_processing(imgs)
+
+        return imgs, ra_imgs, target, self.org_prompt(target), self.ra_prompt(ra_tf, target)
+
+    def __getitem_fn(self, idx):
+        path, target = self.imgs[idx], self.targets[idx]
+        imgs = self.loader(path)
+        imgs = self.transform(imgs)
+        return imgs, target
+
+    def __getitem__(self, idx):
+        return self.__getitem_fn(idx)
+
 
 
 if __name__ == '__main__':

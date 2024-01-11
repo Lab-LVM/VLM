@@ -98,7 +98,7 @@ class ImageNet(VLMDataset, Dataset):
     dataset_path = 'imageNet'
     n_class = 1000
 
-    def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0):
+    def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0, is_train=False):
         dataset = TorchImagenet(os.path.join(root, self.dataset_path), split)
         class_name_list = IMAGENET_CLASS_NAME
         super().__init__(root, *self._imgs_targets(dataset), class_name_list, transform, target_transform, n_shot)

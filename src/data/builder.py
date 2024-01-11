@@ -18,20 +18,20 @@ DATASET_DICT = {
     'imagenetraTextOri': ImageNetRandaugPromptOriginalText,
     'imagenetsimText': ImageNetSimplePromptText,
 
-    'imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),
-    'imagenet_a': partial(ImageNetEvalFeatures, dataset_name='imagenet_a'),
-    'imagenet_r': partial(ImageNetEvalFeatures, dataset_name='imagenet_r'),
-    'imagenet_v2': partial(ImageNetEvalFeatures, dataset_name='imagenet_v2'),
-    'imagenet_sketch': partial(ImageNetEvalFeatures, dataset_name='imagenet_sketch'),
-    'objectnet': partial(ImageNetEvalFeatures, dataset_name='objectnet'),
+    'f_imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),
+    'f_imagenet_a': partial(ImageNetEvalFeatures, dataset_name='imagenet_a'),
+    'f_imagenet_r': partial(ImageNetEvalFeatures, dataset_name='imagenet_r'),
+    'f_imagenet_v2': partial(ImageNetEvalFeatures, dataset_name='imagenet_v2'),
+    'f_imagenet_sketch': partial(ImageNetEvalFeatures, dataset_name='imagenet_sketch'),
+    'f_objectnet': partial(ImageNetEvalFeatures, dataset_name='objectnet'),
 
-    'imagenet_full': ImageNet,
-    'imagenet_a_full': ImageNetA,
-    'imagenet_r_full': ImageNetR,
-    'imagenet_v2_full': ImageNetV2,
-    'imagenet_sketch_full': ImageNetSketch,
+    'imagenet': ImageNet,
+    'imagenet_a': ImageNetA,
+    'imagenet_r': ImageNetR,
+    'imagenet_v2': ImageNetV2,
+    'imagenet_sketch': ImageNetSketch,
+    'objectnet': ObjectNet,
 
-    'objectnet_full': ObjectNet,
     'caltech101': Caltech101,
     'eurosat': EuroSAT,
     'fgvc': FGVCAircraft,
@@ -43,7 +43,7 @@ DATASET_DICT = {
     'dtd': DescribableTextures,
     'ucf101': UCF101,
     'cifar100': CIFAR100Text,
-    'pcam': PCam,
+    'pcam': PCamText,
     'country211': Country211,
 }
 
@@ -51,10 +51,10 @@ DATASET_DICT = {
 def create_dataset(ds_cfg, is_train, **kwargs):
     ds_kwargs = dict(
         transform=kwargs.get('transform', create_transform(ds_cfg, is_train)),
-        # transform=kwargs.get('transform', _simple_transform(224, is_train)),
         root=kwargs.get('root', ds_cfg.root),
         target_transform=kwargs.get('target_transform', None),
         n_shot=kwargs.get('n_shot', 0),
+        is_train=is_train,
     )
     if kwargs.get('split', None):
         ds_kwargs['split'] = kwargs['split']

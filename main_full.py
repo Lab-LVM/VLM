@@ -67,7 +67,6 @@ def main(cfg: DictConfig) -> None:
     df = pd.DataFrame()
 
     for k, v in dataset2dict(cfg.eval_dataset).items():
-        v.name = v.name + '_full'
         cfg.dataset = v
         train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
         test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)

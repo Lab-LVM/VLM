@@ -302,7 +302,7 @@ class ImageNetRandaugPromptText(ImageNet):
 
 
 class ImageNetRandaugPromptOriginalText(ImageNet):
-    def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0):
+    def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0, is_train=False):
         super().__init__(root, split, transform, target_transform, n_shot)
         self.augmentation_prompt = AUGMENT_PROMPT
         self.original_prompt = ORIGINAL_PROMPT
@@ -339,7 +339,7 @@ class ImageNetRandaugPromptOriginalText(ImageNet):
 
 
 class ImageNetSimplePromptText(ImageNet):
-    def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0):
+    def __init__(self, root, split='val', transform=None, target_transform=None, n_shot=0, is_train=False):
         super().__init__(root, split, transform, target_transform, n_shot)
         self.original_prompt = ORIGINAL_PROMPT
 

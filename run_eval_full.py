@@ -28,12 +28,11 @@ def main(cfg: DictConfig) -> None:
 
     for k, v in dataset2dict(cfg.dataset).items():
         for shot in to_list(cfg.n_shot):
-            v.name = v.name+'_full'
             cfg.dataset = v
             train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
             test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
 
-            if 'our' in cfg.model.model_name.lower():
+            if 'our' == cfg.model.model_name.lower():
                 engine = OurFullyTaskEngine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
             else:
                 engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)

@@ -15,5 +15,5 @@ from .sun397 import SUN397
 from .dtd import DescribableTextures
 from .ucf101 import UCF101
 from .cifar100 import CIFAR100, CIFAR100Text
-from .pcam import PCam
+from .pcam import PCam, PCamText
 from .country211 import Country211
