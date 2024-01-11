@@ -41,7 +41,7 @@ def main(cfg: DictConfig) -> None:
     factory = ObjectFactory(cfg, fabric)
     model, tokenizer = factory.create_model()  # model, tokenizer
 
-    train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
+    train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, n_shot=cfg.n_shot)
     loaders = create_dataloader(cfg, train_dataset, is_train=True, fill_last=True)
 
     optimizer, scheduler, n_epochs = factory.create_optimizer_and_scheduler(model, len(loaders))

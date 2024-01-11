@@ -1,6 +1,7 @@
 # @package _global_
 
 defaults:
+  - _self_
   - override /train/optimizer: adamw
   - override /dataset: imagenet
   - override /model: our
@@ -32,9 +33,3 @@ model:
   backbone: ViT-B16
   finetune: True
   return_feature: True
-
-dataset:
-  name: sa9
-  augmentation:
-    train_interpolation: bicubic
-    auto_aug: rand-m9-mstd0.5-inc1

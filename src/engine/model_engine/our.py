@@ -123,17 +123,8 @@ class OurFullyTaskEngine(TaskEngine):
 
         logits = self.model.logit_scale.exp() * qry_features @ text_classifier.mT
 
-        if 'objectnet' in self.cfg.dataset.name:
+        if hasattr(self.val_dataset, 'project_logits'):
             logits = self.val_dataset.project_logits(logits)
-
-        # Classifier logits
-        try:
-            classifier_logits = self.model.classifier(qry_features)
-            if hasattr(self.val_dataset, 'project_logits'):
-                classifier_logits = self.val_dataset.project_logits(classifier_logits)
-            logits += classifier_logits
-        except:
-            pass
 
         self.metric.update(logits, qry_labels)
         self.metric.prefix = 'simple_adapter_classification'
@@ -169,8 +160,8 @@ class OurTrainEngine(TrainEngine):
         if isinstance(self.train_loader.dataset, ImageNetRandaugPrompt):
             self.train_loader.dataset.setup_prompt_transform()
 
-    def IOL_forward(self, criterion, y, image_feature, text_feature):
-        logit_scale = self.model.logit_scale.exp()
+    def IOL_forward(self, criterion, y, image_feature, text_feature, logit_scale):
+        # logit_scale = self.model.logit_scale.exp()
         loss = criterion(image_feature, text_feature, y, logit_scale)
         return loss
 

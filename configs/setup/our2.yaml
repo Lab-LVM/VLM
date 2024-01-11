@@ -1,7 +1,7 @@
 # @package _global_
 
 defaults:
-  - override /train/optimizer: lamb
+  - override /train/optimizer: adamw
   - override /dataset: imagenet
   - override /model: our2
 
@@ -25,11 +25,9 @@ train:
     sched_on_updates: True
 
   optimizer:
-    lr: 8e-3
-    weight_decay: 5e-2
+    lr: 0.05
 
 dataset:
-  name: sa9
   augmentation:
     train_interpolation: bicubic
     auto_aug: rand-m9-mstd0.5-inc1

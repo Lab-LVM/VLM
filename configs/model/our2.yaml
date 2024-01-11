@@ -6,7 +6,5 @@ finetune: True
 
 language_adapter: True
 vision_adapter: True
-adapter:
-
-forward_backbone: False
 return_feature: True
+forward_backbone: True

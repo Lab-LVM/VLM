@@ -1,7 +1,8 @@
 import random
-import torch
 from functools import partial
 
+import numpy as np
+import torch
 from timm.data import create_transform as timm_create_transform
 from torch.utils.data import DataLoader
 
@@ -29,6 +30,7 @@ DATASET_DICT = {
     'imagenet_r_full': ImageNetR,
     'imagenet_v2_full': ImageNetV2,
     'imagenet_sketch_full': ImageNetSketch,
+
     'objectnet_full': ObjectNet,
     'caltech101': Caltech101,
     'eurosat': EuroSAT,
@@ -40,7 +42,7 @@ DATASET_DICT = {
     'sun397': SUN397,
     'dtd': DescribableTextures,
     'ucf101': UCF101,
-    'cifar100': CIFAR100,
+    'cifar100': CIFAR100Text,
     'pcam': PCam,
     'country211': Country211,
 }
@@ -49,6 +51,7 @@ DATASET_DICT = {
 def create_dataset(ds_cfg, is_train, **kwargs):
     ds_kwargs = dict(
         transform=kwargs.get('transform', create_transform(ds_cfg, is_train)),
+        # transform=kwargs.get('transform', _simple_transform(224, is_train)),
         root=kwargs.get('root', ds_cfg.root),
         target_transform=kwargs.get('target_transform', None),
         n_shot=kwargs.get('n_shot', 0),
@@ -60,6 +63,7 @@ def create_dataset(ds_cfg, is_train, **kwargs):
 
     return DATASET_DICT[ds_cfg.name](**ds_kwargs)
 
+
 def fill_drop_last(dataset, batch_size, world_size):
     total_batch_size = batch_size * world_size
     fill_size = total_batch_size - (len(dataset) % total_batch_size)
@@ -69,6 +73,11 @@ def fill_drop_last(dataset, batch_size, world_size):
         fill_img, fill_target = dataset.imgs[rand_idx], dataset.targets[rand_idx]
         dataset.imgs = torch.cat([dataset.imgs, fill_img])
         dataset.targets = torch.cat([dataset.targets, fill_target])
+    elif isinstance(dataset.imgs, np.ndarray):
+        rand_idx = np.random.choice(len(dataset), fill_size, replace=False)
+        fill_img, fill_target = dataset.imgs[rand_idx], dataset.targets[rand_idx]
+        dataset.imgs = np.concatenate([dataset.imgs, fill_img])
+        dataset.targets = np.concatenate([dataset.targets, fill_target])
     else:
         fill_img, fill_target = zip(*random.sample(list(zip(dataset.imgs, dataset.targets)), fill_size))
         dataset.imgs.extend(fill_img)

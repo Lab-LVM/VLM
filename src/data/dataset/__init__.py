@@ -1,4 +1,4 @@
-from .constants import *
+from .class_name import *
 from .dataset import VLMDataset
 from .caltech101 import Caltech101
 from .eurosat import EuroSAT
@@ -14,6 +14,6 @@ from .stanfordcars import StanfordCars
 from .sun397 import SUN397
 from .dtd import DescribableTextures
 from .ucf101 import UCF101
-from .cifar100 import CIFAR100
+from .cifar100 import CIFAR100, CIFAR100Text
 from .pcam import PCam
 from .country211 import Country211
