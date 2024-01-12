@@ -78,7 +78,6 @@ class Our2TrainEngine(TrainEngine):
         else:
             raise NotImplementedError('Criterion is not implemented')
 
-        print(self.train_loader.dataset.__class__.__name__)
         if not 'Text' in self.train_loader.dataset.__class__.__name__:
             self.iterate = self.simple_iterate
 
@@ -130,15 +129,14 @@ class Our2TrainEngine(TrainEngine):
         with torch.no_grad():
             df = pd.DataFrame()
             cfg = copy.deepcopy(self.cfg)
-            ds_backbone = cfg.model.backbone.split('-')[-1]
             for k, v in dataset2dict(cfg.eval_dataset).items():
                 cfg.dataset = v
-                test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=ds_backbone)
+                test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
 
                 engine = create_task_engine(cfg, self.fabric, self.model, self.tokenizer, test_dataset, test_dataset)
                 metrics = engine(n_shots=to_list(cfg.n_shot))
 
-                row = dict(Data=test_dataset.name, Acc=float(metrics['simple_adapter_classification']))
+                row = dict(Data=test_dataset.name, Acc=float(metrics['classification']))
                 df = pd.concat([df, pd.DataFrame(row, index=[0])])
             df = pd.concat([df, pd.DataFrame({'Data': 'Mean', 'Acc': df['Acc'].mean()}, index=[0])])
         del test_dataset

@@ -26,23 +26,20 @@ def main(cfg: DictConfig) -> None:
     df = pd.DataFrame()
 
     for k, v in dataset2dict(cfg.dataset).items():
-        try:
-            for shot in to_list(cfg.n_shot):
-                cfg.dataset = v
-                train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
-                test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
+        for shot in to_list(cfg.n_shot):
+            cfg.dataset = v
+            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
+            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
 
-                if 'our' == cfg.model.model_name.lower():
-                    engine = OurFullyTaskEngine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
-                else:
-                    engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
-                metrics = engine(n_shots=to_list(cfg.n_shot))
+            if 'our' == cfg.model.model_name.lower():
+                engine = OurFullyTaskEngine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+            else:
+                engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+            metrics = engine(n_shots=to_list(cfg.n_shot))
 
-                row = dict(Data=test_dataset.name, shot=shot, **metrics)
-                print(f'{row}\n')
-                df = pd.concat([df, pd.DataFrame(row, index=[0])])
-        except:
-            print(f'Empty: {k}')
+            row = dict(Data=test_dataset.name, shot=shot, **metrics)
+            print(f'{row}\n')
+            df = pd.concat([df, pd.DataFrame(row, index=[0])])
 
     df.to_csv(f'{cfg.name}_result.csv', index=False)
 
