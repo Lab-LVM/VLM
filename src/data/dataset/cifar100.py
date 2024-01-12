@@ -99,7 +99,7 @@ class CIFAR100Text(VLMDataset, Dataset):
         train_dataset = TorchCIFAR100(self.root, train=True)
         train_data_dict = defaultdict(list)
         for i in range(len(train_dataset.data)):
-            train_data_dict[train_dataset.targets[i]].append(str(train_dataset.data[i]))
+            train_data_dict[train_dataset.targets[i]].append(train_dataset.data[i])
         return train_data_dict
 
     @staticmethod
@@ -124,17 +124,6 @@ class CIFAR100Text(VLMDataset, Dataset):
         prompt = random.choice(self.augmentation_prompt)
         prompt = prompt('original', self.num2str(target))
         return prompt
-
-    def __getitem__train(self, idx):
-        path, target = self.imgs[idx], self.targets[idx]
-        imgs = self.loader(path)
-
-        imgs = self.pre_processing(imgs)
-        ra_imgs, ra_tf = self.randaug(imgs)
-        ra_imgs = self.post_processing(ra_imgs)
-        imgs = self.post_processing(imgs)
-
-        return imgs, ra_imgs, target, self.org_prompt(target), self.ra_prompt(ra_tf, target)
 
     def __getitem_train(self, idx):
         path, target = self.imgs[idx], self.targets[idx]

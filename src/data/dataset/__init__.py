@@ -3,7 +3,7 @@ from .dataset import VLMDataset
 from .caltech101 import Caltech101
 from .eurosat import EuroSAT
 from .fgvc import FGVCAircraft
-from .flowers102 import Flowers102
+from .flowers102 import Flowers102, Flowers102Text
 from .food101 import Food101
 from .imagenet import ImageNet, ImageNetRandaugPrompt, ImageNetRandaugPromptV2
 from .imagenet_features import ImageNetRandaugPromptFeatures, ImageNetEvalFeatures

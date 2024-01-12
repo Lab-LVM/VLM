@@ -12,14 +12,14 @@ from .ra_text import RandAugment, RAND_AUG_TRANSFORMS
 
 ORIGINAL_PROMPT = [
     lambda name: f'this is a photo of {name}',
-    lambda name: f'a histopathology slide showing {name}',
-    lambda name: f'histopathology image of {name}',
+    # lambda name: f'a histopathology slide showing {name}',
+    # lambda name: f'histopathology image of {name}',
 ]
 
 AUGMENT_PROMPT = [
     lambda augment, name: f'this is a {augment} photo of {name}',
-    lambda augment, name: f'a histopathology {augment} slide showing {name}',
-    lambda augment, name: f'histopathology {augment} image of {name}',
+    # lambda augment, name: f'a histopathology {augment} slide showing {name}',
+    # lambda augment, name: f'histopathology {augment} image of {name}',
 ]
 
 
@@ -85,7 +85,7 @@ class PCamText(VLMDataset, Dataset):
         target = t_dataset.h5py.File(t_dataset._base_folder / t_dataset._FILES[t_dataset._split]['targets'][0])['y'][:,
                  0, 0, 0]
         for i in range(len(img)):
-            train_data_dict[target[i]].append(str(img[i]))
+            train_data_dict[target[i]].append(img[i])
         return train_data_dict
 
     @staticmethod

@@ -308,6 +308,7 @@ class ImageNetRandaugPromptOriginalText(ImageNet):
         self.original_prompt = ORIGINAL_PROMPT
 
     def setup_prompt_transform(self):
+        print(self.transform.transforms)
         self.pre_processing = transforms.Compose(self.transform.transforms[:2])
         self.randaug = RandAugment(**self.transform.transforms[2].__dict__)
         self.post_processing = transforms.Compose(self.transform.transforms[3:])

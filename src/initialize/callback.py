@@ -15,7 +15,7 @@ class CallBack:
     @rank_zero_only
     def on_train(epoch, update_idx, updates_per_epoch, loss, lr, duration, batch_size, data_duration):
         logging.info(f'{"Train":>5}: {epoch:>3} [{update_idx:>4d}/{updates_per_epoch - 1}] '
-                     f'({100. * update_idx / (updates_per_epoch - 1):>3.0f}%)]  '
+                     f'({100. * (update_idx + 1) / (updates_per_epoch):>3.0f}%)]  '
                      f'Loss: {loss.item():#.3g}  '
                      f'LR: {lr:.3e}  '
                      f'Data: {data_duration:>5.2f}s  '

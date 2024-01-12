@@ -35,7 +35,7 @@ DATASET_DICT = {
     'caltech101': Caltech101,
     'eurosat': EuroSAT,
     'fgvc': FGVCAircraft,
-    'flowers102': Flowers102,
+    'flowers102': Flowers102Text,
     'food101': Food101,
     'oxfordiiitpet': OxfordIIITPet,
     'stanfordcars': StanfordCars,
@@ -64,9 +64,19 @@ def create_dataset(ds_cfg, is_train, **kwargs):
     return DATASET_DICT[ds_cfg.name](**ds_kwargs)
 
 
+def to_ndarray(dataset):
+    if isinstance(dataset.imgs, list):
+        dataset.imgs = np.array(dataset.imgs)
+    if isinstance(dataset.targets, list):
+        dataset.targets = np.array(dataset.targets)
+    return dataset
+
+
 def fill_drop_last(dataset, batch_size, world_size):
     total_batch_size = batch_size * world_size
     fill_size = total_batch_size - (len(dataset) % total_batch_size)
+
+    dataset = to_ndarray(dataset)
 
     if isinstance(dataset.imgs, torch.Tensor):
         rand_idx = torch.randperm(len(dataset))[:fill_size]

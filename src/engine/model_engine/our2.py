@@ -41,7 +41,7 @@ class Our2TaskEngine(TaskEngine):
         self.val_dataset = val_dataset
         self.logging_interval = cfg.train.log_interval
 
-        self.metric = Accuracy('multiclass', num_classes=cfg.dataset.num_classes).cuda()
+        self.metric = Accuracy('multiclass', num_classes=cfg.dataset.num_classes).to(self.device)
         self.model.eval()
 
     @property
@@ -59,7 +59,7 @@ class Our2TaskEngine(TaskEngine):
 
         if hasattr(self.val_dataset, 'project_logits'):
             logits = self.val_dataset.project_logits(logits)
-
+        print(logits.shape, qry_labels.shape)
         self.metric.update(logits, qry_labels)
         self.metric.prefix = 'simple_adapter_classification'
         return self._output
@@ -69,7 +69,6 @@ class Our2TaskEngine(TaskEngine):
 class Our2TrainEngine(TrainEngine):
     def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs):
         super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
-        self.model.cuda()
         self.train_loader.dataset.setup_prompt_transform() if hasattr(self.train_loader.dataset,
                                                                       'setup_prompt_transform') else None
 
@@ -113,9 +112,9 @@ class Our2TrainEngine(TrainEngine):
         ra_prompt = self.tokenizer(ra_prompt, padding='max_length', return_attention_mask=False, return_tensors='pt')[
             'input_ids']
 
-        x = torch.concat([x, ra_x]).cuda() #.to(self.device, non_blocking=True)
-        y = torch.concat([y, y]).cuda() #.to(self.device, non_blocking=True)
-        prompt = torch.concat([prompt, ra_prompt]).cuda() #.to(self.device, non_blocking=True)
+        x = torch.concat([x, ra_x]).to(self.device, non_blocking=True)
+        y = torch.concat([y, y]).to(self.device, non_blocking=True)
+        prompt = torch.concat([prompt, ra_prompt]).to(self.device, non_blocking=True)
 
         with self.fabric.autocast():
             outs = model(x, prompt)

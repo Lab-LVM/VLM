@@ -1,5 +1,6 @@
-import json
 import os.path
+import os.path
+import pickle
 import random
 from abc import ABC
 from collections import defaultdict
@@ -63,12 +64,12 @@ class VLMDataset(ABC):
             self.imgs, self.targets = self.origin_imgs, self.origin_targets
             return
 
-        sample_path = os.path.join(self.root, 'sampling', f'soonge_{self.dataset_path}_{n_shot}s.json')
+        sample_path = os.path.join(self.root, 'sampling', f'soonge_{self.dataset_path}_{n_shot}s.pkl')
 
         if os.path.exists(sample_path):
             print(f'Load exist samples: {sample_path}')
-            with open(sample_path, 'r') as f:
-                data = json.load(f)
+            with open(sample_path, 'rb') as f:
+                data = pickle.load(f)
                 self.imgs, self.targets = data['s_imgs'], data['s_targets']
                 return
 
@@ -79,9 +80,9 @@ class VLMDataset(ABC):
             s_imgs.extend(random.sample(items, n_shot))
             s_targets.extend([class_num for _ in range(n_shot)])
 
-        with open(sample_path, 'w') as f:
+        with open(sample_path, 'wb') as f:
             print(f'Generate new samples: {sample_path}')
-            json.dump(dict(s_imgs=s_imgs, s_targets=s_targets), f, indent=4, ensure_ascii=False)
+            pickle.dump(dict(s_imgs=s_imgs, s_targets=s_targets), f, protocol=3)
 
         self.imgs, self.targets = s_imgs, s_targets
 
