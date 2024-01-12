@@ -6,6 +6,6 @@ name: pcam
 
 num_classes: 2
 
-train: val #train
+train: train
 valid: val
 test: test

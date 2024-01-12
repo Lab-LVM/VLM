@@ -10,27 +10,27 @@ from src.data.dataset import *
 from src.data.mixup import FastCollateMixup
 
 DATASET_DICT = {
-    'sa9': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_with_scaleAug9'),
-    'sa9o': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_with_scaleAug9_withOrigin'),
-
-    'imagenetra': ImageNetRandaugPromptFeatures,
-    'imagenetraText': ImageNetRandaugPromptText,
-    'imagenetraTextOri': ImageNetRandaugPromptOriginalText,
-    'imagenetsimText': ImageNetSimplePromptText,
-
-    'f_imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),
-    'f_imagenet_a': partial(ImageNetEvalFeatures, dataset_name='imagenet_a'),
-    'f_imagenet_r': partial(ImageNetEvalFeatures, dataset_name='imagenet_r'),
-    'f_imagenet_v2': partial(ImageNetEvalFeatures, dataset_name='imagenet_v2'),
-    'f_imagenet_sketch': partial(ImageNetEvalFeatures, dataset_name='imagenet_sketch'),
-    'f_objectnet': partial(ImageNetEvalFeatures, dataset_name='objectnet'),
-
-    'imagenet': ImageNet,
-    'imagenet_a': ImageNetA,
-    'imagenet_r': ImageNetR,
-    'imagenet_v2': ImageNetV2,
-    'imagenet_sketch': ImageNetSketch,
-    'objectnet': ObjectNet,
+    # 'sa9': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_with_scaleAug9'),
+    # 'sa9o': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_with_scaleAug9_withOrigin'),
+    #
+    # 'imagenetra': ImageNetRandaugPromptFeatures,
+    # 'imagenetraText': ImageNetRandaugPromptText,
+    # 'imagenetraTextOri': ImageNetRandaugPromptOriginalText,
+    # 'imagenetsimText': ImageNetSimplePromptText,
+    #
+    # 'f_imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),
+    # 'f_imagenet_a': partial(ImageNetEvalFeatures, dataset_name='imagenet_a'),
+    # 'f_imagenet_r': partial(ImageNetEvalFeatures, dataset_name='imagenet_r'),
+    # 'f_imagenet_v2': partial(ImageNetEvalFeatures, dataset_name='imagenet_v2'),
+    # 'f_imagenet_sketch': partial(ImageNetEvalFeatures, dataset_name='imagenet_sketch'),
+    # 'f_objectnet': partial(ImageNetEvalFeatures, dataset_name='objectnet'),
+    #
+    # 'imagenet': ImageNet,
+    # 'imagenet_a': ImageNetA,
+    # 'imagenet_r': ImageNetR,
+    # 'imagenet_v2': ImageNetV2,
+    # 'imagenet_sketch': ImageNetSketch,
+    # 'objectnet': ObjectNet,
 
     'caltech101': Caltech101,
     'eurosat': EuroSAT,
@@ -54,7 +54,7 @@ def create_dataset(ds_cfg, is_train, **kwargs):
         root=kwargs.get('root', ds_cfg.root),
         target_transform=kwargs.get('target_transform', None),
         n_shot=kwargs.get('n_shot', 0),
-        is_train=is_train,
+        # is_train=is_train,
     )
     if kwargs.get('split', None):
         ds_kwargs['split'] = kwargs['split']
@@ -142,27 +142,16 @@ if __name__ == '__main__':
     from hydra import initialize, compose
 
     for k, v in DATASET_DICT.items():
-        if k != 'imagenetraText':
+        if 'imagenet' in k:
             continue
-        k = 'imagenet'
         with initialize('../../configs', version_base='1.3'):
-            cfg = compose('train_config', overrides=['dataset=imagenet'])
+            cfg = compose('train_config', overrides=[f'dataset={k}'])
         ds_cfg = cfg.dataset
         ds_cfg.root = '/data'
-        ds_cfg.augmentation.cutmix = 1.0
-        # ds_cfg.augmentation.mixup = 1.0
-        # if ds_cfg.train is not None:
-        #     ds = v(ds_cfg.root, ds_cfg.train)
-        #     ds_val = v(ds_cfg.root, ds_cfg.valid)
-        #
-        #     print(f'{ds.__class__.__name__}: {len(ds.imgs)} / {len(ds_val.imgs)}')
-        # else:
-        #     ds = v(ds_cfg.root)
-        #     print(f'NOSPLIT {ds.__class__.__name__}: {len(ds.imgs)}')
-
-        cfg.dataset.name = 'imagenetraText'
-        ds = create_dataset(cfg.dataset, is_train=True)
-        ds.setup_prompt_transform()
-        cfg.dataset = ds_cfg
-        cfg.train.batch_size = 10
-        dl = create_dataloader(cfg, ds, is_train=True)
+        if ds_cfg.train is not None:
+            ds = v(ds_cfg.root, ds_cfg.train)
+            ds_val = v(ds_cfg.root, ds_cfg.test)
+            print(f'{ds.__class__.__name__}: {len(ds.imgs)} / {len(ds_val.imgs)}')
+        else:
+            ds = v(ds_cfg.root)
+            print(f'NOSPLIT {ds.__class__.__name__}: {len(ds.imgs)}')

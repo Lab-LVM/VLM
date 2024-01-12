@@ -17,7 +17,6 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 @hydra.main(config_path="configs", config_name="eval_config", version_base="1.3")
 def main(cfg: DictConfig) -> None:
     cfg.wandb = False
-    # cfg.dataset.name='imagenet_ds'
     fabric = setup_fabric(cfg)
 
     factory = ObjectFactory(cfg, fabric)
@@ -27,20 +26,23 @@ def main(cfg: DictConfig) -> None:
     df = pd.DataFrame()
 
     for k, v in dataset2dict(cfg.dataset).items():
-        for shot in to_list(cfg.n_shot):
-            cfg.dataset = v
-            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
-            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
+        try:
+            for shot in to_list(cfg.n_shot):
+                cfg.dataset = v
+                train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
+                test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
 
-            if 'our' == cfg.model.model_name.lower():
-                engine = OurFullyTaskEngine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
-            else:
-                engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
-            metrics = engine(n_shots=to_list(cfg.n_shot))
+                if 'our' == cfg.model.model_name.lower():
+                    engine = OurFullyTaskEngine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+                else:
+                    engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+                metrics = engine(n_shots=to_list(cfg.n_shot))
 
-            row = dict(Data=test_dataset.name, shot=shot, **metrics)
-            print(f'{row}\n')
-            df = pd.concat([df, pd.DataFrame(row, index=[0])])
+                row = dict(Data=test_dataset.name, shot=shot, **metrics)
+                print(f'{row}\n')
+                df = pd.concat([df, pd.DataFrame(row, index=[0])])
+        except:
+            print(f'Empty: {k}')
 
     df.to_csv(f'{cfg.name}_result.csv', index=False)
 
