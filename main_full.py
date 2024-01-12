@@ -23,10 +23,10 @@ def check_environment(cfg):
     # Model setting
     if cfg.is_master:
         print("==== Major Setting ====")
-        print(f"Language Adapter: {cfg.model.language_adapter}")
-        print(f"Visual Adapter: {cfg.model.vision_adapter}")
-        print(f"Forward Backbone: {cfg.model.forward_backbone}")
-        print(f"Return Feature: {cfg.model.return_feature}")
+        print(f"Language Adapter: {getattr(cfg.model, 'language_adapter', None)}")
+        print(f"Visual Adapter: {getattr(cfg.model, 'vision_adapter', None)}")
+        print(f"Forward Backbone: {getattr(cfg.model, 'forward_backbone', None)}")
+        print(f"Return Feature: {getattr(cfg.model, 'return_feature', None)}")
         print(f"Train Dataset: {cfg.dataset.name}")
         print(f"Eval Dataset: {cfg.eval_dataset.name}")
     return cfg
@@ -71,7 +71,7 @@ def main(cfg: DictConfig) -> None:
         train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
         test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
 
-        engine = OurFullyTaskEngine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+        engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
         metrics = engine(n_shots=to_list(cfg.n_shot))
 
         row = dict(Data=test_dataset.name, shot=0, **metrics)

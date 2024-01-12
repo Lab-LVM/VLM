@@ -78,7 +78,7 @@ class ClassificationFeatureEngine(FeatureEngine):
 
         self.model.eval()
         for data in tqdm(loader, total=len(loader), desc=f'Build {self.train_dataset.n_shot}-Shot Support Set'):
-            x, y = map(lambda x: x.to(self.device), data)
+            x, y, _ = map(lambda x: x.to(self.device) if isinstance(x, torch.Tensor) else x, data)
             x = x.to(memory_format=torch.channels_last)
 
             with self.fabric.autocast():
@@ -107,7 +107,7 @@ class ClassificationFeatureEngine(FeatureEngine):
 
         self.model.eval()
         for data in tqdm(loader, total=len(loader), desc=f'Build Query Set'):
-            x, y = map(lambda x: x.to(self.device), data)
+            x, y, _ = map(lambda x: x.to(self.device) if isinstance(x, torch.Tensor) else x, data)
             x = x.to(memory_format=torch.channels_last)
 
             with self.fabric.autocast():

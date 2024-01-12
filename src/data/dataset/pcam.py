@@ -62,16 +62,13 @@ class PCamText(VLMDataset, Dataset):
     dataset_path = 'pcam'
     n_class = 2
 
-    def __init__(self, root, split='test', transform=None, target_transform=None, n_shot=0, is_train=False):
+    def __init__(self, root, split='test', transform=None, target_transform=None, n_shot=0):
         dataset = TorchPCAM(root, split)
         img = dataset.h5py.File(dataset._base_folder / dataset._FILES[dataset._split]['images'][0])['x'][:]
         target = dataset.h5py.File(dataset._base_folder / dataset._FILES[dataset._split]['targets'][0])['y'][:, 0, 0, 0]
         class_name_list = PCAM_CLASS_NAME
         super().__init__(root, img, target, class_name_list, transform, target_transform, n_shot)
-
         self.augmentation_prompt = AUGMENT_PROMPT
-        if is_train:
-            self.__getitem_fn = self.__getitem_train
 
     @property
     def prompt(self):
@@ -111,7 +108,7 @@ class PCamText(VLMDataset, Dataset):
         prompt = prompt('original', self.num2str(target))
         return prompt
 
-    def __getitem_train(self, idx):
+    def __getitem__(self, idx):
         path, target = self.imgs[idx], self.targets[idx]
         imgs = self.loader(path)
 
@@ -121,15 +118,6 @@ class PCamText(VLMDataset, Dataset):
         imgs = self.post_processing(imgs)
 
         return imgs, ra_imgs, target, self.org_prompt(target), self.ra_prompt(ra_tf, target)
-
-    def __getitem_fn(self, idx):
-        path, target = self.imgs[idx], self.targets[idx]
-        imgs = self.loader(path)
-        imgs = self.transform(imgs)
-        return imgs, target
-
-    def __getitem__(self, idx):
-        return self.__getitem_fn(idx)
 
 
 if __name__ == '__main__':

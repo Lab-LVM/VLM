@@ -3,20 +3,16 @@ import gc
 
 import pandas as pd
 import torch
-from torch.nn.functional import normalize
-from torch.utils.data import DataLoader
 from torchmetrics import Accuracy
 
 from .. import TaskEngine
 from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
 from ...data import create_dataset
-from ...data.dataset import ImageNetRandaugPrompt, ImageNetRandaugPromptText
-from ...data.dataset import ObjectNet
-from ...data.dataset.imagenet_text import ImageNetSimplePromptText, ImageNetRandaugPromptOriginalText
+from ...data.dataset import ImageNetRandaugPrompt
 from ...utils import dataset2dict, to_list
-from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss, \
-    SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss
+from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLossMultiProcessing, CLIPLoss, \
+    SoftCLIPLoss
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine, create_task_engine
 
 
@@ -26,12 +22,11 @@ class Our2ClassificationFeatureEngine(ClassificationFeatureEngine):
         super().__init__(*args, **kwargs)
 
 
-
 @register_task_engine
 class Our2TaskEngine(TaskEngine):
     def __init__(self, cfg, fabric, model, tokenizer, train_dataset, val_dataset):
         feature_engine = Our2ClassificationFeatureEngine(cfg, fabric, model, tokenizer, train_dataset,
-                                                        val_dataset)
+                                                         val_dataset)
         super().__init__(feature_engine)
 
         self.cfg = cfg
@@ -59,9 +54,9 @@ class Our2TaskEngine(TaskEngine):
 
         if hasattr(self.val_dataset, 'project_logits'):
             logits = self.val_dataset.project_logits(logits)
-        print(logits.shape, qry_labels.shape)
+
         self.metric.update(logits, qry_labels)
-        self.metric.prefix = 'simple_adapter_classification'
+        self.metric.prefix = 'classification'
         return self._output
 
 
@@ -78,31 +73,24 @@ class Our2TrainEngine(TrainEngine):
 
         if isinstance(criterion[0], IndomainOutdomainContrastiveLoss):
             self.criterion_forward = self.IOL_forward
-        elif isinstance(criterion[0], SupervisedContrastiveLoss):
-            self.criterion_forward = self.SCL_forward
         elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss)):
             self.criterion_forward = self.SCLM_forward
         else:
-            self.criterion_forward = self.CLCR_forward
+            raise NotImplementedError('Criterion is not implemented')
+
+        print(self.train_loader.dataset.__class__.__name__)
+        if not 'Text' in self.train_loader.dataset.__class__.__name__:
+            self.iterate = self.simple_iterate
 
         if isinstance(self.train_loader.dataset, ImageNetRandaugPrompt):
             self.train_loader.dataset.setup_prompt_transform()
 
     def IOL_forward(self, criterion, y, image_feature, text_feature):
-        logit_scale = self.model.logit_scale.exp()
-        loss = criterion(image_feature, text_feature, y, logit_scale)
-        return loss
-
-    def SCLM_forward(self, criterion, y, image_feature, text_feature, image_prob=None):
         loss = criterion(image_feature, text_feature, y, self.model.logit_scale.exp())
         return loss
 
-    def SCL_forward(self, criterion, y, logits_per_image, logits_per_text, image_prob=None):
-        loss = (criterion(logits_per_image, y) + criterion(logits_per_text, y)) / 2
-        return loss
-
-    def CLCR_forward(self, criterion, y, logits_per_image, logits_per_text):
-        loss = criterion(logits_per_image, logits_per_text)
+    def SCLM_forward(self, criterion, y, image_feature, text_feature):
+        loss = criterion(image_feature, text_feature, y, self.model.logit_scale.exp())
         return loss
 
     def iterate(self, model, data, criterion):
@@ -115,6 +103,21 @@ class Our2TrainEngine(TrainEngine):
         x = torch.concat([x, ra_x]).to(self.device, non_blocking=True)
         y = torch.concat([y, y]).to(self.device, non_blocking=True)
         prompt = torch.concat([prompt, ra_prompt]).to(self.device, non_blocking=True)
+
+        with self.fabric.autocast():
+            outs = model(x, prompt)
+            loss = self.criterion_forward(criterion, y, *outs)
+
+        return loss, outs[0], y
+
+    def simple_iterate(self, model, data, criterion):
+        x, y, prompt = data
+        prompt = self.tokenizer(prompt, padding='max_length', return_attention_mask=False, return_tensors='pt')[
+            'input_ids']
+
+        x = x.to(self.device, non_blocking=True)
+        y = y.to(self.device, non_blocking=True)
+        prompt = prompt.to(self.device, non_blocking=True)
 
         with self.fabric.autocast():
             outs = model(x, prompt)

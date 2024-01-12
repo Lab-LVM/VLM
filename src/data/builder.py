@@ -15,35 +15,38 @@ DATASET_DICT = {
     #
     # 'imagenetra': ImageNetRandaugPromptFeatures,
     # 'imagenetraText': ImageNetRandaugPromptText,
-    # 'imagenetraTextOri': ImageNetRandaugPromptOriginalText,
-    # 'imagenetsimText': ImageNetSimplePromptText,
-    #
-    # 'f_imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),
-    # 'f_imagenet_a': partial(ImageNetEvalFeatures, dataset_name='imagenet_a'),
-    # 'f_imagenet_r': partial(ImageNetEvalFeatures, dataset_name='imagenet_r'),
-    # 'f_imagenet_v2': partial(ImageNetEvalFeatures, dataset_name='imagenet_v2'),
-    # 'f_imagenet_sketch': partial(ImageNetEvalFeatures, dataset_name='imagenet_sketch'),
-    # 'f_objectnet': partial(ImageNetEvalFeatures, dataset_name='objectnet'),
-    #
-    # 'imagenet': ImageNet,
-    # 'imagenet_a': ImageNetA,
-    # 'imagenet_r': ImageNetR,
-    # 'imagenet_v2': ImageNetV2,
-    # 'imagenet_sketch': ImageNetSketch,
-    # 'objectnet': ObjectNet,
+    'imagenetraTextOri': ImageNetRandaugPromptOriginalText,
+    'imagenetsimText': ImageNetSimplePromptText,
+
+    'f_imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),
+    'f_imagenet_a': partial(ImageNetEvalFeatures, dataset_name='imagenet_a'),
+    'f_imagenet_r': partial(ImageNetEvalFeatures, dataset_name='imagenet_r'),
+    'f_imagenet_v2': partial(ImageNetEvalFeatures, dataset_name='imagenet_v2'),
+    'f_imagenet_sketch': partial(ImageNetEvalFeatures, dataset_name='imagenet_sketch'),
+    'f_objectnet': partial(ImageNetEvalFeatures, dataset_name='objectnet'),
+
+    'imagenet': ImageNet,
+    'imagenet_a': ImageNetA,
+    'imagenet_r': ImageNetR,
+    'imagenet_v2': ImageNetV2,
+    'imagenet_sketch': ImageNetSketch,
+    'objectnet': ObjectNet,
 
     'caltech101': Caltech101,
     'eurosat': EuroSAT,
     'fgvc': FGVCAircraft,
-    'flowers102': Flowers102Text,
+    'flowers102ra': Flowers102Text,
+    'flowers102': Flowers102,
     'food101': Food101,
     'oxfordiiitpet': OxfordIIITPet,
     'stanfordcars': StanfordCars,
     'sun397': SUN397,
     'dtd': DescribableTextures,
     'ucf101': UCF101,
-    'cifar100': CIFAR100Text,
-    'pcam': PCamText,
+    'cifar100ra': CIFAR100Text,
+    'cifar100': CIFAR100,
+    'pcamra': PCamText,
+    'pcam': PCam,
     'country211': Country211,
 }
 
@@ -54,7 +57,6 @@ def create_dataset(ds_cfg, is_train, **kwargs):
         root=kwargs.get('root', ds_cfg.root),
         target_transform=kwargs.get('target_transform', None),
         n_shot=kwargs.get('n_shot', 0),
-        # is_train=is_train,
     )
     if kwargs.get('split', None):
         ds_kwargs['split'] = kwargs['split']

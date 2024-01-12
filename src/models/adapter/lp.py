@@ -28,7 +28,7 @@ def LP(backbone='ViT-B16', freeze=False, classifier=True, **kwargs):
             param.requires_grad = True
 
     if classifier:
-        model.__setattr__('classifier', torch.nn.Linear(dim, 1000))
+        model.__setattr__('classifier', torch.nn.Linear(dim, kwargs.get('num_classes', 1000)))
         forward_bound_method = forward.__get__(model, model.__class__)
         setattr(model, 'forward', forward_bound_method)
 

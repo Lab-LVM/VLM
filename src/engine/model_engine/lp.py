@@ -40,12 +40,11 @@ class LPTaskEngine(TaskEngine):
         self.model.eval()
 
         for data in tqdm(val_loader, total=len(val_loader), desc=f'LinearProb'):
-            x, y = map(lambda x: x.to(self.device), data)
+            x, y, _ = map(lambda x: x.to(self.device) if isinstance(x, torch.Tensor) else x, data)
             x = x.to(memory_format=torch.channels_last)
 
             with self.fabric.autocast():
-                image_features = self.model.encode_image(x)
-                prob = self.model.classifier(image_features)
+                prob = self.model(x)
 
             if hasattr(self.val_dataset, 'project_logits'):
                 prob = self.val_dataset.project_logits(prob)
@@ -62,7 +61,9 @@ class LPTrainEngine(TrainEngine):
         super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
 
     def iterate(self, model, data, criterion):
-        x, y = map(lambda x: x.to(self.device), data)
+        x, y, _ = data
+        x = x.to(self.device, non_blocking=True)
+        y = y.to(self.device, non_blocking=True)
         x = x.to(memory_format=torch.channels_last)
 
         with self.fabric.autocast():
@@ -80,3 +81,16 @@ class LPTrainEngine(TrainEngine):
 
     def _model_eval(self):
         self.model.eval()
+
+    def __call__(self, *args, **kwargs):
+        for epoch in range(self.start_epoch, self.num_epochs):
+            self.train_loader.dataset.set_feature(epoch) if hasattr(self.train_loader.dataset, 'set_feature') else None
+            self.train_loader.sampler.set_epoch(epoch) if self.distributed else None
+
+            train_metrics = self.train(epoch)
+            self._distribute_bn()
+            self.scheduler.step(epoch + 1)
+
+            self._save(epoch, train_metrics[self.cm])
+            self._log(train_metrics, {}, epoch)
+            self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)

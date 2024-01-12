@@ -1,7 +1,6 @@
 import random
 from collections import defaultdict
 
-import torch.utils.data
 from torch.utils.data import Dataset
 from torchvision.datasets import Flowers102 as TorchFlowers102
 from torchvision.transforms import transforms
@@ -23,8 +22,8 @@ class Flowers102(VLMDataset, Dataset):
 
     def __init__(self, root, split='test', transform=None, target_transform=None, n_shot=0):
         if split == 'trainval':
-            train_dataset = TorchFlowers102(self.root, 'train')
-            val_dataset = TorchFlowers102(self.root, 'val')
+            train_dataset = TorchFlowers102(root, 'train')
+            val_dataset = TorchFlowers102(root, 'val')
             train_dataset._image_files.extend(val_dataset._image_files)
             train_dataset._labels.extend(val_dataset._labels)
             dataset = train_dataset
@@ -54,7 +53,7 @@ class Flowers102Text(VLMDataset, Dataset):
     dataset_path = 'flowers-102'
     n_class = 102
 
-    def __init__(self, root, split='test', transform=None, target_transform=None, n_shot=0, is_train=False):
+    def __init__(self, root, split='test', transform=None, target_transform=None, n_shot=0):
         if split == 'trainval':
             train_dataset = TorchFlowers102(root, 'train')
             val_dataset = TorchFlowers102(root, 'val')
@@ -67,8 +66,6 @@ class Flowers102Text(VLMDataset, Dataset):
         super().__init__(root, dataset._image_files, dataset._labels, class_name_list, transform, target_transform,
                          n_shot)
         self.augmentation_prompt = AUGMENT_PROMPT
-        if is_train:
-            self.__getitem_fn = self.__getitem_train
 
     @property
     def prompt(self):
@@ -104,7 +101,7 @@ class Flowers102Text(VLMDataset, Dataset):
         prompt = prompt('original', self.num2str(target))
         return prompt
 
-    def __getitem_train(self, idx):
+    def __getitem__(self, idx):
         path, target = self.imgs[idx], self.targets[idx]
         imgs = self.loader(path)
 
@@ -114,15 +111,6 @@ class Flowers102Text(VLMDataset, Dataset):
         imgs = self.post_processing(imgs)
 
         return imgs, ra_imgs, target, self.org_prompt(target), self.ra_prompt(ra_tf, target)
-
-    def __getitem_fn(self, idx):
-        path, target = self.imgs[idx], self.targets[idx]
-        imgs = self.loader(path)
-        imgs = self.transform(imgs)
-        return imgs, target
-
-    def __getitem__(self, idx):
-        return self.__getitem_fn(idx)
 
 
 if __name__ == '__main__':
