@@ -12,8 +12,8 @@ num_workers: 4
 seed: 42
 log_interval: 50
 
-criteria_metric: Top1
-criteria_decreasing: False
+criteria_metric: loss
+criteria_decreasing: True
 eval_metrics: [ Top1 ] #, Top5 ]
 
 criterion: CLIPLoss

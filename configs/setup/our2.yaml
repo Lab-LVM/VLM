@@ -5,15 +5,18 @@ defaults:
   - override /dataset: imagenet
   - override /model: our2
 
-gpu: 0
-name: ${model.model_name}
+gpu: [ 0,1,2,3,4,5,6,7 ]
+#name: ${model.model_name}
 n_shot: 0
+
+model:
+  freeze: False
 
 train:
   epochs: 10
-  batch_size: 4096
-  total_batch: 4096
-  num_workers: 4
+  batch_size: 80
+  total_batch: 640
+  num_workers: 32
   criterion: IOL
 
   scheduler:
@@ -25,7 +28,8 @@ train:
     sched_on_updates: True
 
   optimizer:
-    lr: 0.05
+    lr: 1.25e-6
+  adapter_lr: 5e-3
 
 dataset:
   augmentation:

@@ -44,7 +44,7 @@ def mlp(dim=512):
     )
 
 @register_model
-def Our2(backbone='ViT-B16', freeze=False, language_adapter=False, vision_adapter=False, return_feature=True, **kwargs):
+def Our2(backbone='ViT-B16', freeze=False, language_adapter=False, vision_adapter=False, return_feature=True, finetune=False, **kwargs):
     model, _ = clip.load(backbone)
     if 'B16' in backbone or 'B32' in backbone:
         dim = 512
@@ -58,15 +58,16 @@ def Our2(backbone='ViT-B16', freeze=False, language_adapter=False, vision_adapte
         for name, param in model.named_parameters():
             param.requires_grad = True
 
-    if language_adapter:
-        model.__setattr__('language_adapter', mlp(dim=dim))
-        encode_text_bound_method = encode_text.__get__(model, model.__class__)
-        setattr(model, 'encode_text', encode_text_bound_method)
+    if finetune:
+        if language_adapter:
+            model.__setattr__('language_adapter', mlp(dim=dim))
+            encode_text_bound_method = encode_text.__get__(model, model.__class__)
+            setattr(model, 'encode_text', encode_text_bound_method)
 
-    if vision_adapter:
-        model.__setattr__('vision_adapter', mlp(dim=dim))
-        encode_image_bound_method = encode_image.__get__(model, model.__class__)
-        setattr(model, 'encode_image', encode_image_bound_method)
+        if vision_adapter:
+            model.__setattr__('vision_adapter', mlp(dim=dim))
+            encode_image_bound_method = encode_image.__get__(model, model.__class__)
+            setattr(model, 'encode_image', encode_image_bound_method)
 
     if return_feature:
         forward_bound_method = forward_features.__get__(model, model.__class__)
