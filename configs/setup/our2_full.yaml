@@ -11,8 +11,8 @@ n_shot: 0
 
 train:
   epochs: 10
-  batch_size: 4096
-  total_batch: 4096
+  batch_size: 64
+  total_batch: 512
   num_workers: 4
   criterion: IOL
 
@@ -25,7 +25,11 @@ train:
     sched_on_updates: True
 
   optimizer:
-    lr: 0.05
+    lr: 1.25e-6
+  adapter_lr: 5e-3
+
+  model:
+    freeze: False
 
 dataset:
   augmentation:
