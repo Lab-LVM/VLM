@@ -18,4 +18,4 @@ augmentation:
   mixup: 0
   cutmix: 0
   train_interpolation: bicubic
-  auto_aug: rand-m9-mstd0.5-inc1
+  auto_aug: rand-m7-mstd0.5-inc1
