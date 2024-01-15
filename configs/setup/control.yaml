@@ -3,10 +3,20 @@
 defaults:
   - override /train/optimizer: adamw
   - override /dataset: imagenet
+  - override /model: our2
+
 
 gpu: 0
 name: ${model.model_name}
 n_shot: 0
+
+model:
+  freeze: False
+  finetune: False
+  vision_adapter: False
+  language_adapter: False
+  forward_backbone: True
+  return_feature: True
 
 train:
   epochs: 10

@@ -85,7 +85,7 @@ def forward_features(self, image, text):
     image_features = image_features / image_features.norm(dim=1, keepdim=True)
     text_features = text_features / text_features.norm(dim=1, keepdim=True)
 
-    return image_features, text_features, self.logit_scale.exp()
+    return image_features, text_features
 
 
 def mlp(dim=512):
@@ -164,9 +164,9 @@ def Our(backbone='ViT-B16', freeze=False, finetune=False, language_adapter=False
             forward_bound_method = forward.__get__(model, model.__class__)
             setattr(model, 'forward', forward_bound_method)
 
-        if kwargs.get('return_feature', False):
-            forward_bound_method = forward_features.__get__(model, model.__class__)
-            setattr(model, 'forward', forward_bound_method)
+    if kwargs.get('return_feature', False):
+        forward_bound_method = forward_features.__get__(model, model.__class__)
+        setattr(model, 'forward', forward_bound_method)
 
     return model
 

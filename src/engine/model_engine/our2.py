@@ -173,7 +173,7 @@ class Our2TrainEngineForDistributionShift(TrainEngine):
         else:
             raise NotImplementedError('Criterion is not implemented')
 
-        if not 'Text' in self.train_loader.dataset.__class__.__name__:
+        if not 'raText' in self.train_loader.dataset.__class__.__name__:
             self.iterate = self.simple_iterate
 
         if isinstance(self.train_loader.dataset, ImageNetRandaugPrompt):
@@ -219,26 +219,6 @@ class Our2TrainEngineForDistributionShift(TrainEngine):
 
         return loss, outs[0], y
 
-    def eval(self):
-        self.model.eval()
-        with torch.no_grad():
-            df = pd.DataFrame()
-            cfg = copy.deepcopy(self.cfg)
-            for k, v in dataset2dict(cfg.eval_dataset).items():
-                cfg.dataset = v
-                test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
-
-                engine = create_task_engine(cfg, self.fabric, self.model, self.tokenizer, test_dataset, test_dataset)
-                metrics = engine(n_shots=to_list(cfg.n_shot))
-
-                row = dict(Data=test_dataset.name, Acc=float(metrics['classification']))
-                df = pd.concat([df, pd.DataFrame(row, index=[0])])
-            df = pd.concat([df, pd.DataFrame({'Data': 'Mean', 'Acc': df['Acc'].mean()}, index=[0])])
-        del test_dataset
-        torch.cuda.empty_cache()
-        gc.collect()
-        return df
-
     def __call__(self, *args, **kwargs):
         for epoch in range(self.start_epoch, self.num_epochs):
             self.train_loader.dataset.set_feature(epoch) if hasattr(self.train_loader.dataset, 'set_feature') else None
@@ -251,7 +231,3 @@ class Our2TrainEngineForDistributionShift(TrainEngine):
             self._save(epoch, train_metrics[self.cm])
             self._log(train_metrics, {}, epoch)
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)
-
-        if kwargs.get('pass_eval', None):
-            return None
-        return self.eval()
