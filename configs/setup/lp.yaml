@@ -1,0 +1,33 @@
+# @package _global_
+
+defaults:
+  - override /train/optimizer: adamw
+  - override /dataset: imagenet
+  - override /model: lp
+
+
+gpu: 0
+name: ${model.model_name}
+n_shot: 0
+
+train:
+  epochs: 10
+  batch_size: 512
+  total_batch: 512
+  num_workers: 4
+  
+  criterion: CrossEntropy
+
+  scheduler:
+    sched: null
+
+  optimizer:
+    lr: 0.05
+    weight_decay: 1e-1
+
+dataset:
+  augmentation:
+    train_interpolation: bicubic
+    auto_aug: null
+    hflip: 0.5
+    scale: [ 0.9, 1.0 ]
