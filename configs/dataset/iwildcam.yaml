@@ -1,0 +1,11 @@
+defaults:
+  - base_dataset
+  - _self_
+
+name: iwildcam
+
+num_classes: 182
+
+train: train
+valid: val
+test: test
