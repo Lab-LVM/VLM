@@ -49,7 +49,7 @@ class Flowers102(VLMDataset, Dataset):
         return train_data_dict
 
 
-class Flowers102Text(VLMDataset, Dataset):
+class Flowers102raText(VLMDataset, Dataset):
     dataset_path = 'flowers-102'
     n_class = 102
 

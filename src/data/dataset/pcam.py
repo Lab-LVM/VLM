@@ -58,7 +58,7 @@ class PCam(VLMDataset, Dataset):
         return fromarray(data).convert("RGB")
 
 
-class PCamText(VLMDataset, Dataset):
+class PCamraText(VLMDataset, Dataset):
     dataset_path = 'pcam'
     n_class = 2
 

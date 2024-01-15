@@ -78,7 +78,7 @@ class CIFAR100(VLMDataset, Dataset):
         return fromarray(data)
 
 
-class CIFAR100Text(VLMDataset, Dataset):
+class CIFAR100raText(VLMDataset, Dataset):
     dataset_path = 'cifar-100-python'
     n_class = 100
 
