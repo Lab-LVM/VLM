@@ -2,27 +2,15 @@ session_name: fewshot
 windows:
   - window_name: window
     layout: tiled
-    shell_command_before:
-      - export _nShot=4
-      - export _ds=flowers102
+#    shell_command_before:
+#      - export _nShot=4
+#      - export _ds=flowers102
     panes:
-#      - python main_full.py gpu=4 train.adapter_lr=0.05 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=10 name=Ours_${_ds}_${_nShot}_LR05_e10 dataset.name=${_ds}ra +setup=our2 model=our2
-#      - python main_full.py gpu=5 train.adapter_lr=0.05 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=30 name=Ours_${_ds}_${_nShot}_LR05_e30 dataset.name=${_ds}ra +setup=our2 model=our2
-#      - python main_full.py gpu=6 train.adapter_lr=0.05 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=50 name=Ours_${_ds}_${_nShot}_LR05_e50 dataset.name=${_ds}ra +setup=our2 model=our2
-#      - python main_full.py gpu=6 train.adapter_lr=0.05 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=100 name=Ours_${_ds}_${_nShot}_LR05_e100 dataset.name=${_ds}ra +setup=our2 model=our2 # 80.???
-
-#      - python main_full.py gpu=4 train.adapter_lr=0.05 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=200 name=Ours_${_ds}_${_nShot}_LR05_e200 dataset.name=${_ds}ra +setup=our2 model=our2 # 91.283
-#      - python main_full.py gpu=5 train.adapter_lr=0.005 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=200 name=Ours_${_ds}_${_nShot}_LR05_e200 dataset.name=${_ds}ra +setup=our2 model=our2
-#      - python main_full.py gpu=6 train.adapter_lr=0.0005 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=200 name=Ours_${_ds}_${_nShot}_LR05_e200 dataset.name=${_ds}ra +setup=our2 model=our2
-#      - python main_full.py gpu=7 train.adapter_lr=0.00005 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=200 name=Ours_${_ds}_${_nShot}_LR05_e200 dataset.name=${_ds}ra +setup=our2 model=our2 # 91.820
-
-#      - python main_full.py gpu=4 train.adapter_lr=0.000005 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=200 name=Ours_${_ds}_${_nShot}_LR05_e200 dataset.name=${_ds}ra +setup=our2 model=our2 # 81.9
-#      - python main_full.py gpu=5 train.adapter_lr=0.0000005 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=200 name=Ours_${_ds}_${_nShot}_LR05_e200 dataset.name=${_ds}ra +setup=our2 model=our2 # 20.3
-#      - python main_full.py gpu=6 train.adapter_lr=0.00005 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=300 name=Ours_${_ds}_${_nShot}_LR05_e300 dataset.name=${_ds}ra +setup=our2 model=our2 # 91.99
-#      - python main_full.py gpu=7 train.adapter_lr=0.00005 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=408 train.epochs=400 name=Ours_${_ds}_${_nShot}_LR05_e400 dataset.name=${_ds}ra +setup=our2 model=our2 # 91.7
-
-# For other models
-#      - python main_full.py gpu=4 train.optimizer.lr=1.25e-6 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=1 train.epochs=10 name=Ours_${_ds}_${_nShot} dataset.name=${_ds}ra +setup=our2 model=our2 model.freeze=False
-#      - python main_full.py gpu=5 train.optimizer.lr=1.25e-6 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=1 train.epochs=10 name=FLYP_${_ds}_${_nShot} +setup=control model=flyp model.freeze=False
-#      - python main_full.py gpu=6 train.optimizer.lr=1.25e-6 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=1 train.epochs=10 name=LP_${_ds}_${_nShot} +setup=control model=lp model.freeze=True train.criterion=ce
-#      - python main_full.py gpu=7 train.optimizer.lr=1.25e-6 dataset=$_ds dataset@eval_dataset=$_ds n_shot=$_nShot train.batch_size=1 train.epochs=10 name=FFT_${_ds}_${_nShot} +setup=control model=lp model.freeze=False train.criterion=ce
+      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=0 checkpoint=finetune/wiseft_B32_e5.ckpt dataset.name=imagenet_ds
+      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=1 checkpoint=finetune/wiseft_B32_e10.ckpt dataset.name=imagenet_ds
+      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=2 checkpoint=finetune/wiseft_B32_e15.ckpt dataset.name=imagenet_ds
+      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=3 checkpoint=finetune/wiseft_B32_e20.ckpt dataset.name=imagenet_ds
+      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=4 checkpoint=finetune/FT_B32_e5.ckpt dataset.name=imagenet_ds
+      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=5 checkpoint=finetune/FT_B32_e10.ckpt dataset.name=imagenet_ds
+      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=6 checkpoint=finetune/FT_B32_e15.ckpt dataset.name=imagenet_ds
+      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=7 checkpoint=finetune/FT_B32_e20.ckpt dataset.name=imagenet_ds

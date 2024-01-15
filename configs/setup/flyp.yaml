@@ -3,20 +3,12 @@
 defaults:
   - override /train/optimizer: adamw
   - override /dataset: imagenet
-  - override /model: our2
+  - override /model: flyp
 
 
 gpu: 0
 name: ${model.model_name}
 n_shot: 0
-
-model:
-  freeze: False
-  finetune: False
-  vision_adapter: False
-  language_adapter: False
-  forward_backbone: True
-  return_feature: True
 
 train:
   epochs: 10
@@ -36,4 +28,4 @@ dataset:
     train_interpolation: bicubic
     auto_aug: null
     hflip: 0.0
-    scale: [0.9, 1.0]
+    scale: [ 0.9, 1.0 ]

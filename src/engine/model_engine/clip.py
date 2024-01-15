@@ -42,17 +42,8 @@ class CLIPTaskEngine(TaskEngine):
 
         logits = self.model.logit_scale.exp() * qry_features @ text_classifier.mT
 
-        if 'objectnet' in self.cfg.dataset.name:
+        if hasattr(self.val_dataset, 'project_logits'):
             logits = self.val_dataset.project_logits(logits)
-
-        # Classifier logits
-        try:
-            classifier_logits = self.model.classifier(qry_features)
-            if hasattr(self.val_dataset, 'project_logits'):
-                classifier_logits = self.val_dataset.project_logits(classifier_logits)
-            logits += classifier_logits
-        except:
-            pass
 
         self.metric.update(logits, qry_labels)
         self.metric.prefix = 'clip_zeroshot'
@@ -83,22 +74,5 @@ class CLIPTrainEngine(TrainEngine):
     def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs, **kwargs):
         super().__init__(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs)
 
-    def iterate(self, model, data, criterion):
-        x, y = map(lambda x: x.to(self.device), data)
-        x = x.to(memory_format=torch.channels_last)
-
-        with self.fabric.autocast():
-            with torch.no_grad():
-                image_features = self.model.encode_image(x)
-
-            prob = self.model.classifier(image_features)
-            loss = criterion(prob, y)
-
-        return loss, prob, y
-
-    def _model_train(self):
-        self.model.eval()
-        self.model.classifier.train()
-
-    def _model_eval(self):
-        self.model.eval()
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError

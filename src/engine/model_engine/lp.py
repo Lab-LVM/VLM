@@ -44,12 +44,12 @@ class LPTaskEngine(TaskEngine):
             x = x.to(memory_format=torch.channels_last)
 
             with self.fabric.autocast():
-                prob = self.model(x)
+                logits = self.model(x)
 
             if hasattr(self.val_dataset, 'project_logits'):
-                prob = self.val_dataset.project_logits(prob)
+                logits = self.val_dataset.project_logits(logits)
 
-            self.metric.update(prob, y)
+            self.metric.update(logits, y)
 
         self.metric.prefix = 'clip_linear_prob'
         return self._output
@@ -67,20 +67,10 @@ class LPTrainEngine(TrainEngine):
         x = x.to(memory_format=torch.channels_last)
 
         with self.fabric.autocast():
-            with torch.no_grad():
-                image_features = self.model.encode_image(x)
-
-            prob = self.model.classifier(image_features)
+            prob = self.model(x)
             loss = criterion(prob, y)
 
         return loss, prob, y
-
-    def _model_train(self):
-        self.model.eval()
-        self.model.classifier.train()
-
-    def _model_eval(self):
-        self.model.eval()
 
     def __call__(self, *args, **kwargs):
         for epoch in range(self.start_epoch, self.num_epochs):
