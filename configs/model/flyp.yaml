@@ -4,6 +4,8 @@ defaults:
 model_name: Our2
 
 finetune: False
+freeze: False
+
 language_adapter: False
 vision_adapter: False
 return_feature: True
