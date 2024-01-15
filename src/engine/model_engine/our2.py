@@ -173,7 +173,7 @@ class Our2TrainEngineForDistributionShift(TrainEngine):
         else:
             raise NotImplementedError('Criterion is not implemented')
 
-        if not 'raText' in self.train_loader.dataset.__class__.__name__:
+        if not 'OriginalText' in self.train_loader.dataset.__class__.__name__:
             self.iterate = self.simple_iterate
 
         if isinstance(self.train_loader.dataset, ImageNetRandaugPrompt):
