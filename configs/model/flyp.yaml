@@ -2,8 +2,8 @@ defaults:
   - base_model
 
 model_name: Our2
-finetune: True
 
+finetune: False
 language_adapter: False
 vision_adapter: False
 return_feature: True
