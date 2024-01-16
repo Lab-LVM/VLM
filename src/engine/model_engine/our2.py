@@ -145,7 +145,7 @@ class Our2TrainEngine(TrainEngine):
         for epoch in range(self.start_epoch, self.num_epochs):
             self.train_loader.dataset.set_feature(epoch) if hasattr(self.train_loader.dataset, 'set_feature') else None
             self.train_loader.sampler.set_epoch(epoch) if self.distributed else None
-            eval_metrics = self.eval()
+
             train_metrics = self.train(epoch)
             self._distribute_bn()
             if epoch % 5 == 0 or epoch > self.num_epochs - 10:
