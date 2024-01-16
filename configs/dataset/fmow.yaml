@@ -1,0 +1,11 @@
+defaults:
+  - base_dataset
+  - _self_
+
+name: fmow
+
+num_classes: 62
+
+train: train
+valid: val
+test: test
