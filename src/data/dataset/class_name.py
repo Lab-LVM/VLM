@@ -1715,3 +1715,16 @@ IWILDCAM_CLASS_NAME = ['empty', 'white-lipped peccary', 'central american agouti
                        'motorcycle', 'deer mouse', 'jaguarundi', 'bare-throated tiger heron', 'blue ground dove',
                        'red squirrel', 'unknown bird', 'grey-cowled wood rail', 'unknown dove',
                        'central american red brocket']
+
+FMOW_CLASS_NAME = ['airport', 'airport hangar', 'airport terminal', 'amusement park', 'aquaculture',
+                   'archaeological site', 'barn', 'border checkpoint', 'burial site', 'car dealership',
+                   'construction site', 'crop field', 'dam', 'debris or rubble', 'educational institution',
+                   'electric substation', 'factory or powerplant', 'fire station', 'flooded road', 'fountain',
+                   'gas station', 'golf course', 'ground transportation station', 'helipad', 'hospital',
+                   'impoverished settlement', 'interchange', 'lake or pond', 'lighthouse', 'military facility',
+                   'multi unit residential', 'nuclear powerplant', 'office building', 'oil or gas facility', 'park',
+                   'parking lot or garage', 'place of worship', 'police station', 'port', 'prison', 'race track',
+                   'railway bridge', 'recreational facility', 'road bridge', 'runway', 'shipyard', 'shopping mall',
+                   'single unit residential', 'smokestack', 'solar farm', 'space facility', 'stadium', 'storage tank',
+                   'surface mine', 'swimming pool', 'toll booth', 'tower', 'tunnel opening', 'waste disposal',
+                   'water treatment facility', 'wind farm', 'zoo']

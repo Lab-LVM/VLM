@@ -51,6 +51,9 @@ DATASET_DICT = {
     'pcamra': PCamraText,
     'country211': Country211,
     'iwildcam': IWildCam,
+    'iwildcamra': IWildCamText,
+    'fmow': FMow,
+    'fmowra': FMowText,
 }
 
 

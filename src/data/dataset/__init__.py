@@ -17,4 +17,5 @@ from .ucf101 import UCF101
 from .cifar100 import CIFAR100, CIFAR100raText
 from .pcam import PCam, PCamraText
 from .country211 import Country211
-from .iwild import IWildCam
+from .iwild import IWildCam, IWildCamText
+from .fmow import FMow, FMowText

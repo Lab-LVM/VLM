@@ -51,7 +51,7 @@ class ClassificationFeatureEngine(FeatureEngine):
             text_input = self.tokenizer(text, padding='max_length', return_attention_mask=False, return_tensors='pt')['input_ids'].to(self.device)
 
             with self.fabric.autocast():
-                text_feature = self.model.encode_text(text_input)
+                text_feature = self.model.module.encode_text(text_input)
 
             text_feature = normalize(text_feature, dim=-1).mean(0)
             text_feature /= text_feature.norm()
@@ -82,7 +82,7 @@ class ClassificationFeatureEngine(FeatureEngine):
             x = x.to(memory_format=torch.channels_last)
 
             with self.fabric.autocast():
-                image_features = self.model.encode_image(x)
+                image_features = self.model.module.encode_image(x)
 
             features.append(image_features.detach().cpu())
             labels.append(y.detach().cpu())
@@ -111,7 +111,7 @@ class ClassificationFeatureEngine(FeatureEngine):
             x = x.to(memory_format=torch.channels_last)
 
             with self.fabric.autocast():
-                image_features = self.model.encode_image(x)
+                image_features = self.model.module.encode_image(x)
 
             features.append(image_features.detach().cpu())
             labels.append(y.detach().cpu())

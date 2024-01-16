@@ -1,7 +1,5 @@
-import copy
 import gc
 
-import pandas as pd
 import torch
 from torchmetrics import Accuracy
 
@@ -10,10 +8,9 @@ from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
 from ...data import create_dataset
 from ...data.dataset import ImageNetRandaugPrompt
-from ...utils import dataset2dict, to_list
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLossMultiProcessing, CLIPLoss, \
     SoftCLIPLoss
-from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine, create_task_engine
+from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
 
 
 @register_feature_engine
@@ -57,6 +54,16 @@ class Our2TaskEngine(TaskEngine):
 
         self.metric.update(logits, qry_labels)
         self.metric.prefix = 'classification'
+
+        if hasattr(self.val_dataset, 'scoring'):
+            preds = logits.argmax(dim=1, keepdim=True).view_as(qry_labels)
+            output = self.val_dataset.scoring(preds.cpu(), qry_labels.cpu())
+            if output[0].get('F1-macro_all', None):
+                output[0]['classification'] = output[0]['F1-macro_all']
+            else:
+                output[0]['classification'] = output[0]['acc_worst_region']
+            return output[0]
+
         return self._output
 
 
@@ -78,7 +85,7 @@ class Our2TrainEngine(TrainEngine):
         else:
             raise NotImplementedError('Criterion is not implemented')
 
-        if not 'raText' in self.train_loader.dataset.__class__.__name__:
+        if not 'Text' in self.train_loader.dataset.__class__.__name__:
             self.iterate = self.simple_iterate
 
         if isinstance(self.train_loader.dataset, ImageNetRandaugPrompt):
@@ -138,7 +145,7 @@ class Our2TrainEngine(TrainEngine):
         for epoch in range(self.start_epoch, self.num_epochs):
             self.train_loader.dataset.set_feature(epoch) if hasattr(self.train_loader.dataset, 'set_feature') else None
             self.train_loader.sampler.set_epoch(epoch) if self.distributed else None
-
+            eval_metrics = self.eval()
             train_metrics = self.train(epoch)
             self._distribute_bn()
             if epoch % 5 == 0 or epoch > self.num_epochs - 10:
