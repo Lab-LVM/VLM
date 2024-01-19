@@ -2,11 +2,11 @@ import os
 import random
 
 from torch.utils.data import Dataset
-from torchvision.datasets import Caltech101 as TorchCaltech101
+from torchvision.datasets import ImageFolder
 from torchvision.transforms import transforms
 
-from . import VLMDataset, CALTECH101_CLASS_NAME
-from .ra_text import RandAugment, RAND_AUG_TRANSFORMS
+from src.data.dataset import VLMDataset, CALTECH101_CLASS_NAME
+from src.data.dataset.ra_text import RandAugment, RAND_AUG_TRANSFORMS
 
 ORIGINAL_PROMPT = [
     lambda name: f'a photo of a {name}.',
@@ -87,24 +87,15 @@ class Caltech101(VLMDataset, Dataset):
     dataset_path = 'caltech101'
     n_class = 101
 
-    def __init__(self, root, split='category', transform=None, target_transform=None, n_shot=0):
-        self._split_warning(self.__class__.__name__, split, 'category')
-        dataset = TorchCaltech101(root, split)
+    def __init__(self, root, split='test', transform=None, target_transform=None, n_shot=0):
+        dataset = ImageFolder(os.path.join(root, self.dataset_path, split))
         class_name_list = CALTECH101_CLASS_NAME
         super().__init__(root, *self._imgs_targets(dataset), class_name_list, transform, target_transform, n_shot)
 
     @staticmethod
     def _imgs_targets(dataset):
-        imgs = []
-        targets = []
-        for i in range(len(dataset)):
-            imgs.append(os.path.join(
-                dataset.root,
-                '101_ObjectCategories',
-                dataset.categories[dataset.y[i]],
-                f'image_{dataset.index[i]:04d}.jpg',
-            ))
-            targets.append(dataset.y[i])
+        imgs = [x[0] for x in dataset.imgs]
+        targets = dataset.targets
         return imgs, targets
 
     @property
@@ -116,25 +107,16 @@ class Caltech101raText(VLMDataset, Dataset):
     dataset_path = 'caltech101'
     n_class = 101
 
-    def __init__(self, root, split='category', transform=None, target_transform=None, n_shot=0):
-        self._split_warning(self.__class__.__name__, split, 'category')
-        dataset = TorchCaltech101(root, split)
+    def __init__(self, root, split='test', transform=None, target_transform=None, n_shot=0):
+        dataset = ImageFolder(os.path.join(root, self.dataset_path, split))
         class_name_list = CALTECH101_CLASS_NAME
         super().__init__(root, *self._imgs_targets(dataset), class_name_list, transform, target_transform, n_shot)
         self.augmentation_prompt = AUGMENT_PROMPT
 
     @staticmethod
     def _imgs_targets(dataset):
-        imgs = []
-        targets = []
-        for i in range(len(dataset)):
-            imgs.append(os.path.join(
-                dataset.root,
-                '101_ObjectCategories',
-                dataset.categories[dataset.y[i]],
-                f'image_{dataset.index[i]:04d}.jpg',
-            ))
-            targets.append(dataset.y[i])
+        imgs = [x[0] for x in dataset.imgs]
+        targets = dataset.targets
         return imgs, targets
 
     @property
@@ -173,10 +155,9 @@ class Caltech101raText(VLMDataset, Dataset):
 
 
 if __name__ == '__main__':
-    ds = Caltech101('/data/vlm', transform=transforms.ToTensor(), n_shot=4)
+    ds = Caltech101raText('/data', transform=transforms.ToTensor(), n_shot=4)
 
     data = next(iter(ds))
-
     print(data[0].shape, data[1])
     print(ds.class_name[:5])
     print(f'{ds.str2num("background")}, {ds.num2str(data[1])}')

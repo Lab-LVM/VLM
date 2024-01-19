@@ -6,6 +6,6 @@ name: caltech101
 
 num_classes: 101
 
-train:
-valid:
-test:
+train: train
+valid: val
+test: test
