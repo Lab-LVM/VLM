@@ -29,7 +29,7 @@ train:
 
   optimizer:
     lr: 1.25e-6
-  adapter_lr: 5e-3
+  adapter_lr: 5e-4
 
 dataset:
   augmentation:
