@@ -60,6 +60,7 @@ def main(cfg: DictConfig) -> None:
 
     # Eval
     cfg.train.batch_size = 512
+    cfg.train.num_workers=4
     model.eval()
 
     df = pd.DataFrame()
