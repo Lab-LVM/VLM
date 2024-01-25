@@ -7,8 +7,9 @@ from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler_v2, scheduler_kwargs
 from torch import nn
 
+from src.utils.loss_fn_our_ablation import AugmentedContrastiveLossAblation
 from src.utils.loss_function import CLIPLoss, CoCaLoss, SupervisedContrastiveLoss, IndomainOutdomainContrastiveLoss, \
-    SupervisedContrastiveLossMultiProcessing, SoftCLIPLoss
+    SupervisedContrastiveLossMultiProcessing, SoftCLIPLoss, IndomainOutdomainContrastiveLoss2
 from src.utils.registry import create_model
 from src.utils.scheduler import CosineLR
 from src.utils.utils import filter_grad
@@ -101,6 +102,12 @@ class ObjectFactory:
 
         elif self.train.criterion == 'IOL':
             train_loss_fn = validate_loss_fn = IndomainOutdomainContrastiveLoss()  # contextual
+
+        elif self.train.criterion == 'IOL2':
+            train_loss_fn = validate_loss_fn = IndomainOutdomainContrastiveLoss2()  # contextual
+
+        elif self.train.criterion == 'Ablation':
+            train_loss_fn = validate_loss_fn = AugmentedContrastiveLossAblation(self.train.criterion_type)  # contextual
 
         elif self.train.criterion == 'SCLM':
             train_loss_fn = validate_loss_fn = SupervisedContrastiveLossMultiProcessing()

@@ -15,6 +15,7 @@ from ...data.dataset import ImageNetRandaugPrompt, ImageNetRandaugPromptText
 from ...data.dataset import ObjectNet
 from ...data.dataset.imagenet_text import ImageNetSimplePromptText, ImageNetRandaugPromptOriginalText
 from ...utils import dataset2dict, to_list
+from ...utils.loss_fn_our_ablation import AugmentedContrastiveLossAblation
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss, \
     SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine, create_task_engine
@@ -76,7 +77,7 @@ class OurTaskEngine(TaskEngine):
 
             logits = self.model.logit_scale.exp() * torch.mm(image_features, text_features)
 
-        if self.cfg.dataset.name == 'objectnet':
+        if 'objectnet' in self.cfg.dataset.name:
             logits = ObjectNet(self.cfg.dataset.root).project_logits(logits)
 
         # Classifier logits
@@ -87,7 +88,6 @@ class OurTaskEngine(TaskEngine):
             logits += classifier_logits
         except:
             pass
-
         self.metric.update(logits, targets)
         self.metric.prefix = 'simple_adapter_classification'
         return self._output
@@ -143,7 +143,7 @@ class OurTrainEngine(TrainEngine):
             criterion[0].rank = fabric.local_rank
             criterion[0].world_size = fabric.world_size
 
-        if isinstance(criterion[0], IndomainOutdomainContrastiveLoss):
+        if isinstance(criterion[0], (IndomainOutdomainContrastiveLoss, AugmentedContrastiveLossAblation)):
             self.criterion_forward = self.IOL_forward
         elif isinstance(criterion[0], SupervisedContrastiveLoss):
             self.criterion_forward = self.SCL_forward
@@ -160,9 +160,8 @@ class OurTrainEngine(TrainEngine):
         if isinstance(self.train_loader.dataset, ImageNetRandaugPrompt):
             self.train_loader.dataset.setup_prompt_transform()
 
-    def IOL_forward(self, criterion, y, image_feature, text_feature, logit_scale):
-        # logit_scale = self.model.logit_scale.exp()
-        loss = criterion(image_feature, text_feature, y, logit_scale)
+    def IOL_forward(self, criterion, y, image_feature, text_feature):
+        loss = criterion(image_feature, text_feature, y, self.model.logit_scale.exp())
         return loss
 
     def SCLM_forward(self, criterion, y, image_feature, text_feature, image_prob=None):
@@ -240,10 +239,11 @@ class OurTrainEngine(TrainEngine):
             cfg = copy.deepcopy(self.cfg)
             ds_backbone = cfg.model.backbone.split('-')[-1]
             for k, v in dataset2dict(cfg.eval_dataset).items():
+                v.name = 'f_' + v.name
                 cfg.dataset = v
                 test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=ds_backbone)
 
-                engine = create_task_engine(cfg, self.fabric, self.model, self.tokenizer, test_dataset, test_dataset)
+                engine = OurTaskEngine(cfg, self.fabric, self.model, self.tokenizer, test_dataset, test_dataset)
                 metrics = engine(n_shots=to_list(cfg.n_shot))
 
                 row = dict(Data=test_dataset.name, Acc=float(metrics['simple_adapter_classification']))

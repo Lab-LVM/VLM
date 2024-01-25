@@ -8,8 +8,9 @@ from ..feature_engine import ClassificationFeatureEngine
 from ..train_engine import TrainEngine
 from ...data import create_dataset
 from ...data.dataset import ImageNetRandaugPrompt
+from ...utils.loss_fn_our_ablation import AugmentedContrastiveLossAblation
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLossMultiProcessing, CLIPLoss, \
-    SoftCLIPLoss
+    SoftCLIPLoss, IndomainOutdomainContrastiveLoss2
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
 
 
@@ -40,6 +41,7 @@ class Our2TaskEngine(TaskEngine):
     def available_task(self):
         return ['classification']
 
+    @torch.no_grad()
     def classification(self, **kwargs):
         self.feature_engine.sampling(0)
         self.metric.reset()
@@ -173,7 +175,7 @@ class Our2TrainEngineForDistributionShift(TrainEngine):
             criterion[0].rank = fabric.local_rank
             criterion[0].world_size = fabric.world_size
 
-        if isinstance(criterion[0], IndomainOutdomainContrastiveLoss):
+        if isinstance(criterion[0], (IndomainOutdomainContrastiveLoss, IndomainOutdomainContrastiveLoss2, AugmentedContrastiveLossAblation)):
             self.criterion_forward = self.IOL_forward
         elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss)):
             self.criterion_forward = self.SCLM_forward
