@@ -8,6 +8,7 @@ from .food101 import Food101
 from .imagenet import ImageNet, ImageNetRandaugPrompt, ImageNetRandaugPromptV2
 from .imagenet_features import ImageNetRandaugPromptFeatures, ImageNetEvalFeatures
 from .imagenet_text import ImageNetRandaugPromptText, ImageNetSimplePromptText, ImageNetRandaugPromptOriginalText
+from .imagenet_text import OriginalTextImageNetRandaugPromptAblationAA, OriginalTextImageNetRandaugPromptAblationAN, OriginalTextImageNetRandaugPromptAblationNN, ImageNetSimpleAugPrompt, ImageNetSimpleAugNormPrompt
 from .imagenet_x import ImageNetA, ImageNetR, ImageNetSketch, ImageNetV2, ObjectNet
 from .oxfordiiitpet import OxfordIIITPet
 from .stanfordcars import StanfordCars, StanfordCarsraText

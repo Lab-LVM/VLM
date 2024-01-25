@@ -326,6 +326,11 @@ class ImageNetRandaugPromptOriginalText(ImageNet):
         prompt = prompt('original', self.num2str(target))
         return prompt
 
+    def sim_prompt(self, target):
+        prompt = random.choice(ORIGINAL_PROMPT)
+        prompt = prompt(self.num2str(target))
+        return prompt
+
     def __getitem__(self, idx):
         path, target = self.imgs[idx], self.targets[idx]
         imgs = self.loader(path)
@@ -350,13 +355,80 @@ class ImageNetSimplePromptText(ImageNet):
         prompt = random.choice(self.original_prompt)
         prompt = prompt(self.num2str(target))
         return prompt
-    
+
     def __getitem__(self, idx):
         path, target = self.imgs[idx], self.targets[idx]
         imgs = self.loader(path)
         imgs = self.transform(imgs)
 
         return imgs, target, self.org_prompt(target)
+
+
+class ImageNetSimpleAugPrompt(ImageNetRandaugPromptOriginalText):
+    def __getitem__(self, idx):
+        path, target = self.imgs[idx], self.targets[idx]
+        imgs = self.loader(path)
+
+        imgs = self.pre_processing(imgs)
+        ra_imgs, ra_tf = self.randaug(imgs)
+        ra_imgs = self.post_processing(ra_imgs)
+
+        return ra_imgs, target, self.ra_prompt(ra_tf, target)
+
+
+class ImageNetSimpleAugNormPrompt(ImageNetRandaugPromptOriginalText):
+    def __getitem__(self, idx):
+        path, target = self.imgs[idx], self.targets[idx]
+        imgs = self.loader(path)
+
+        imgs = self.pre_processing(imgs)
+        ra_imgs, ra_tf = self.randaug(imgs)
+        ra_imgs = self.post_processing(ra_imgs)
+
+        return ra_imgs, target, self.org_prompt(target)
+
+
+class OriginalTextImageNetRandaugPromptAblationNN(ImageNetRandaugPromptOriginalText):
+    def __getitem__(self, idx):
+        path, target = self.imgs[idx], self.targets[idx]
+        img = self.loader(path)
+
+        img1 = self.pre_processing(img)
+        img2 = self.pre_processing(img)
+
+        img1 = self.post_processing(img1)
+        img2 = self.post_processing(img2)
+
+        return img1, img2, target, self.sim_prompt(target), self.sim_prompt(target)
+
+
+class OriginalTextImageNetRandaugPromptAblationAN(ImageNetRandaugPromptOriginalText):
+    def __getitem__(self, idx):
+        path, target = self.imgs[idx], self.targets[idx]
+        imgs = self.loader(path)
+
+        imgs = self.pre_processing(imgs)
+        ra_imgs, ra_tf = self.randaug(imgs)
+        ra_imgs = self.post_processing(ra_imgs)
+        imgs = self.post_processing(imgs)
+
+        return imgs, ra_imgs, target, self.sim_prompt(target), self.sim_prompt(target)
+
+
+class OriginalTextImageNetRandaugPromptAblationAA(ImageNetRandaugPromptOriginalText):
+    def __getitem__(self, idx):
+        path, target = self.imgs[idx], self.targets[idx]
+        imgs = self.loader(path)
+
+        imgs = self.pre_processing(imgs)
+        ra_imgs, ra_tf = self.randaug(imgs)
+        ra_imgs = self.post_processing(ra_imgs)
+
+        imgs2 = self.pre_processing(imgs)
+        ra_imgs2, ra_tf2 = self.randaug(imgs2)
+        ra_imgs2 = self.post_processing(ra_imgs2)
+
+        return ra_imgs, ra_imgs2, target, self.ra_prompt(ra_tf, target), self.ra_prompt(ra_tf2, target)
 
 
 if __name__ == '__main__':
