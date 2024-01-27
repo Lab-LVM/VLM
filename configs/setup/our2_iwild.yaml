@@ -16,7 +16,7 @@ train:
   batch_size: 80
   total_batch: 640
   num_workers: 32
-  criterion: IOL
+  criterion: AugCL2
 
   scheduler:
     sched: cosine

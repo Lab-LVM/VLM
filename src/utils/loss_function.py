@@ -174,67 +174,114 @@ def soft_cross_entropy(logit, target):
     return loss.mean()
 
 
-class SoftCLIPLoss(nn.Module):
-    def __init__(
-            self,
-            local_loss=False,
-            gather_with_grad=False,
-            cache_labels=True,
-            rank=0,
-            world_size=1,
-            use_horovod=False,
-    ):
-        super().__init__()
-        self.local_loss = local_loss
-        self.gather_with_grad = gather_with_grad
-        self.cache_labels = cache_labels
-        self.rank = rank
-        self.world_size = world_size
-        self.use_horovod = use_horovod
+class SoftContrastiveLoss(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rank = 0
+        self.world_size = 1
 
-        # cache state
-        self.prev_num_logits = 0
-        self.labels = {}
+    def SoftCE(self, logits, targets):
+        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
+        if logits.size(0) > logits.size(1):
+            targets = targets[:, :logits.size(1)]
+        elif logits.size(0) < logits.size(1):
+            targets = targets[:logits.size(0), :]
 
-    def get_ground_truth(self, device, num_logits) -> torch.Tensor:
-        # calculated ground-truth and cache if enabled
-        if self.prev_num_logits != num_logits or device not in self.labels:
-            labels = torch.arange(num_logits, device=device, dtype=torch.long)
-            if self.world_size > 1 and self.local_loss:
-                labels = labels + num_logits * self.rank
-            if self.cache_labels:
-                self.labels[device] = labels
-                self.prev_num_logits = num_logits
-        else:
-            labels = self.labels[device]
-        return labels
+        cardinality = torch.sum(targets, dim=1)
+        loss = torch.sum(-targets * torch.nn.functional.log_softmax(logits, dim=-1), dim=-1) / cardinality
+        return loss.mean()
 
-    def get_logits(self, image_features, text_features, logit_scale):
-        if self.world_size > 1:
-            all_image_features, all_text_features = gather_features(
-                image_features, text_features,
-                self.local_loss, self.gather_with_grad, self.rank, self.world_size)
-
-            if self.local_loss:
-                logits_per_image = logit_scale * image_features @ all_text_features.T
-                logits_per_text = logit_scale * text_features @ all_image_features.T
-            else:
-                logits_per_image = logit_scale * all_image_features @ all_text_features.T
-                logits_per_text = logits_per_image.T
-        else:
-            logits_per_image = logit_scale * image_features @ text_features.T
-            logits_per_text = logit_scale * text_features @ image_features.T
-
+    def generate_logits(self, image_feature, text_feature, logit_scale):
+        logits_per_image = logit_scale * torch.mm(image_feature, text_feature.t())
+        logits_per_text = logits_per_image.t()
         return logits_per_image, logits_per_text
 
     def forward(self, image_features, text_features, targets, logit_scale):
-        # logits_per_image, logits_per_text = self.get_logits(image_features, text_features, logit_scale)
-        # if self.world_size > 1:
-        #     targets = all_gather(targets)
-        logits_per_image = logit_scale * image_features @ text_features.T
-        logits_per_text = logit_scale * text_features @ image_features.T
+        if self.world_size > 1:
+            image_features, text_features, targets = gather_all_features(image_features, text_features, targets)
 
-        return (soft_cross_entropy(logits_per_image, targets) + soft_cross_entropy(logits_per_text, targets)) / 2
+        logits_per_image, logits_per_text = self.generate_logits(image_features, text_features, logit_scale)
+
+        loss = (self.SoftCE(logits_per_image, targets) + self.SoftCE(logits_per_text, targets)) / 2
+        return loss
+
+
+class BCELoss(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rank = 0
+        self.world_size = 1
+        self.BCE = nn.BCEWithLogitsLoss()
+
+    def generate_logits(self, image_feature, text_feature, logit_scale):
+        logits_per_image = torch.mm(image_feature, text_feature.t())
+        logits_per_text = logits_per_image.t()
+
+        half = image_feature.size(0) // 2
+        logits_image_self = torch.mm(image_feature[:half], image_feature[half:].t())
+
+        return logits_per_image, logits_per_text, logits_image_self
+
+    def forward(self, image_features, text_features, targets, logit_scale):
+        if self.world_size > 1:
+            image_features, text_features, targets = gather_all_features(image_features, text_features, targets)
+
+        logits_per_image, logits_per_text, logits_image_self = self.generate_logits(image_features, text_features,
+                                                                                    logit_scale)
+
+        self_targets = torch.arange(logits_image_self.size(0), device=logits_image_self.device, dtype=torch.long)
+
+        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
+        self_targets = (self_targets.unsqueeze(-1) == self_targets.unsqueeze(0)).float()
+
+        loss = (self.BCE(logits_per_image, targets) + self.BCE(logits_per_text, targets)
+                + self.BCE(logits_image_self, self_targets)) / 3
+        return loss
+
+
+class AugCL2(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rank = 0
+        self.world_size = 1
+
+    def ACL2(self, logits, targets):
+        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
+        mask_inverse = 1 - targets
+        cardinality = torch.sum(targets, dim=1)
+
+        prob = torch.nn.functional.softmax(logits, dim=-1)
+
+        exp_logits = torch.exp(logits - torch.max(logits, dim=1, keepdim=True)[0]) + 1e-5
+        calibration = (torch.sum(exp_logits, dim=1, keepdim=True) /
+                       torch.sum(exp_logits * mask_inverse, dim=1, keepdim=True))
+
+        log_prob = torch.log(prob * calibration)
+
+        loss = torch.sum(-targets * log_prob, dim=-1) / cardinality
+        return loss.mean()
+
+    def generate_logits(self, image_feature, text_feature, logit_scale):
+        logits_per_image = logit_scale * torch.mm(image_feature, text_feature.t())
+        logits_per_text = logits_per_image.t()
+
+        half = image_feature.size(0) // 2
+        logits_image_self = logit_scale * torch.mm(image_feature[:half], image_feature[half:].t())
+        half_target = target[:half]
+
+        return logits_per_image, logits_per_text, logits_image_self, half_target
+
+    def forward(self, image_features, text_features, targets, logit_scale):
+        if self.world_size > 1:
+            image_features, text_features, targets = gather_all_features(image_features, text_features, targets)
+
+        logits_per_image, logits_per_text, logits_image_self, half_target = self.generate_logits(image_features,
+                                                                                                 text_features,
+                                                                                                 logit_scale)
+
+        loss = (self.ACL2(logits_per_image, targets) + self.ACL2(logits_per_text, targets)
+                + self.ACL2(logits_image_self, half_target)) / 3
+        return loss
 
 
 class IndomainOutdomainContrastiveLoss(nn.Module):
@@ -243,7 +290,7 @@ class IndomainOutdomainContrastiveLoss(nn.Module):
         self.rank = 0
         self.world_size = 1
 
-    def SCL(self, logits, targets, half=False):
+    def SCL(self, logits, targets):
         mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         mask_inverse = 1 - mask_same_class
 
@@ -277,6 +324,7 @@ class IndomainOutdomainContrastiveLoss(nn.Module):
                 + self.SCL(logits_image_self, self_targets)) / 3
         return loss
 
+
 class IndomainOutdomainContrastiveLoss2(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -292,9 +340,6 @@ class IndomainOutdomainContrastiveLoss2(nn.Module):
         cardinality = torch.sum(mask_same_class, dim=1)
 
         log_prob = -torch.nn.functional.log_softmax(logits, dim=-1)
-
-        # exp_logits = torch.exp(logits - torch.max(logits, dim=1, keepdim=True)[0]) + 1e-5
-        # log_prob = -torch.log(exp_logits / torch.sum(exp_logits * mask_inverse, dim=1, keepdim=True))
         sample_wise_loss = torch.sum(log_prob * mask_same_class, dim=1) / cardinality
 
         return torch.mean(sample_wise_loss)
@@ -314,45 +359,7 @@ class IndomainOutdomainContrastiveLoss2(nn.Module):
 
         logits_per_image, logits_per_text, logits_image_self = self.generate_logits(image_features, text_features,
                                                                                     logit_scale)
-        half = targets.size(0)//2
-        self_targets = targets[:half]
-
-        loss = (self.SCL(logits_per_image, targets) + self.SCL(logits_per_text, targets)
-                + self.SCL(logits_image_self, self_targets)) / 3
-        return loss
-
-class IndomainOutdomainContrastiveLoss3(nn.Module): # NT-Xent
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.rank = 0
-        self.world_size = 1
-
-    def SCL(self, logits, targets):
-        mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
-        cardinality = torch.sum(mask_same_class, dim=1)
-
-        logits = logits / cardinality
-        log_prob = -torch.nn.functional.log_softmax(logits, dim=-1)
-        sample_wise_loss = torch.sum(log_prob * mask_same_class, dim=1)
-
-        return torch.mean(sample_wise_loss)
-
-    def generate_logits(self, image_feature, text_feature, logit_scale):
-        logits_per_image = logit_scale * torch.mm(image_feature, text_feature.t())
-        logits_per_text = logits_per_image.t()
-
-        half = image_feature.size(0) // 2
-        logits_image_self = logit_scale * torch.mm(image_feature[:half], image_feature[half:].t())
-
-        return logits_per_image, logits_per_text, logits_image_self
-
-    def forward(self, image_features, text_features, targets, logit_scale):
-        if self.world_size > 1:
-            image_features, text_features, targets = gather_all_features(image_features, text_features, targets)
-
-        logits_per_image, logits_per_text, logits_image_self = self.generate_logits(image_features, text_features,
-                                                                                    logit_scale)
-        half = targets.size(0)//2
+        half = targets.size(0) // 2
         self_targets = targets[:half]
 
         loss = (self.SCL(logits_per_image, targets) + self.SCL(logits_per_text, targets)
@@ -453,10 +460,9 @@ class OriginalSupervisedContrastiveLoss(nn.Module):
 if __name__ == '__main__':
     import torch
 
-    prob = torch.rand(5, 5)
-    target = torch.arange(0, 5)
+    prob = torch.rand(6, 6)
+    target = torch.arange(0, 6)
     target[1] += 2
-    loss_fn = IndomainOutdomainContrastiveLoss()
+    loss_fn = AugCL2()
 
-    loss_fn(prob, target, indomain=True)
-    loss_fn(prob, target, indomain=False)
+    loss_fn(prob, prob, target, 100)

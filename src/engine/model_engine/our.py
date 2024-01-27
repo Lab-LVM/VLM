@@ -17,8 +17,8 @@ from ...data.dataset.imagenet_text import ImageNetSimplePromptText, ImageNetRand
 from ...utils import dataset2dict, to_list
 from ...utils.loss_fn_our_ablation import AugmentedContrastiveLossAblation
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss, \
-    SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss
-from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine, create_task_engine
+    SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftContrastiveLoss
+from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
 
 
 @register_feature_engine
@@ -143,11 +143,12 @@ class OurTrainEngine(TrainEngine):
             criterion[0].rank = fabric.local_rank
             criterion[0].world_size = fabric.world_size
 
-        if isinstance(criterion[0], (IndomainOutdomainContrastiveLoss, AugmentedContrastiveLossAblation)):
+        if isinstance(criterion[0],
+                      (IndomainOutdomainContrastiveLoss, AugmentedContrastiveLossAblation, SoftContrastiveLoss)):
             self.criterion_forward = self.IOL_forward
         elif isinstance(criterion[0], SupervisedContrastiveLoss):
             self.criterion_forward = self.SCL_forward
-        elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss)):
+        elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss)):
             self.criterion_forward = self.SCLM_forward
         else:
             self.criterion_forward = self.CLCR_forward

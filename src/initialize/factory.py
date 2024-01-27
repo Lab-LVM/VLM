@@ -9,7 +9,7 @@ from torch import nn
 
 from src.utils.loss_fn_our_ablation import AugmentedContrastiveLossAblation
 from src.utils.loss_function import CLIPLoss, CoCaLoss, SupervisedContrastiveLoss, IndomainOutdomainContrastiveLoss, \
-    SupervisedContrastiveLossMultiProcessing, SoftCLIPLoss, IndomainOutdomainContrastiveLoss2
+    SupervisedContrastiveLossMultiProcessing, SoftContrastiveLoss, IndomainOutdomainContrastiveLoss2, BCELoss, AugCL2
 from src.utils.registry import create_model
 from src.utils.scheduler import CosineLR
 from src.utils.utils import filter_grad
@@ -66,7 +66,8 @@ class ObjectFactory:
             lbfgs_kwargs.__delattr__('grad_accumulation')
             optimizer = torch.optim.LBFGS(filter_grad(model), **lbfgs_kwargs)
         else:
-            optimizer = create_optimizer_v2(filter_grad(model, self.train.adapter_lr), **optimizer_kwargs(cfg=self.optim))
+            optimizer = create_optimizer_v2(filter_grad(model, self.train.adapter_lr),
+                                            **optimizer_kwargs(cfg=self.optim))
 
         if self.scheduler.sched is not None:
             updates_per_epoch = \
@@ -97,8 +98,14 @@ class ObjectFactory:
         elif self.train.criterion == 'SCL':
             train_loss_fn = validate_loss_fn = SupervisedContrastiveLoss()
 
-        elif self.train.criterion == 'SoftCLIPLoss':
-            train_loss_fn = validate_loss_fn = SoftCLIPLoss()
+        elif self.train.criterion == 'SoftCE':
+            train_loss_fn = validate_loss_fn = SoftContrastiveLoss()
+
+        elif self.train.criterion == 'BCE':
+            train_loss_fn = validate_loss_fn = BCELoss()
+
+        elif self.train.criterion == 'AugCL2':
+            train_loss_fn = validate_loss_fn = AugCL2()
 
         elif self.train.criterion == 'IOL':
             train_loss_fn = validate_loss_fn = IndomainOutdomainContrastiveLoss()  # contextual

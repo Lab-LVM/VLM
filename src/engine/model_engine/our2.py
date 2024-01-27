@@ -10,7 +10,7 @@ from ...data import create_dataset
 from ...data.dataset import ImageNetRandaugPrompt
 from ...utils.loss_fn_our_ablation import AugmentedContrastiveLossAblation
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLossMultiProcessing, CLIPLoss, \
-    SoftCLIPLoss, IndomainOutdomainContrastiveLoss2
+    IndomainOutdomainContrastiveLoss2, SoftContrastiveLoss, BCELoss, AugCL2
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
 
 
@@ -80,9 +80,9 @@ class Our2TrainEngine(TrainEngine):
             criterion[0].rank = fabric.local_rank
             criterion[0].world_size = fabric.world_size
 
-        if isinstance(criterion[0], IndomainOutdomainContrastiveLoss):
+        if isinstance(criterion[0], (IndomainOutdomainContrastiveLoss, IndomainOutdomainContrastiveLoss2, AugmentedContrastiveLossAblation, SoftContrastiveLoss, BCELoss, AugCL2)):
             self.criterion_forward = self.IOL_forward
-        elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss)):
+        elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss)):
             self.criterion_forward = self.SCLM_forward
         else:
             raise NotImplementedError('Criterion is not implemented')
@@ -175,9 +175,9 @@ class Our2TrainEngineForDistributionShift(TrainEngine):
             criterion[0].rank = fabric.local_rank
             criterion[0].world_size = fabric.world_size
 
-        if isinstance(criterion[0], (IndomainOutdomainContrastiveLoss, IndomainOutdomainContrastiveLoss2, AugmentedContrastiveLossAblation)):
+        if isinstance(criterion[0], (IndomainOutdomainContrastiveLoss, IndomainOutdomainContrastiveLoss2, AugmentedContrastiveLossAblation, SoftContrastiveLoss, BCELoss, AugCL2)):
             self.criterion_forward = self.IOL_forward
-        elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftCLIPLoss)):
+        elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss)):
             self.criterion_forward = self.SCLM_forward
         else:
             raise NotImplementedError('Criterion is not implemented')
