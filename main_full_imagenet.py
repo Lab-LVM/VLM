@@ -9,6 +9,7 @@ from src.models import *
 from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data
 from src.utils import resume, dataset2dict, to_list
+from src.utils.registry import create_task_engine
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
