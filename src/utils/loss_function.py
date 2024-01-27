@@ -261,13 +261,13 @@ class AugCL2(nn.Module):
         loss = torch.sum(-targets * log_prob, dim=-1) / cardinality
         return loss.mean()
 
-    def generate_logits(self, image_feature, text_feature, logit_scale):
+    def generate_logits(self, image_feature, text_feature, logit_scale, targets):
         logits_per_image = logit_scale * torch.mm(image_feature, text_feature.t())
         logits_per_text = logits_per_image.t()
 
         half = image_feature.size(0) // 2
         logits_image_self = logit_scale * torch.mm(image_feature[:half], image_feature[half:].t())
-        half_target = target[:half]
+        half_target = targets[:half]
 
         return logits_per_image, logits_per_text, logits_image_self, half_target
 
@@ -277,7 +277,9 @@ class AugCL2(nn.Module):
 
         logits_per_image, logits_per_text, logits_image_self, half_target = self.generate_logits(image_features,
                                                                                                  text_features,
-                                                                                                 logit_scale)
+                                                                                                 logit_scale,
+                                                                                                 targets,
+                                                                                                 )
 
         loss = (self.ACL2(logits_per_image, targets) + self.ACL2(logits_per_text, targets)
                 + self.ACL2(logits_image_self, half_target)) / 3

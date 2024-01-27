@@ -80,7 +80,9 @@ class Our2TrainEngine(TrainEngine):
             criterion[0].rank = fabric.local_rank
             criterion[0].world_size = fabric.world_size
 
-        if isinstance(criterion[0], (IndomainOutdomainContrastiveLoss, IndomainOutdomainContrastiveLoss2, AugmentedContrastiveLossAblation, SoftContrastiveLoss, BCELoss, AugCL2)):
+        if isinstance(criterion[0], (
+        IndomainOutdomainContrastiveLoss, IndomainOutdomainContrastiveLoss2, AugmentedContrastiveLossAblation,
+        SoftContrastiveLoss, BCELoss, AugCL2)):
             self.criterion_forward = self.IOL_forward
         elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss)):
             self.criterion_forward = self.SCLM_forward
@@ -135,6 +137,7 @@ class Our2TrainEngine(TrainEngine):
 
     @torch.no_grad()
     def eval(self):
+        self.cfg.train.num_workers = 4
         test_ds = create_dataset(self.cfg.eval_dataset, is_train=False, split=self.cfg.eval_dataset.test)
         engine = Our2TaskEngine(self.cfg, self.fabric, self.model, self.tokenizer, test_ds, test_ds)
         metrics = engine()
@@ -175,7 +178,9 @@ class Our2TrainEngineForDistributionShift(TrainEngine):
             criterion[0].rank = fabric.local_rank
             criterion[0].world_size = fabric.world_size
 
-        if isinstance(criterion[0], (IndomainOutdomainContrastiveLoss, IndomainOutdomainContrastiveLoss2, AugmentedContrastiveLossAblation, SoftContrastiveLoss, BCELoss, AugCL2)):
+        if isinstance(criterion[0], (
+        IndomainOutdomainContrastiveLoss, IndomainOutdomainContrastiveLoss2, AugmentedContrastiveLossAblation,
+        SoftContrastiveLoss, BCELoss, AugCL2)):
             self.criterion_forward = self.IOL_forward
         elif isinstance(criterion[0], (SupervisedContrastiveLossMultiProcessing, CLIPLoss)):
             self.criterion_forward = self.SCLM_forward
@@ -227,6 +232,24 @@ class Our2TrainEngineForDistributionShift(TrainEngine):
             loss = self.criterion_forward(criterion, y, *outs)
 
         return loss, outs[0], y
+
+    def _save(self, epoch, criterion_metric=None):
+        save_path = f'e_{epoch}.ckpt'
+        save_state = {
+            'epoch': epoch,
+            'arch': self.model_name,
+            'state_dict': self.model,
+            'optimizer': self.optimizer,
+            'cfg': self.cfg,
+        }
+        if criterion_metric is not None:
+            save_state[self.cm] = criterion_metric
+        self.fabric.save(save_path, save_state)
+
+        is_best = (self.decreasing and criterion_metric < self.best_metric) or (
+                not self.decreasing and criterion_metric > self.best_metric)
+        if is_best:
+            self.best_metric, self.best_epoch = criterion_metric, epoch
 
     def __call__(self, *args, **kwargs):
         for epoch in range(self.start_epoch, self.num_epochs):
