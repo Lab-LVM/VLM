@@ -253,7 +253,7 @@ class AugCL2(nn.Module):
         prob = torch.nn.functional.softmax(logits, dim=-1)
 
         exp_logits = torch.exp(logits - torch.max(logits, dim=1, keepdim=True)[0]) + 1e-5
-        calibration = (torch.sum(exp_logits, dim=1, keepdim=True) /
+        calibration = (torch.sum(exp_logits * targets, dim=1, keepdim=True) /
                        torch.sum(exp_logits * mask_inverse, dim=1, keepdim=True))
 
         log_prob = torch.log(prob * calibration)

@@ -44,14 +44,20 @@ class AugmentedContrastiveLossAblation(nn.Module):
         elif logits.size(0) < logits.size(1):
             mask_same_class = mask_same_class[:logits.size(0), :]
 
+        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         mask_inverse = 1 - mask_same_class
-        cardinality = torch.sum(mask_same_class, dim=1)
+        cardinality = torch.sum(targets, dim=1)
+
+        prob = torch.nn.functional.softmax(logits, dim=-1)
 
         exp_logits = torch.exp(logits - torch.max(logits, dim=1, keepdim=True)[0]) + 1e-5
-        log_prob = -torch.log(exp_logits / torch.sum(exp_logits * mask_inverse, dim=1, keepdim=True))
-        sample_wise_loss = torch.sum(log_prob * mask_same_class, dim=1) / cardinality
+        calibration = (torch.sum(exp_logits * mask_same_class, dim=1, keepdim=True) /
+                       torch.sum(exp_logits * mask_inverse, dim=1, keepdim=True))
 
-        return torch.mean(sample_wise_loss)
+        log_prob = torch.log(prob * calibration)
+
+        loss = torch.sum(-targets * log_prob, dim=-1) / cardinality
+        return loss.mean()
 
     @staticmethod
     def generate_logits(image_feature, text_feature, logit_scale):
