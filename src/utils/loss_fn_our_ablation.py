@@ -97,35 +97,27 @@ class AugmentedContrastiveLossAblation(nn.Module):
         return self._forward(IT, It, iT, it, targets, self_targets, logits_image_self, logits_text_self)
 
     def _ntype1(self, IT, It, iT, it, targets, self_targets, logits_image_self, logits_text_self):
-        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         return (self.NTX(IT, targets) + self.NTX(IT.t(), targets)) / 2
 
     def _ntype2(self, IT, It, iT, it, targets, self_targets, logits_image_self, logits_text_self):
-        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         return (self.NTX(it, targets) + self.NTX(it.t(), targets)) / 2
 
     def _ntype3(self, IT, It, iT, it, targets, self_targets, logits_image_self, logits_text_self):
-        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         return (self.NTX(it, targets) + self.NTX(it.t(), targets) + self.NTX(IT, targets) + self.NTX(IT.t(), targets)) / 4
 
     def _ctype1(self, IT, It, iT, it, targets, self_targets, logits_image_self, logits_text_self):
-        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         return (self.SoftCE(IT, targets) + self.SoftCE(IT.t(), targets)) / 2
 
     def _ctype2(self, IT, It, iT, it, targets, self_targets, logits_image_self, logits_text_self):
-        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         return (self.SoftCE(it, targets) + self.SoftCE(it.t(), targets)) / 2
 
     def _ctype3(self, IT, It, iT, it, targets, self_targets, logits_image_self, logits_text_self):
-        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         return (self.SoftCE(it, targets) + self.SoftCE(it.t(), targets) + self.SoftCE(IT, targets) + self.SoftCE(IT.t(), targets)) / 4
 
     def _ctype4(self, IT, It, iT, it, targets, self_targets, logits_image_self, logits_text_self):
-        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         return (self.SoftCE(iT, targets) + self.SoftCE(iT.t(), targets)) / 2
 
     def _ctype5(self, IT, It, iT, it, targets, self_targets, logits_image_self, logits_text_self):
-        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         return (self.SoftCE(It, targets) + self.SoftCE(It.t(), targets)) / 2
 
     def _ctype6(self, IT, It, iT, it, targets, self_targets, logits_image_self, logits_text_self):

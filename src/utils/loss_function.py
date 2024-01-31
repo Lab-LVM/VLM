@@ -250,12 +250,11 @@ class AugCL2(nn.Module):
         mask_inverse = 1 - targets
         cardinality = torch.sum(targets, dim=1)
 
-        prob = torch.nn.functional.softmax(logits, dim=-1)
-
         exp_logits = torch.exp(logits - torch.max(logits, dim=1, keepdim=True)[0]) + 1e-5
         calibration = (torch.sum(exp_logits * targets, dim=1, keepdim=True) /
                        torch.sum(exp_logits * mask_inverse, dim=1, keepdim=True))
 
+        prob = torch.nn.functional.softmax(logits, dim=-1)
         log_prob = torch.log(prob * calibration)
 
         loss = torch.sum(-targets * log_prob, dim=-1) / cardinality
