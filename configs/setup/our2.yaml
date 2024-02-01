@@ -16,7 +16,7 @@ train:
   epochs: 10
   batch_size: 80
   total_batch: 640
-  num_workers: 32
+  num_workers: 8
   criterion: AugCL2
 
   scheduler:

@@ -9,7 +9,7 @@ python main_full_imagenet.py +setup=our2 train=base_train_pre dataset.name=image
 python main_full_imagenet.py +setup=our2 train=base_train_pre dataset.name=imagenetraTextOri dataset@eval_dataset=imagenet_ds model.backbone=ViT-B32 train.batch_size=128 train.num_workers=12 train.adapter_lr=0.001 train.epochs=15 name=B32_E15 gpu='[0,1,2,3]'
 python main_full_imagenet.py +setup=our2 train=base_train_pre dataset.name=imagenetraTextOri dataset@eval_dataset=imagenet_ds model.backbone=ViT-B32 train.batch_size=128 train.num_workers=12 train.adapter_lr=0.001 train.epochs=20 name=B32_E20 gpu='[0,1,2,3]'
 
-# Epoch Ablation
+# Epoch Ablation Long Epoch
 python main_full_imagenet.py +setup=our2 train=base_train_pre dataset.name=imagenetraTextOri dataset@eval_dataset=imagenet_ds model.backbone=ViT-B32 train.batch_size=128 train.num_workers=12 train.adapter_lr=0.001 train.epochs=5 name=B32_E5 gpu='[0,1,2,3]'
 python main_full_imagenet.py +setup=our2 train=base_train_pre dataset.name=imagenetraTextOri dataset@eval_dataset=imagenet_ds model.backbone=ViT-B32 train.batch_size=128 train.num_workers=12 train.adapter_lr=0.001 train.epochs=15 name=B32_E15 gpu='[4,5,6,7]'
 

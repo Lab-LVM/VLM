@@ -1,5 +1,4 @@
 import torch
-from einops.layers.torch import Rearrange
 
 import src.models.clip as clip
 from src.utils.registry import register_model
@@ -24,6 +23,7 @@ def encode_text(self, text):
     x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
     return self.language_adapter(x) + x
 
+
 def forward_features(self, image, text):
     image_features = self.encode_image(image)
     text_features = self.encode_text(text)
@@ -43,8 +43,10 @@ def mlp(dim=512):
         torch.nn.LayerNorm(dim),
     )
 
+
 @register_model
-def Our2(backbone='ViT-B16', freeze=False, language_adapter=False, vision_adapter=False, return_feature=True, finetune=False, **kwargs):
+def Our2(backbone='ViT-B16', freeze=False, language_adapter=False, vision_adapter=False, return_feature=True,
+         finetune=False, **kwargs):
     model, _ = clip.load(backbone)
     if 'B16' in backbone or 'B32' in backbone:
         dim = 512
@@ -74,7 +76,6 @@ def Our2(backbone='ViT-B16', freeze=False, language_adapter=False, vision_adapte
         setattr(model, 'forward', forward_bound_method)
 
     return model
-
 
 
 if __name__ == '__main__':
