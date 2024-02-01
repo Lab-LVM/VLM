@@ -17,7 +17,7 @@ from ...data.dataset.imagenet_text import ImageNetSimplePromptText, ImageNetRand
 from ...utils import dataset2dict, to_list
 from ...utils.loss_fn_our_ablation import AugmentedContrastiveLossAblation
 from ...utils.loss_function import IndomainOutdomainContrastiveLoss, SupervisedContrastiveLoss, \
-    SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftContrastiveLoss
+    SupervisedContrastiveLossMultiProcessing, CLIPLoss, SoftContrastiveLoss, AugCL2
 from ...utils.registry import register_task_engine, register_train_engine, register_feature_engine
 
 
@@ -144,7 +144,7 @@ class OurTrainEngine(TrainEngine):
             criterion[0].world_size = fabric.world_size
 
         if isinstance(criterion[0],
-                      (IndomainOutdomainContrastiveLoss, AugmentedContrastiveLossAblation, SoftContrastiveLoss)):
+                      (IndomainOutdomainContrastiveLoss, AugmentedContrastiveLossAblation, SoftContrastiveLoss, AugCL2)):
             self.criterion_forward = self.IOL_forward
         elif isinstance(criterion[0], SupervisedContrastiveLoss):
             self.criterion_forward = self.SCL_forward
@@ -264,7 +264,7 @@ class OurTrainEngine(TrainEngine):
             self._distribute_bn()
             self.scheduler.step(epoch + 1)
 
-            self._save(epoch, train_metrics[self.cm])
+            # self._save(epoch, train_metrics[self.cm])
             self._log(train_metrics, {}, epoch)
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)
 
