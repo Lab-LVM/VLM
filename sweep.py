@@ -6,8 +6,9 @@ from src.engine import *
 from src.models import *
 from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data
+from src.models.adapter.our2_tmp import Our2TMP
 from src.utils import resume, dataset2dict, to_list
-from src.utils.registry import create_train_engine, create_task_engine
+from src.utils.registry import create_train_engine, create_task_engine, create_model
 
 
 @hydra.main(config_path="configs", config_name="train_config", version_base="1.3")
@@ -20,7 +21,18 @@ def main(cfg: DictConfig) -> None:
         fabric = setup_fabric(cfg)
 
         factory = ObjectFactory(cfg, fabric)
-        model, tokenizer = factory.create_model()  # model, tokenizer
+
+        tokenizer = create_model(cfg.model.tokenizer)
+
+        model = Our2TMP(
+            **cfg.model,
+            in_chans=cfg.dataset.in_channels,
+            num_classes=cfg.dataset.num_classes,
+        )
+        model.to(factory.device)
+
+        if cfg.train.channels_last:
+            model = model.to(memory_format=torch.channels_last)
 
         ds_backbone = cfg.model.backbone.split('-')[-1]
         train_dataset = create_dataset(cfg.dataset, backbone=ds_backbone, is_train=False, split=cfg.dataset.train)
@@ -40,7 +52,7 @@ def main(cfg: DictConfig) -> None:
         wandb.watch(model, log='all', log_freq=100)
 
         # Train
-        train_engine = create_train_engine(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler,
+        train_engine = OurTrainEngine(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler,
                                            (start_epoch, n_epochs))
 
         df = train_engine()
