@@ -9,3 +9,6 @@ num_classes: 200
 train:
 valid:
 test:
+
+augmentation:
+  crop_pct: 0.875
