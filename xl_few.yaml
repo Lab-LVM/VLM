@@ -1,4 +1,4 @@
-session_name: fewshot
+session_name: wildst
 windows:
   - window_name: window
     layout: tiled
@@ -6,11 +6,7 @@ windows:
 #      - export _nShot=4
 #      - export _ds=flowers102
     panes:
-      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=0 checkpoint=finetune/wiseft_B32_e5.ckpt dataset.name=imagenet_ds
-      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=1 checkpoint=finetune/wiseft_B32_e10.ckpt dataset.name=imagenet_ds
-      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=2 checkpoint=finetune/wiseft_B32_e15.ckpt dataset.name=imagenet_ds
-      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=3 checkpoint=finetune/wiseft_B32_e20.ckpt dataset.name=imagenet_ds
-      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=4 checkpoint=finetune/FT_B32_e5.ckpt dataset.name=imagenet_ds
-      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=5 checkpoint=finetune/FT_B32_e10.ckpt dataset.name=imagenet_ds
-      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=6 checkpoint=finetune/FT_B32_e15.ckpt dataset.name=imagenet_ds
-      - python run_eval_full.py model=lp model.backbone=ViT-B32 gpu=7 checkpoint=finetune/FT_B32_e20.ckpt dataset.name=imagenet_ds
+      - python main_full.py +setup=our2_iwild dataset=iwildcam dataset.name=iwildcamra dataset@eval_dataset=iwildcam model.backbone=ViT-B32 train.epochs=20 model.freeze=True train.num_workers=4 name=B32_iWilCam_E20_Freeze_5e2 gpu=0 train.batch_size=512 train.adapter_lr=5e-2
+      - python main_full.py +setup=our2_iwild dataset=iwildcam dataset.name=iwildcamra dataset@eval_dataset=iwildcam model.backbone=ViT-B32 train.epochs=20 model.freeze=True train.num_workers=4 name=B32_iWilCam_E20_Freeze_1e2 gpu=1 train.batch_size=512 train.adapter_lr=1e-2
+      - python main_full.py +setup=our2_iwild dataset=iwildcam dataset.name=iwildcamra dataset@eval_dataset=iwildcam model.backbone=ViT-B32 train.epochs=20 model.freeze=True train.num_workers=4 name=B32_iWilCam_E20_Freeze_1e3 gpu=2 train.batch_size=512 train.adapter_lr=1e-3
+      - python main_full.py +setup=our2_iwild dataset=iwildcam dataset.name=iwildcamra dataset@eval_dataset=iwildcam model.backbone=ViT-B32 train.epochs=20 model.freeze=True train.num_workers=4 name=B32_iWilCam_E20_Freeze_1e1 gpu=3 train.batch_size=512 train.adapter_lr=1e-1
