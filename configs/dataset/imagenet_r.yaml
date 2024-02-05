@@ -6,6 +6,6 @@ name: imagenet_r
 
 num_classes: 200
 
-train:
-valid:
-test:
+train: null
+valid: null
+test: null

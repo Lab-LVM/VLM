@@ -6,9 +6,9 @@ name: objectnet
 
 num_classes: 113
 
-train:
-valid:
-test:
+train: null
+valid: null
+test: null
 
 augmentation:
   crop_pct: 0.875

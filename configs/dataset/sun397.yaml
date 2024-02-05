@@ -6,6 +6,6 @@ name: sun397
 
 num_classes: 397
 
-train:
-valid:
-test:
+train: null
+valid: null
+test: null

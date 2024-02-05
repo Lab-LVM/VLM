@@ -10,8 +10,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 
-from src.data.dataset.imagenet import OPENAI_IMAGENET_PROMPT
-from . import VLMDataset, IMAGENET_CLASS_NAME
+from . import VLMClassificationDataset, IMAGENET_CLASS_NAME, IMAGENET_PROMPT
 
 imagenet_a_class_number = [
     6, 11, 13, 15, 17, 22, 23, 27, 30, 37, 39, 42, 47, 50, 57, 70, 71, 76, 79, 89, 90, 94, 96, 97, 99, 105, 107, 108,
@@ -38,7 +37,7 @@ imagenet_r_class_number = [
 ]
 
 
-class ImageNetX(VLMDataset, Dataset, ABC):
+class ImageNetX(VLMClassificationDataset, Dataset, ABC):
     dataset_path = 'imageNet-X'
     n_class = 1000
     class_number = range(0, 1000)
@@ -57,7 +56,7 @@ class ImageNetX(VLMDataset, Dataset, ABC):
 
     @property
     def prompt(self):
-        return OPENAI_IMAGENET_PROMPT
+        return IMAGENET_PROMPT
 
     def project_logits(self, logits):
         if logits.shape[-1] == self.n_class:
@@ -84,7 +83,7 @@ class ImageNetSketch(ImageNetX):
         return logits
 
 
-class ImageNetV2(VLMDataset, Dataset):
+class ImageNetV2(VLMClassificationDataset, Dataset):
     dataset_path = 'imageNet-V2'
     n_class = 1000
 
@@ -99,10 +98,10 @@ class ImageNetV2(VLMDataset, Dataset):
 
     @property
     def prompt(self):
-        return OPENAI_IMAGENET_PROMPT
+        return IMAGENET_PROMPT
 
 
-class ObjectNet(VLMDataset, Dataset):
+class ObjectNet(VLMClassificationDataset, Dataset):
     dataset_path = 'objectnet-1.0'
     n_class = 113
 
@@ -159,7 +158,7 @@ class ObjectNet(VLMDataset, Dataset):
 
     @property
     def prompt(self):
-        return OPENAI_IMAGENET_PROMPT
+        return IMAGENET_PROMPT
 
     def project_logits(self, logits):
         device = logits.device

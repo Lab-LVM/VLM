@@ -6,7 +6,6 @@ name: flowers102
 
 num_classes: 102
 
-# train/val/test
-train: trainval
+train: train
 valid: val
 test: test

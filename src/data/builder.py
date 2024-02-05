@@ -1,5 +1,4 @@
 import random
-from functools import partial
 
 import numpy as np
 import torch
@@ -10,26 +9,6 @@ from src.data.dataset import *
 from src.data.mixup import FastCollateMixup
 
 DATASET_DICT = {
-    # 'sa9': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_with_scaleAug9'),
-    'sa9o': partial(ImageNetRandaugPromptFeatures, dataset_path='imageNet_train_with_scaleAug9_withOrigin'),
-    #
-    # 'imagenetra': ImageNetRandaugPromptFeatures,
-    # 'imagenetraText': ImageNetRandaugPromptText,
-    'imagenetraTextOri': ImageNetRandaugPromptOriginalText,
-    'imagenetsimText': ImageNetSimplePromptText,
-    'imagenetsimAug': ImageNetSimpleAugPrompt,
-    'imagenetsimAugNorm': ImageNetSimpleAugNormPrompt,
-    'imagenetAA': OriginalTextImageNetRandaugPromptAblationAA,
-    'imagenetAN': OriginalTextImageNetRandaugPromptAblationAN,
-    'imagenetNN': OriginalTextImageNetRandaugPromptAblationNN,
-
-    'f_imagenet': partial(ImageNetEvalFeatures, dataset_name='imagenet'),
-    'f_imagenet_a': partial(ImageNetEvalFeatures, dataset_name='imagenet_a'),
-    'f_imagenet_r': partial(ImageNetEvalFeatures, dataset_name='imagenet_r'),
-    'f_imagenet_v2': partial(ImageNetEvalFeatures, dataset_name='imagenet_v2'),
-    'f_imagenet_sketch': partial(ImageNetEvalFeatures, dataset_name='imagenet_sketch'),
-    'f_objectnet': partial(ImageNetEvalFeatures, dataset_name='objectnet'),
-
     'imagenet': ImageNet,
     'imagenet_a': ImageNetA,
     'imagenet_r': ImageNetR,
@@ -38,27 +17,20 @@ DATASET_DICT = {
     'objectnet': ObjectNet,
 
     'caltech101': Caltech101,
-    'caltech101ra': Caltech101raText,
     'eurosat': EuroSAT,
     'fgvc': FGVCAircraft,
     'flowers102': Flowers102,
-    'flowers102ra': Flowers102raText,
     'food101': Food101,
     'oxfordiiitpet': OxfordIIITPet,
     'stanfordcars': StanfordCars,
-    'stanfordcarsra': StanfordCarsraText,
     'sun397': SUN397,
     'dtd': DescribableTextures,
     'ucf101': UCF101,
     'cifar100': CIFAR100,
-    'cifar100ra': CIFAR100raText,
     'pcam': PCam,
-    'pcamra': PCamraText,
     'country211': Country211,
     'iwildcam': IWildCam,
-    'iwildcamra': IWildCamText,
     'fmow': FMow,
-    'fmowra': FMowText,
 }
 
 

@@ -4,10 +4,10 @@ from torch.utils.data import Dataset
 from torchvision.datasets import Food101 as TorchFood101
 from torchvision.transforms import transforms
 
-from . import VLMDataset, FOOD101_CLASS_NAME
+from . import VLMClassificationDataset, FOOD101_CLASS_NAME, FOOD101_PROMPT
 
 
-class Food101(VLMDataset, Dataset):
+class Food101(VLMClassificationDataset, Dataset):
     dataset_path = 'food-101'
     n_class = 101
 
@@ -19,9 +19,7 @@ class Food101(VLMDataset, Dataset):
 
     @property
     def prompt(self):
-        return [
-            lambda c: f'a photo of a {c}, a type of food.'
-        ]
+        return FOOD101_PROMPT
 
     def _data_dict(self):
         train_dataset = TorchFood101(self.root, 'train')
@@ -29,13 +27,3 @@ class Food101(VLMDataset, Dataset):
         for i in range(len(train_dataset._image_files)):
             train_data_dict[train_dataset._labels[i]].append(str(train_dataset._image_files[i]))
         return train_data_dict
-
-
-if __name__ == '__main__':
-    ds = Food101('/data', transform=transforms.ToTensor(), n_shot=0)
-
-    data = next(iter(ds))
-
-    print(data[0].shape, data[1])
-    print(ds.class_name[:5])
-    print(f'{ds.str2num("apple pie")}, {ds.num2str(data[1])}')

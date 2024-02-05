@@ -1200,7 +1200,7 @@ SUN397_CLASS_NAME = [
     'youth hostel',
 ]
 
-DESCRIBABLETEXTURES_CLASS_NAME = [
+DESCRIBABLE_TEXTURES_CLASS_NAME = [
     'banded',
     'blotchy',
     'braided',

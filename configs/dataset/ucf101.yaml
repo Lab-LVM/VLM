@@ -6,6 +6,6 @@ name: ucf101
 
 num_classes: 101
 
-train:
-valid:
-test:
+train: null
+valid: null
+test: null

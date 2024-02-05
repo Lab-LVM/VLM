@@ -6,6 +6,6 @@ name: eurosat
 
 num_classes: 10
 
-train:
-valid:
-test:
+train: null
+valid: null
+test: null

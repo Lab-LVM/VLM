@@ -2,9 +2,6 @@ model_name: CLIP
 backbone: ViT-B16
 
 freeze: True
-finetune: False
+return_feature: True
 
 tokenizer: CLIP_tokenizer
-
-forward_backbone: False
-return_feature: False

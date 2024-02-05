@@ -9,6 +9,3 @@ num_classes: 10
 train: train
 valid: test
 test: test
-
-augmentation:
-  autoaug: True

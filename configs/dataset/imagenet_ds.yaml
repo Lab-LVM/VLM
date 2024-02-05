@@ -6,7 +6,7 @@ root: /data
 task: multiclass
 
 in_channels: 3
-num_classes: 1000
+num_classes: null
 train_size: [ 3,224,224 ]
 eval_size: [ 3,224,224 ]
 

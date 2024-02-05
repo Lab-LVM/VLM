@@ -6,6 +6,6 @@ name: imagenet_sketch
 
 num_classes: 1000
 
-train:
-valid:
-test:
+train: null
+valid: null
+test: null

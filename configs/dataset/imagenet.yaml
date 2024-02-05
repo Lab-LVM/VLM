@@ -9,6 +9,3 @@ num_classes: 1000
 train: train
 valid: val
 test: val
-
-augmentation:
-  auto_aug: rand-m7-mstd0.5-inc1

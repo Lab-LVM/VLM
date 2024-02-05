@@ -1,7 +1,7 @@
 defaults:
   - augmentation: base_augmentation
 
-name:
+name: null
 root: /data
 task: multiclass
 
@@ -13,9 +13,3 @@ eval_size: [ 3,224,224 ]
 train: train
 valid: val
 test: test
-
-augmentation:
-  mixup: 0
-  cutmix: 0
-  train_interpolation: bicubic
-  auto_aug: rand-m7-mstd0.5-inc1

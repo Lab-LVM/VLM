@@ -1,3 +1,4 @@
+import math
 import os.path
 import os.path
 import pickle
@@ -7,26 +8,44 @@ from collections import defaultdict
 
 from PIL import Image
 from termcolor import colored
+from torchvision import transforms
 
 
-class VLMDataset(ABC):
+def transform_eval(
+        img_size=224,
+        crop_pct=1.0,
+        mean=(0.48145466, 0.4578275, 0.40821073),
+        std=(0.26862954, 0.26130258, 0.27577711),
+
+):
+    scale_size = math.floor(img_size / crop_pct)
+    tfl = [
+        transforms.Resize(scale_size, interpolation=transforms.InterpolationMode.BICUBIC),
+        transforms.CenterCrop(img_size),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=mean, std=std)
+    ]
+    return transforms.Compose(tfl)
+
+
+class VLMClassificationDataset(ABC):
     root: str
     dataset_path: str
     n_class: int
-    class_name: list
+    class_names: list
     _num2name: dict
     _name2num: dict
     prompt: list
     imgs: list
     targets: list
 
-    def __init__(self, root, imgs, targets, class_name_list, transform, target_transform, n_shot):
+    def __init__(self, root, imgs, targets, class_names, transform, target_transform, n_shot):
         self.root = root
-        self.transform = transform
+        self.transform = transform if transform is not None else transform_eval()
         self.target_transform = target_transform
         self.n_shot = n_shot
 
-        self.set_class_name(class_name_list)
+        self.set_class_name(class_names)
         self.origin_imgs, self.origin_targets = imgs, targets
         self.sampling(n_shot)
 
@@ -40,10 +59,10 @@ class VLMDataset(ABC):
             lambda c: f'a photo {c}.'
         ]
 
-    def set_class_name(self, class_name_list):
-        self.class_name = class_name_list
-        self._num2name = {i: name for i, name in enumerate(class_name_list)}
-        self._name2num = {name: i for i, name in enumerate(class_name_list)}
+    def set_class_name(self, class_names):
+        self.class_names = class_names
+        self._num2name = {i: name for i, name in enumerate(class_names)}
+        self._name2num = {name: i for i, name in enumerate(class_names)}
 
     def num2str(self, num):
         return self._num2name.get(num, f'{num} is not exists in {self.dataset_path}')

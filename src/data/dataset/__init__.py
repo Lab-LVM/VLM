@@ -1,6 +1,8 @@
-from .class_name import *
-from .dataset import VLMDataset
-from .caltech101 import Caltech101, Caltech101raText
+from .constant.class_name import *
+from .constant.prompt import *
+
+from .dataset import VLMClassificationDataset
+from .caltech101 import Caltech101
 from .eurosat import EuroSAT
 from .fgvc import FGVCAircraft
 from .flowers102 import Flowers102, Flowers102raText
