@@ -7,6 +7,14 @@ _TASK_REGISTRY: Dict[str, Callable[..., Any]] = {}
 _TRAIN_REGISTRY: Dict[str, Callable[..., Any]] = {}
 
 
+def list_registry():
+    res = f'Model: {_MODEL_REGISTRY.keys()}\n'
+    res += f'Task Engine: {_TASK_REGISTRY.keys()}\n'
+    res += f'Feature Engine: {_FEATURE_REGISTRY.keys()}\n'
+    res += f'Train Engine: {_TRAIN_REGISTRY.keys()}\n'
+    return res
+
+
 def register_model(fn):
     _MODEL_REGISTRY[fn.__name__] = fn
     return fn

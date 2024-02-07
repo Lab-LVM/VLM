@@ -8,20 +8,21 @@ from torch.nn.functional import normalize
 from tqdm import tqdm
 
 from ..data import create_dataloader
+from ..utils.registry import register_feature_engine
 
 
 class FeatureEngine(abc.ABC):
     pass
 
 
+@register_feature_engine
 class ClassificationFeatureEngine(FeatureEngine):
-    def __init__(self, cfg, fabric, model, tokenizer, train_dataset, val_dataset):
+    def __init__(self, cfg, fabric, model, tokenizer, train_dataset=None, val_dataset=None):
         self.cfg = cfg
         self.fabric = fabric
         self.cache = cfg.cache
         self.model_name = cfg.model.model_name
         self.dataset_name = cfg.dataset.name
-        self.num_class = train_dataset.n_class
         self.cache_path = self._make_cache_path()
 
         self.model = model
@@ -48,7 +49,8 @@ class ClassificationFeatureEngine(FeatureEngine):
         self.model.eval()
         for class_name in tqdm(self.train_dataset.class_name, desc='Build Text Classifier'):
             text = [p(class_name) for p in self.train_dataset.prompt]
-            text_input = self.tokenizer(text, padding='max_length', return_attention_mask=False, return_tensors='pt')['input_ids'].to(self.device)
+            text_input = self.tokenizer(text, padding='max_length', return_attention_mask=False, return_tensors='pt')[
+                'input_ids'].to(self.device)
 
             with self.fabric.autocast():
                 text_feature = self.model.module.encode_text(text_input)

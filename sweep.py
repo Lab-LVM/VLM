@@ -2,7 +2,7 @@ import hydra
 import wandb
 from omegaconf import DictConfig, OmegaConf
 
-from src.engine import *
+from src.engines import *
 from src.models import *
 from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data
@@ -80,8 +80,8 @@ def main(cfg: DictConfig) -> None:
         #     train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, backbone=ds_backbone)
         #     test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=ds_backbone)
         #
-        #     engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
-        #     metrics = engine(n_shots=to_list(cfg.n_shot))
+        #     engines = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+        #     metrics = engines(n_shots=to_list(cfg.n_shot))
         #     acc = float(metrics['simple_adapter_classification'])
         #     acc_list.append(acc)
         #     wandb.log({f'{k}_acc': acc})

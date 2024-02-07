@@ -1,7 +1,7 @@
 import hydra
 from omegaconf import DictConfig
 
-from src.engine import *
+from src.engines import *
 from src.models import *
 from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data

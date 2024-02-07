@@ -3,3 +3,7 @@ defaults:
 
 model_name: Tip
 n_shot: ${n_shot}
+
+task_engine: TipTaskEngine
+feature_engine: TipFeatureEngine
+train_engine: TipTrainEngine

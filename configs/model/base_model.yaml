@@ -5,3 +5,7 @@ freeze: True
 return_feature: True
 
 tokenizer: CLIP_tokenizer
+
+task_engine: FewshotTaskEngine
+feature_engine: ClassificationFeatureEngine
+train_engine: TrainEngine

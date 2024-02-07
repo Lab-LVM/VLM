@@ -14,7 +14,7 @@ from ...utils.registry import register_task_engine, register_train_engine, regis
 
 
 @register_feature_engine
-class TipClassificationFeatureEngine(ClassificationFeatureEngine):
+class TipFeatureEngine(ClassificationFeatureEngine):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -65,8 +65,8 @@ class TipClassificationFeatureEngine(ClassificationFeatureEngine):
 @register_task_engine
 class TipTaskEngine(TaskEngine):
     def __init__(self, cfg, fabric, model, tokenizer, train_dataset, val_dataset):
-        feature_engine = TipClassificationFeatureEngine(cfg, fabric, model, tokenizer, train_dataset, val_dataset)
-        super().__init__(feature_engine)
+        super().__init__()
+        self.feature_engine = TipFeatureEngine(cfg, fabric, model, tokenizer, train_dataset, val_dataset)
 
     def __call__(self, n_shots, **kwargs):
         output = dict()
@@ -161,8 +161,7 @@ class TipTrainEngine(TrainEngine):
         ])
 
         cache_dataset = create_dataset(cfg.dataset, split=cfg.dataset.train, n_shot=cfg.n_shot)
-        self.feature_engine = TipClassificationFeatureEngine(cfg, fabric, model, tokenizer, cache_dataset,
-                                                             self.val_loader.dataset)
+        self.feature_engine = TipFeatureEngine(cfg, fabric, model, tokenizer, cache_dataset, self.val_loader.dataset)
 
         self.alpha = kwargs.get('alpha', 1.17)
         self.beta = kwargs.get('beta', 1.0)

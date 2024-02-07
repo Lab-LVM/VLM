@@ -3,3 +3,5 @@ defaults:
 
 model_name: LP
 classifier: True
+
+train_engine: LPTrainEngine

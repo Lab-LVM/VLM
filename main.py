@@ -1,12 +1,13 @@
+import gc
 import os
 
 import hydra
 import pandas as pd
+import torch
 import wandb
 from omegaconf import DictConfig
 
-from src.engine import *
-from src.models import *
+from src.data import create_dataset, create_dataloader
 from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data
 from src.utils import resume, dataset2dict, to_list
@@ -24,7 +25,7 @@ def main(cfg: DictConfig) -> None:
     model, tokenizer = factory.create_model()  # model, tokenizer
 
     ds_backbone = cfg.model.backbone.split('-')[-1]
-    train_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.train, backbone=ds_backbone)
+    train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
     loaders = create_dataloader(cfg, train_dataset, is_train=True)
 
     optimizer, scheduler, n_epochs = factory.create_optimizer_and_scheduler(model, len(loaders))
@@ -45,24 +46,24 @@ def main(cfg: DictConfig) -> None:
     df = train_engine()
     print(df)
 
-    # # Eval
-    # model.eval()
-    #
-    # df = pd.DataFrame()
-    #
-    # for k, v in dataset2dict(cfg.eval_dataset).items():
-    #     for shot in to_list(cfg.n_shot):
-    #         cfg.dataset = v
-    #         train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, backbone=ds_backbone)
-    #         test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=ds_backbone)
-    #
-    #         engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
-    #         metrics = engine(n_shots=to_list(cfg.n_shot))
-    #
-    #         row = dict(Data=test_dataset.name, shot=shot, **metrics)
-    #         print(f'{row}\n')
-    #         df = pd.concat([df, pd.DataFrame(row, index=[0])])
-    #
+    # Eval
+    model.eval()
+
+    df = pd.DataFrame()
+
+    for k, v in dataset2dict(cfg.eval_dataset).items():
+        for shot in to_list(cfg.n_shot):
+            cfg.dataset = v
+            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, backbone=ds_backbone)
+            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, backbone=ds_backbone)
+
+            engines = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+            metrics = engines(n_shots=to_list(cfg.n_shot))
+
+            row = dict(Data=test_dataset.name, shot=shot, **metrics)
+            print(f'{row}\n')
+            df = pd.concat([df, pd.DataFrame(row, index=[0])])
+
     df.to_csv(f'result_{cfg.name}.csv', index=False)
 
     if cfg.is_master:

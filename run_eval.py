@@ -2,7 +2,7 @@ import hydra
 import wandb
 from omegaconf import DictConfig
 
-from src.engine import *
+from src.engines import *
 from src.models import *
 from src.initialize import setup_fabric, ObjectFactory
 from src.utils import dataset2dict, to_list, import_config, move_dir

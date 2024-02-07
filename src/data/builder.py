@@ -40,12 +40,8 @@ def create_dataset(ds_cfg, is_train, **kwargs):
         root=kwargs.get('root', ds_cfg.root),
         target_transform=kwargs.get('target_transform', None),
         n_shot=kwargs.get('n_shot', 0),
+        split=kwargs.get('split', None)
     )
-    if kwargs.get('split', None):
-        ds_kwargs['split'] = kwargs['split']
-    if kwargs.get('backbone', None):
-        ds_kwargs['backbone'] = kwargs['backbone']
-
     return DATASET_DICT[ds_cfg.name](**ds_kwargs)
 
 

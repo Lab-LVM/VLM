@@ -946,7 +946,7 @@ SUN397_CLASS_NAME = [
     'elevator door',
     'elevator interior',
     'elevator shaft',
-    'engine room',
+    'engines room',
     'escalator indoor',
     'excavation',
     'factory indoor',

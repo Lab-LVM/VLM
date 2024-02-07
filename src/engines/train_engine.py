@@ -5,7 +5,10 @@ import torch
 import torchmetrics
 from torchmetrics import MeanMetric
 
+from ..utils.registry import register_train_engine
 
+
+@register_train_engine
 class TrainEngine:
     def __init__(self, cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs):
         self.local_rank = fabric.local_rank
@@ -55,7 +58,7 @@ class TrainEngine:
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)
 
     def iterate(self, model, data, criterion):
-        x, y = data
+        x, y = map(lambda x: x.to(self.device, non_blocking=True), data)
         x = x.to(memory_format=torch.channels_last)
 
         with self.fabric.autocast():

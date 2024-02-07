@@ -5,7 +5,7 @@ import pandas as pd
 import wandb
 from omegaconf import DictConfig
 
-from src.engine import *
+from src.engines import *
 from src.models import *
 from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data
@@ -71,8 +71,8 @@ def main(cfg: DictConfig) -> None:
     #     train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
     #     test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
     #
-    #     engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
-    #     metrics = engine(n_shots=to_list(cfg.n_shot))
+    #     engines = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+    #     metrics = engines(n_shots=to_list(cfg.n_shot))
     #
     #     row = dict(Data=test_dataset.name, shot=0, **metrics)
     #     if fabric.is_global_zero:

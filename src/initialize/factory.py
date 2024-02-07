@@ -13,6 +13,8 @@ from src.utils.loss_function import CLIPLoss, CoCaLoss, SupervisedContrastiveLos
 from src.utils.registry import create_model
 from src.utils.scheduler import CosineLR
 from src.utils.utils import filter_grad
+from src.models import *
+from src.engines import *
 
 
 class ObjectFactory:
