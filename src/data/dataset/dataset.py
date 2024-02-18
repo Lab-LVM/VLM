@@ -122,7 +122,9 @@ class VLMClassificationDataset(ABC):
         return imgs, target, prompt(self.num2str(target))
 
     def __str__(self):
-        return f'{self.__class__.__name__} | # class: {self.n_class} | # root: {self.dataset_path} | prompt: {self.prompt}'
+        return (f'{self.__class__.__name__} | root: {self.dataset_path}\n'
+                f'# class: {self.n_class} | # samples per class: {self.n_shot} | # of total sample: {self.__len__()}\n'
+                f'prompt: {[p("[CLASS]") for p in self.prompt]}')
 
     @staticmethod
     def _split_warning(dataset_name, split, state):

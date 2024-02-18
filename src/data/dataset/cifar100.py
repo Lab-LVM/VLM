@@ -21,13 +21,6 @@ class CIFAR100(VLMClassificationDataset, Dataset):
     def prompt(self):
         return CIFAR_PROMPT
 
-    def _data_dict(self):
-        train_dataset = TorchCIFAR100(self.root, train=True)
-        train_data_dict = defaultdict(list)
-        for i in range(len(train_dataset.data)):
-            train_data_dict[train_dataset.targets[i]].append(str(train_dataset.data[i]))
-        return train_data_dict
-
     @staticmethod
     def loader(data):
         return fromarray(data)

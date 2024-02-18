@@ -21,17 +21,6 @@ class PCam(VLMClassificationDataset, Dataset):
     def prompt(self):
         return PCAM_PROMPT
 
-    def _data_dict(self):
-        t_dataset = TorchPCAM(self.root, split='train')
-        train_data_dict = defaultdict(list)
-
-        img = t_dataset.h5py.File(t_dataset._base_folder / t_dataset._FILES[t_dataset._split]['images'][0])['x'][:]
-        target = t_dataset.h5py.File(t_dataset._base_folder / t_dataset._FILES[t_dataset._split]['targets'][0])['y'][:,
-                 0, 0, 0]
-        for i in range(len(img)):
-            train_data_dict[target[i]].append(str(img[i]))
-        return train_data_dict
-
     @staticmethod
     def loader(data):
         return fromarray(data).convert("RGB")

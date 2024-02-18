@@ -24,11 +24,3 @@ class ImageNet(VLMClassificationDataset, Dataset):
     @property
     def prompt(self):
         return IMAGENET_PROMPT
-
-    def _data_dict(self):
-        train_dataset = TorchImagenet(os.path.join(self.root, self.dataset_path), 'train')
-        train_data_dict = defaultdict(list)
-        for i in range(len(train_dataset.imgs)):
-            train_data_dict[train_dataset.targets[i]].append(train_dataset.imgs[i][0])
-
-        return train_data_dict

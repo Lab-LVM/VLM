@@ -6,7 +6,6 @@ from timm.data import create_transform as timm_create_transform
 from torch.utils.data import DataLoader
 
 from src.data.dataset import *
-from src.data.mixup import FastCollateMixup
 
 DATASET_DICT = {
     'imagenet': ImageNet,
@@ -45,6 +44,15 @@ def create_dataset(ds_cfg, is_train, **kwargs):
     return DATASET_DICT[ds_cfg.name](**ds_kwargs)
 
 
+def create_dataloader(cfg, dataset, is_train, fill_last=True):
+    if is_train and fill_last:
+        dataset = fill_drop_last(dataset, cfg.train.batch_size, cfg.world_size)
+    collate_fn = None
+    loader = DataLoader(dataset, cfg.train.batch_size, shuffle=is_train, num_workers=cfg.train.num_workers,
+                        collate_fn=collate_fn, drop_last=False, pin_memory=True)
+    return loader
+
+
 def to_ndarray(dataset):
     if isinstance(dataset.imgs, list):
         dataset.imgs = np.array(dataset.imgs)
@@ -75,26 +83,6 @@ def fill_drop_last(dataset, batch_size, world_size):
         dataset.targets.extend(fill_target)
 
     return dataset
-
-
-def create_dataloader(cfg, dataset, is_train, fill_last=True):
-    aug = cfg.dataset.augmentation
-
-    if is_train and fill_last:
-        dataset = fill_drop_last(dataset, cfg.train.batch_size, cfg.world_size)
-
-    collate_fn = None
-    mixup_active = aug.mixup > 0 or aug.cutmix > 0. or aug.cutmix_minmax is not None
-    if mixup_active:
-        mixup_args = dict(
-            mixup_alpha=aug.mixup, cutmix_alpha=aug.cutmix, cutmix_minmax=aug.cutmix_minmax,
-            prob=aug.mixup_prob, switch_prob=aug.mixup_switch_prob, mode=aug.mixup_mode,
-            label_smoothing=aug.smoothing, num_classes=dataset.num_classes)
-        collate_fn = FastCollateMixup(**mixup_args)
-
-    loader = DataLoader(dataset, cfg.train.batch_size, shuffle=is_train, num_workers=cfg.train.num_workers,
-                        collate_fn=collate_fn, drop_last=False, pin_memory=True)
-    return loader
 
 
 def create_transform(ds_cfg, is_train):

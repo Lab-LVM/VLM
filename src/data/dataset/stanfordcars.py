@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from torch.utils.data import Dataset
 from torchvision.datasets import StanfordCars as TorchStanfordCars
 
@@ -27,12 +25,3 @@ class StanfordCars(VLMClassificationDataset, Dataset):
     @property
     def prompt(self):
         return STANFORDCARS_PROMPT
-
-    def _data_dict(self):
-        train_dataset = TorchStanfordCars(self.root, 'train')
-        train_data_dict = defaultdict(list)
-        _imgs, _targets = self._imgs_targets(train_dataset)
-
-        for i in range(len(_imgs)):
-            train_data_dict[_targets[i]].append(str(_imgs[i]))
-        return train_data_dict

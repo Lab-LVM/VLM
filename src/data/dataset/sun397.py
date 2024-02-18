@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from torch.utils.data import Dataset
 from torchvision.datasets import SUN397 as TorchSUN397
 
@@ -20,9 +18,3 @@ class SUN397(VLMClassificationDataset, Dataset):
     @property
     def prompt(self):
         return SUN397_PROMPT
-
-    def _data_dict(self):
-        data_dict = defaultdict(list)
-        for i in range(len(self.dataset._image_files)):
-            data_dict[self.dataset._labels[i]].append(str(self.dataset._image_files[i]))
-        return data_dict

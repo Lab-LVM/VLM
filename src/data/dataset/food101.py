@@ -20,10 +20,3 @@ class Food101(VLMClassificationDataset, Dataset):
     @property
     def prompt(self):
         return FOOD101_PROMPT
-
-    def _data_dict(self):
-        train_dataset = TorchFood101(self.root, 'train')
-        train_data_dict = defaultdict(list)
-        for i in range(len(train_dataset._image_files)):
-            train_data_dict[train_dataset._labels[i]].append(str(train_dataset._image_files[i]))
-        return train_data_dict

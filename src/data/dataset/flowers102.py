@@ -25,14 +25,3 @@ class Flowers102(VLMClassificationDataset, Dataset):
     @property
     def prompt(self):
         return FLOWERS102_PROMPT
-
-    def _data_dict(self):
-        train_dataset = TorchFlowers102(self.root, 'train')
-        val_dataset = TorchFlowers102(self.root, 'val')
-        train_dataset._image_files.extend(val_dataset._image_files)
-        train_dataset._labels.extend(val_dataset._labels)
-
-        train_data_dict = defaultdict(list)
-        for i in range(len(train_dataset)):
-            train_data_dict[train_dataset._labels[i]].append(str(train_dataset._image_files[i]))
-        return train_data_dict

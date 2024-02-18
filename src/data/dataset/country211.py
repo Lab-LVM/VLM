@@ -24,11 +24,3 @@ class Country211(VLMClassificationDataset, Dataset):
     @property
     def prompt(self):
         return COUNTRY211_PROMPT
-
-    def _data_dict(self):
-        train_dataset = TorchCountry211(os.path.join(self.root), 'train')
-        train_data_dict = defaultdict(list)
-        for i in range(len(train_dataset.imgs)):
-            train_data_dict[train_dataset.targets[i]].append(train_dataset.imgs[i][0])
-
-        return train_data_dict
