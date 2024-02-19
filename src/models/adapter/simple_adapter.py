@@ -39,7 +39,7 @@ def mlp(dim=512):
 
 
 @register_model
-def Our2(backbone='ViT-B16', freeze=False, language_adapter=False, vision_adapter=False, **kwargs):
+def SimpleAdapter(backbone='ViT-B16', freeze=False, language_adapter=False, vision_adapter=False, **kwargs):
     model = load_clip_from_transformers(backbone)
     dim = model.projection_dim
 
@@ -64,7 +64,7 @@ def Our2(backbone='ViT-B16', freeze=False, language_adapter=False, vision_adapte
 
 
 if __name__ == '__main__':
-    model = Our2(freeze=True, finetune=True)
+    model = SimpleAdapter(freeze=True, finetune=True)
 
     o = model(torch.rand(2, 3, 224, 224), torch.ones(2, 77, dtype=torch.long))
     print(len(o))
