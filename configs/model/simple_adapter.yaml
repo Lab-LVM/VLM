@@ -1,0 +1,13 @@
+model_name: SimpleAdapter
+backbone: ViT-B16
+
+freeze: True
+
+tokenizer: CLIP_tokenizer
+
+task_engine: FewshotTaskEngine
+feature_engine: ClassificationFeatureEngine
+train_engine: TrainEngine
+
+language_adapter: True
+visual_adapter: True
