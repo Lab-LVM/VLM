@@ -47,10 +47,10 @@ class ClassificationFeatureEngine(FeatureEngine):
 
         text_classifier = list()
         self.model.eval()
-        for class_name in tqdm(self.train_dataset.class_name, desc='Build Text Classifier'):
+        for class_name in tqdm(self.train_dataset.class_names, desc='Build Text Classifier'):
             text = [p(class_name) for p in self.train_dataset.prompt]
             text_input = self.tokenizer(text, padding='max_length', return_attention_mask=False, return_tensors='pt')[
-                'input_ids'].to(self.device)
+                'input_ids'].to(self.device, non_blocking=True)
 
             with self.fabric.autocast():
                 text_feature = self.model.module.encode_text(text_input)
@@ -59,7 +59,7 @@ class ClassificationFeatureEngine(FeatureEngine):
             text_feature /= text_feature.norm()
             text_classifier.append(text_feature)
 
-        self.text_classifier = torch.stack(text_classifier, dim=0).to(self.device)
+        self.text_classifier = torch.stack(text_classifier, dim=0).to(self.device, non_blocking=True)
 
         self._save_file(self.text_classifier, file_name)
         return self.text_classifier
@@ -80,7 +80,7 @@ class ClassificationFeatureEngine(FeatureEngine):
 
         self.model.eval()
         for data in tqdm(loader, total=len(loader), desc=f'Build {self.train_dataset.n_shot}-Shot Support Set'):
-            x, y, _ = map(lambda x: x.to(self.device) if isinstance(x, torch.Tensor) else x, data)
+            x, y, _ = map(lambda x: x.to(self.device, non_blocking=True) if isinstance(x, torch.Tensor) else x, data)
             x = x.to(memory_format=torch.channels_last)
 
             with self.fabric.autocast():
@@ -89,9 +89,9 @@ class ClassificationFeatureEngine(FeatureEngine):
             features.append(image_features.detach().cpu())
             labels.append(y.detach().cpu())
 
-        features = torch.cat(features, dim=0).to(self.device)
+        features = torch.cat(features, dim=0).to(self.device, non_blocking=True)
         self.sup_features = normalize(features, dim=-1)
-        self.sup_labels = torch.cat(labels).to(self.device)
+        self.sup_labels = torch.cat(labels).to(self.device, non_blocking=True)
 
         self._save_file((self.sup_features, self.sup_labels), file_name)
         return self.sup_features, self.sup_labels
@@ -109,7 +109,7 @@ class ClassificationFeatureEngine(FeatureEngine):
 
         self.model.eval()
         for data in tqdm(loader, total=len(loader), desc=f'Build Query Set'):
-            x, y, _ = map(lambda x: x.to(self.device) if isinstance(x, torch.Tensor) else x, data)
+            x, y, _ = map(lambda x: x.to(self.device, non_blocking=True) if isinstance(x, torch.Tensor) else x, data)
             x = x.to(memory_format=torch.channels_last)
 
             with self.fabric.autocast():
@@ -118,9 +118,9 @@ class ClassificationFeatureEngine(FeatureEngine):
             features.append(image_features.detach().cpu())
             labels.append(y.detach().cpu())
 
-        features = torch.cat(features, dim=0).to(self.device)
+        features = torch.cat(features, dim=0).to(self.device, non_blocking=True)
         self.qry_features = normalize(features, dim=-1)
-        self.qry_labels = torch.cat(labels).to(self.device)
+        self.qry_labels = torch.cat(labels).to(self.device, non_blocking=True)
 
         self._save_file((self.qry_features, self.qry_labels), file_name)
         return self.qry_features, self.qry_labels

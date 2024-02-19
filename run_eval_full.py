@@ -1,11 +1,14 @@
+import gc
 import os
 
+import torch
 import hydra
+import pandas as pd
 import wandb
 from omegaconf import DictConfig
 
 from src.engines import *
-from src.models import *
+from src.data import create_dataset
 from src.initialize import setup_fabric, ObjectFactory
 from src.utils import dataset2dict, to_list
 from src.utils.registry import create_task_engine
@@ -25,15 +28,15 @@ def main(cfg: DictConfig) -> None:
     df = pd.DataFrame()
 
     for k, v in dataset2dict(cfg.dataset).items():
-        for shot in to_list(cfg.n_shot):
+        for n_shot in to_list(cfg.n_shot):
             cfg.dataset = v
-            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train)
-            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
+            train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, n_shot=n_shot)
+            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, n_shot=n_shot)
 
             engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
-            metrics = engine(n_shots=to_list(cfg.n_shot))
+            metrics = engine(n_shot=n_shot)
 
-            row = dict(Data=test_dataset.name, shot=shot, **metrics)
+            row = dict(Data=test_dataset.name, **metrics)
             print(f'{row}\n')
             df = pd.concat([df, pd.DataFrame(row, index=[0])])
 

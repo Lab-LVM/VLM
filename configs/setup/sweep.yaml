@@ -1,6 +1,6 @@
 project: VLM
-name: Ours_B32_Final
-description: The sweep of our methods on ViT-B/16 backbone with freezing this.
+name: VLM_sweep
+description: The sweep on ViT-B/16 backbone with freezing this.
 entity: SoongE
 
 program: sweep.py
@@ -9,8 +9,6 @@ metric:
   name: EvalAccuracy
   goal: maximize
 parameters:
-  gpu:
-    value: 0
   train.adapter_lr:
     distribution: uniform
     min: 1e-5
@@ -24,9 +22,8 @@ command:
   - python
   - ${program}
   - ${args_no_hyphens}
-  - +setup=our2
-  - model.backbone=ViT-B32
+  - gpu=0
+  - model.backbone=ViT-B16
   - model.freeze=True
   - train.batch_size=4096
-  - dataset.name=sa9o
-  - model.forward_backbone=False
+  - dataset=imagenet

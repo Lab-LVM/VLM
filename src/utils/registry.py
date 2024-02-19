@@ -44,7 +44,7 @@ def create_model(model_name, **kwargs):
 
 
 def create_task_engine(cfg, fabric, model, tokenizer, train_dataset, val_dataset, **kwargs):
-    engine_name = cfg.model.model_name + 'TaskEngine'
+    engine_name = cfg.model.task_engine
     fn = _TASK_REGISTRY.get(engine_name, None)
     if fn:
         return fn(cfg, fabric, model, tokenizer, train_dataset, val_dataset, **kwargs)
@@ -53,9 +53,9 @@ def create_task_engine(cfg, fabric, model, tokenizer, train_dataset, val_dataset
 
 
 def create_train_engine(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs, **kwargs):
-    train_engine_name = cfg.model.model_name + 'TrainEngine'
-    fn = _TRAIN_REGISTRY.get(train_engine_name, None)
+    engine_name = cfg.model.train_engine
+    fn = _TRAIN_REGISTRY.get(engine_name, None)
     if fn:
         return fn(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler, epochs, **kwargs)
     else:
-        raise NotImplementedError(f'{train_engine_name} train engine is not implemented.')
+        raise NotImplementedError(f'{engine_name} train engine is not implemented.')

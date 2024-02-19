@@ -169,11 +169,6 @@ def gather_all_features(*features):
     return [all_gather(feature) for feature in features]
 
 
-def soft_cross_entropy(logit, target):
-    loss = torch.sum(-target * F.log_softmax(logit, dim=-1), dim=-1)
-    return loss.mean()
-
-
 class SoftContrastiveLoss(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -206,46 +201,13 @@ class SoftContrastiveLoss(nn.Module):
         return loss
 
 
-class BCELoss(nn.Module):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.rank = 0
-        self.world_size = 1
-        self.BCE = nn.BCEWithLogitsLoss()
-
-    def generate_logits(self, image_feature, text_feature, logit_scale):
-        logits_per_image = torch.mm(image_feature, text_feature.t())
-        logits_per_text = logits_per_image.t()
-
-        half = image_feature.size(0) // 2
-        logits_image_self = torch.mm(image_feature[:half], image_feature[half:].t())
-
-        return logits_per_image, logits_per_text, logits_image_self
-
-    def forward(self, image_features, text_features, targets, logit_scale):
-        if self.world_size > 1:
-            image_features, text_features, targets = gather_all_features(image_features, text_features, targets)
-
-        logits_per_image, logits_per_text, logits_image_self = self.generate_logits(image_features, text_features,
-                                                                                    logit_scale)
-
-        self_targets = torch.arange(logits_image_self.size(0), device=logits_image_self.device, dtype=torch.long)
-
-        targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
-        self_targets = (self_targets.unsqueeze(-1) == self_targets.unsqueeze(0)).float()
-
-        loss = (self.BCE(logits_per_image, targets) + self.BCE(logits_per_text, targets)
-                + self.BCE(logits_image_self, self_targets)) / 3
-        return loss
-
-
-class AugCL2(nn.Module):
+class AugCL(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.rank = 0
         self.world_size = 1
 
-    def ACL2(self, logits, targets):
+    def ACL(self, logits, targets):
         targets = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
         mask_inverse = 1 - targets
         cardinality = torch.sum(targets, dim=1)
@@ -280,190 +242,6 @@ class AugCL2(nn.Module):
                                                                                                  targets,
                                                                                                  )
 
-        loss = (self.ACL2(logits_per_image, targets) + self.ACL2(logits_per_text, targets)
-                + self.ACL2(logits_image_self, half_target)) / 3
+        loss = (self.ACL(logits_per_image, targets) + self.ACL(logits_per_text, targets)
+                + self.ACL(logits_image_self, half_target)) / 3
         return loss
-
-
-class IndomainOutdomainContrastiveLoss(nn.Module):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.rank = 0
-        self.world_size = 1
-
-    def SCL(self, logits, targets):
-        mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
-        mask_inverse = 1 - mask_same_class
-
-        cardinality = torch.sum(mask_same_class, dim=1)
-
-        exp_logits = torch.exp(logits - torch.max(logits, dim=1, keepdim=True)[0]) + 1e-5
-        log_prob = -torch.log(exp_logits / torch.sum(exp_logits * mask_inverse, dim=1, keepdim=True))
-        sample_wise_loss = torch.sum(log_prob * mask_same_class, dim=1) / cardinality
-
-        return torch.mean(sample_wise_loss)
-
-    def generate_logits(self, image_feature, text_feature, logit_scale):
-        logits_per_image = logit_scale * torch.mm(image_feature, text_feature.t())
-        logits_per_text = logits_per_image.t()
-
-        half = image_feature.size(0) // 2
-        logits_image_self = logit_scale * torch.mm(image_feature[:half], image_feature[half:].t())
-
-        return logits_per_image, logits_per_text, logits_image_self
-
-    def forward(self, image_features, text_features, targets, logit_scale):
-        if self.world_size > 1:
-            image_features, text_features, targets = gather_all_features(image_features, text_features, targets)
-
-        logits_per_image, logits_per_text, logits_image_self = self.generate_logits(image_features, text_features,
-                                                                                    logit_scale)
-
-        self_targets = torch.arange(logits_image_self.size(0), device=logits_image_self.device, dtype=torch.long)
-
-        loss = (self.SCL(logits_per_image, targets) + self.SCL(logits_per_text, targets)
-                + self.SCL(logits_image_self, self_targets)) / 3
-        return loss
-
-
-class IndomainOutdomainContrastiveLoss2(nn.Module):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.rank = 0
-        self.world_size = 1
-
-    def SCL(self, logits, targets, half=False):
-        mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
-        mask_inverse = 1 - mask_same_class
-        if half:
-            mask_inverse = mask_inverse + mask_same_class * 0.5
-            mask_same_class = mask_same_class * 0.5
-        cardinality = torch.sum(mask_same_class, dim=1)
-
-        log_prob = -torch.nn.functional.log_softmax(logits, dim=-1)
-        sample_wise_loss = torch.sum(log_prob * mask_same_class, dim=1) / cardinality
-
-        return torch.mean(sample_wise_loss)
-
-    def generate_logits(self, image_feature, text_feature, logit_scale):
-        logits_per_image = logit_scale * torch.mm(image_feature, text_feature.t())
-        logits_per_text = logits_per_image.t()
-
-        half = image_feature.size(0) // 2
-        logits_image_self = logit_scale * torch.mm(image_feature[:half], image_feature[half:].t())
-
-        return logits_per_image, logits_per_text, logits_image_self
-
-    def forward(self, image_features, text_features, targets, logit_scale):
-        if self.world_size > 1:
-            image_features, text_features, targets = gather_all_features(image_features, text_features, targets)
-
-        logits_per_image, logits_per_text, logits_image_self = self.generate_logits(image_features, text_features,
-                                                                                    logit_scale)
-        half = targets.size(0) // 2
-        self_targets = targets[:half]
-
-        loss = (self.SCL(logits_per_image, targets) + self.SCL(logits_per_text, targets)
-                + self.SCL(logits_image_self, self_targets)) / 3
-        return loss
-
-
-class SupervisedContrastiveLossMultiProcessing(nn.Module):
-    def __init__(self):
-        super(SupervisedContrastiveLossMultiProcessing, self).__init__()
-        self.rank = 0
-        self.world_size = 1
-
-    def SCL(self, dot_product_tempered, targets):
-        exp_dot_tempered = (
-                torch.exp(dot_product_tempered - torch.max(dot_product_tempered, dim=1, keepdim=True)[0]) + 1e-5
-        )
-        mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
-        mask_anchor_out = 1 - mask_same_class
-
-        cardinality_per_samples = torch.sum(mask_same_class, dim=1)
-
-        log_prob = -torch.log(exp_dot_tempered / (torch.sum(exp_dot_tempered * mask_anchor_out, dim=1, keepdim=True)))
-        supervised_contrastive_loss_per_sample = torch.sum(log_prob * mask_same_class, dim=1) / cardinality_per_samples
-        supervised_contrastive_loss = torch.mean(supervised_contrastive_loss_per_sample)
-        return supervised_contrastive_loss
-
-    def forward(self, image_features, text_features, targets, logit_scale):
-        if self.world_size > 1:
-            image_features, text_features, targets = gather_all_features(image_features, text_features, targets)
-
-        logits_per_image = logit_scale * torch.mm(image_features, text_features.t())
-        logits_per_text = logits_per_image.t()
-
-        return self.SCL(logits_per_image, targets) + self.SCL(logits_per_text, targets)
-
-
-class SupervisedContrastiveLoss(nn.Module):
-    def __init__(self):
-        super(SupervisedContrastiveLoss, self).__init__()
-        self.rank = 0
-        self.world_size = 1
-
-    def forward(self, logits, targets):
-        dot_product_tempered = logits
-        # Minus max for numerical stability with exponential. Same done in cross entropy. Epsilon added to avoid log(0)
-        exp_dot_tempered = (
-                torch.exp(dot_product_tempered - torch.max(dot_product_tempered, dim=1, keepdim=True)[0]) + 1e-5
-        )
-        mask_same_class = (targets.unsqueeze(-1) == targets.unsqueeze(0)).float()
-        mask_anchor_out = 1 - mask_same_class
-
-        cardinality_per_samples = torch.sum(mask_same_class, dim=1)
-
-        log_prob = -torch.log(exp_dot_tempered / (torch.sum(exp_dot_tempered * mask_anchor_out, dim=1, keepdim=True)))
-        supervised_contrastive_loss_per_sample = torch.sum(log_prob * mask_same_class, dim=1) / cardinality_per_samples
-        supervised_contrastive_loss = torch.mean(supervised_contrastive_loss_per_sample)
-        return supervised_contrastive_loss
-
-
-class OriginalSupervisedContrastiveLoss(nn.Module):
-    def __init__(self, temperature=0.07):
-        """
-        Implementation of the loss described in the paper Supervised Contrastive Learning :
-        https://arxiv.org/abs/2004.11362
-
-        :param temperature: int
-        """
-        super(OriginalSupervisedContrastiveLoss, self).__init__()
-        self.temperature = temperature
-
-    def forward(self, projections, targets):
-        """
-        :param projections: torch.Tensor, shape [batch_size, projection_dim]
-        :param targets: torch.Tensor, shape [batch_size]
-        :return: torch.Tensor, scalar
-        """
-        device = torch.device("cuda") if projections.is_cuda else torch.device("cpu")
-
-        dot_product_tempered = torch.mm(projections, projections.T) / self.temperature
-        # Minus max for numerical stability with exponential. Same done in cross entropy. Epsilon added to avoid log(0)
-        exp_dot_tempered = (
-                torch.exp(dot_product_tempered - torch.max(dot_product_tempered, dim=1, keepdim=True)[0]) + 1e-5
-        )
-
-        mask_similar_class = (targets.unsqueeze(1).repeat(1, targets.shape[0]) == targets).to(device)
-        mask_anchor_out = (1 - torch.eye(exp_dot_tempered.shape[0])).to(device)
-        mask_combined = mask_similar_class * mask_anchor_out
-        cardinality_per_samples = torch.sum(mask_combined, dim=1)
-
-        log_prob = -torch.log(exp_dot_tempered / (torch.sum(exp_dot_tempered * mask_anchor_out, dim=1, keepdim=True)))
-        supervised_contrastive_loss_per_sample = torch.sum(log_prob * mask_combined, dim=1) / cardinality_per_samples
-        supervised_contrastive_loss = torch.mean(supervised_contrastive_loss_per_sample)
-
-        return supervised_contrastive_loss
-
-
-if __name__ == '__main__':
-    import torch
-
-    prob = torch.rand(6, 6)
-    target = torch.arange(0, 6)
-    target[1] += 2
-    loss_fn = AugCL2()
-
-    loss_fn(prob, prob, target, 100)

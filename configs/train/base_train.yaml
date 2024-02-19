@@ -3,10 +3,9 @@ defaults:
   - optimizer: lamb
 
 epochs: 10
-iter_per_epoch:
+iter_per_epoch: null
 batch_size: 512
 total_batch: 4096
-adapter_lr: null
 
 num_workers: 4
 seed: 42
@@ -18,7 +17,7 @@ eval_metrics: [ Top1 ] #, Top5 ]
 
 criterion: CLIPLoss
 bce_loss: False
-bce_target_thresh:
+bce_target_thresh: null
 
 sync_bn: False
 dist_bn: reduce # [ broadcast | reduce ]

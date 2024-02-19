@@ -8,7 +8,7 @@ defaults:
 name: ${dataset.name}_${model.model_name}_${model.backbone}
 
 n_shot: 0
-checkpoint: # Not used in train
+checkpoint: null
 cache: False
 
 wandb: True

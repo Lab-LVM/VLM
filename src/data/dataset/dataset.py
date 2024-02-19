@@ -96,6 +96,7 @@ class VLMClassificationDataset(ABC):
         s_imgs = list()
         s_targets = list()
         for class_num, items in self._data_dict().items():
+            print(n_shot)
             s_imgs.extend(random.sample(items, n_shot))
             s_targets.extend([class_num for _ in range(n_shot)])
 

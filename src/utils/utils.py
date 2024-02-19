@@ -1,5 +1,4 @@
 import os
-from collections import OrderedDict
 from pathlib import Path
 from typing import List
 
@@ -14,15 +13,6 @@ VLZB = ['caltech101', 'eurosat', 'fgvc', 'flowers102', 'food101', 'oxfordiiitpet
         'ucf101', 'pcam', 'country211', 'imagenet', 'cifar100']
 
 IMAGENET_DS = ['imagenet', 'imagenet_r', 'imagenet_a', 'imagenet_v2', 'imagenet_sketch', 'objectnet']
-
-
-def clean_state_dict(state_dict):
-    # 'clean' checkpoint by removing .module prefix from state dict if it exists from parallel training
-    cleaned_state_dict = OrderedDict()
-    for k, v in state_dict.items():
-        name = k[7:] if k.startswith('module.') else k
-        cleaned_state_dict[name] = v
-    return cleaned_state_dict
 
 
 def dataset2dict(cfg):
@@ -50,25 +40,8 @@ def to_list(item):
     return [item]
 
 
-def filter_grad(model, adapter_lr=None):
-    backbone = []
-    adapter = []
-    adapter_name = []
-    for name, param in model.named_parameters():
-        if not param.requires_grad:
-            continue
-
-        if 'adapter' in name:
-            adapter_name.append(name)
-            adapter.append(param)
-        else:
-            backbone.append(param)
-    params = [{'params': adapter}, {'params': backbone}]
-    if adapter_lr is not None:
-        params[0]['lr'] = adapter_lr
-    return params
-
-    # return filter(lambda p: p.requires_grad, model.parameters())
+def filter_grad(model):
+    return filter(lambda p: p.requires_grad, model.parameters())
 
 
 def import_config(cfg):

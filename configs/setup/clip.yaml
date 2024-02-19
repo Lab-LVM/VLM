@@ -5,10 +5,8 @@ defaults:
   - override /dataset: imagenet
   - override /model: clip
 
-precision: 32-true
-
 gpu: 0
-name: ${model.model_name}
+name: CLIP
 n_shot: 0
 
 train:

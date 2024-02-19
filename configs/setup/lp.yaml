@@ -5,9 +5,8 @@ defaults:
   - override /dataset: imagenet
   - override /model: lp
 
-
 gpu: 0
-name: ${model.model_name}
+name: LP
 n_shot: 0
 
 train:

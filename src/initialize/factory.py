@@ -7,14 +7,11 @@ from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler_v2, scheduler_kwargs
 from torch import nn
 
-from src.utils.loss_fn_our_ablation import AugmentedContrastiveLossAblation
-from src.utils.loss_function import CLIPLoss, CoCaLoss, SupervisedContrastiveLoss, IndomainOutdomainContrastiveLoss, \
-    SupervisedContrastiveLossMultiProcessing, SoftContrastiveLoss, IndomainOutdomainContrastiveLoss2, BCELoss, AugCL2
+from src.models import *
+from src.utils.loss_function import CLIPLoss, CoCaLoss, AugCL
 from src.utils.registry import create_model
 from src.utils.scheduler import CosineLR
 from src.utils.utils import filter_grad
-from src.models import *
-from src.engines import *
 
 
 class ObjectFactory:
@@ -97,29 +94,8 @@ class ObjectFactory:
         elif self.train.criterion == 'CoCaLoss':
             train_loss_fn = validate_loss_fn = CoCaLoss(1.0, 1.0)
 
-        elif self.train.criterion == 'SCL':
-            train_loss_fn = validate_loss_fn = SupervisedContrastiveLoss()
-
-        elif self.train.criterion == 'SoftCE':
-            train_loss_fn = validate_loss_fn = SoftContrastiveLoss()
-
-        elif self.train.criterion == 'BCE':
-            train_loss_fn = validate_loss_fn = BCELoss()
-
-        elif self.train.criterion == 'AugCL2':
-            train_loss_fn = validate_loss_fn = AugCL2()
-
-        elif self.train.criterion == 'IOL':
-            train_loss_fn = validate_loss_fn = IndomainOutdomainContrastiveLoss()  # contextual
-
-        elif self.train.criterion == 'IOL2':
-            train_loss_fn = validate_loss_fn = IndomainOutdomainContrastiveLoss2()  # contextual
-
-        elif self.train.criterion == 'Ablation':
-            train_loss_fn = validate_loss_fn = AugmentedContrastiveLossAblation(self.train.criterion_type)  # contextual
-
-        elif self.train.criterion == 'SCLM':
-            train_loss_fn = validate_loss_fn = SupervisedContrastiveLossMultiProcessing()
+        elif self.train.criterion == 'AugCL':
+            train_loss_fn = validate_loss_fn = AugCL()
 
         elif self.dataset.augmentation.cutmix > 0 or self.dataset.augmentation.mixup > 0:
             # smoothing is handled with mixup target transform which outputs sparse, soft targets

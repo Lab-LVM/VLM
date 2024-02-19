@@ -5,8 +5,8 @@ defaults:
   - override /dataset: imagenet
   - override /model: tip
 
-gpu: 7
-name: ${model.model_name}
+gpu: 0
+name: TIP
 n_shot: 16
 
 train:
@@ -28,13 +28,8 @@ train:
     lr: 1e-3
     opt_eps: 1e-4
 
-model:
-  model_name: Tip
-  freeze: True
-  finetune: True
-
 dataset:
   augmentation:
     no_aug: True
     train_interpolation: bicubic
-    auto_aug:
+    auto_aug: null

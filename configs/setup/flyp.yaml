@@ -3,11 +3,10 @@
 defaults:
   - override /train/optimizer: adamw
   - override /dataset: imagenet
-  - override /model: flyp
-
+  - override /model: clip
 
 gpu: 0
-name: ${model.model_name}
+name: FLYP
 n_shot: 0
 
 train:
