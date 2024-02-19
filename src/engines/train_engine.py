@@ -58,7 +58,7 @@ class TrainEngine:
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)
 
     def iterate(self, model, data, criterion):
-        x, y = map(lambda x: x.to(self.device, non_blocking=True), data)
+        x, y, _ = map(lambda x: x.to(self.device, non_blocking=True) if isinstance(x, torch.Tensor) else x, data)
         x = x.to(memory_format=torch.channels_last)
 
         with self.fabric.autocast():

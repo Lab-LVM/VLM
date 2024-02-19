@@ -33,5 +33,5 @@ if __name__ == '__main__':
     model = LP()
 
     o = model(torch.rand(2, 3, 224, 224), torch.ones(2, 77, dtype=torch.long))
-    print(len(o))
-    print(o[0].shape)
+    # print(len(o))
+    # print(o[0].shape)

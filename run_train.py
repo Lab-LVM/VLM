@@ -1,12 +1,19 @@
+import gc
+import os
+
 import hydra
+import torch
+import wandb
 from omegaconf import DictConfig
 
 from src.engines import *
-from src.models import *
+from src.data import create_dataset, create_dataloader
 from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data
 from src.utils import resume
 from src.utils.registry import create_train_engine
+
+os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
 
 @hydra.main(config_path="configs", config_name="train_config", version_base="1.3")
@@ -37,9 +44,6 @@ def main(cfg: DictConfig) -> None:
     train_engine()
 
     if cfg.is_master:
-        import torch
-        import gc
-        import wandb
         torch.cuda.empty_cache()
         gc.collect()
         wandb.finish(quiet=True)

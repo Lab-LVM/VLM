@@ -30,11 +30,6 @@ train:
     lr: 1e-3
     weight_decay: 0.1
 
-model:
-  model_name: CLIP
-  freeze: True
-  finetune: True
-
 dataset:
   augmentation:
     no_aug: True
