@@ -34,7 +34,8 @@ DATASET_DICT = {
 
 
 def create_dataset(ds_cfg, is_train, **kwargs):
-    assert not is_train and kwargs.get('n_shot', 0) == 0, 'validation or test dataset must be n_shot as 0.'
+    assert is_train or kwargs.get('n_shot', 0) == 0, 'validation or test dataset must be n_shot as 0.'
+
     ds_kwargs = dict(
         transform=kwargs.get('transform', create_transform(ds_cfg, is_train)),
         root=kwargs.get('root', ds_cfg.root),
