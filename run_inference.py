@@ -18,7 +18,6 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
 @hydra.main(config_path="configs", config_name="eval_config", version_base="1.3")
 def main(cfg: DictConfig) -> None:
-    cfg.wandb = False
     fabric = setup_fabric(cfg)
 
     factory = ObjectFactory(cfg, fabric)
@@ -31,12 +30,12 @@ def main(cfg: DictConfig) -> None:
         for n_shot in to_list(cfg.n_shot):
             cfg.dataset = v
             train_dataset = create_dataset(cfg.dataset, is_train=True, split=cfg.dataset.train, n_shot=n_shot)
-            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, n_shot=n_shot)
+            test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test)
 
             engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
             metrics = engine(n_shot=n_shot)
 
-            row = dict(Data=test_dataset.name, **metrics)
+            row = dict(ExpName=cfg.name, Data=test_dataset.name, **metrics)
             print(f'{row}\n')
             df = pd.concat([df, pd.DataFrame(row, index=[0])])
 

@@ -34,6 +34,7 @@ DATASET_DICT = {
 
 
 def create_dataset(ds_cfg, is_train, **kwargs):
+    assert not is_train and kwargs.get('n_shot', 0) == 0, 'validation or test dataset must be n_shot as 0.'
     ds_kwargs = dict(
         transform=kwargs.get('transform', create_transform(ds_cfg, is_train)),
         root=kwargs.get('root', ds_cfg.root),
@@ -44,7 +45,7 @@ def create_dataset(ds_cfg, is_train, **kwargs):
     return DATASET_DICT[ds_cfg.name](**ds_kwargs)
 
 
-def create_dataloader(cfg, dataset, is_train, fill_last=True):
+def create_dataloader(cfg, dataset, is_train, fill_last=False):
     if is_train and fill_last:
         dataset = fill_drop_last(dataset, cfg.train.batch_size, cfg.world_size)
     collate_fn = None

@@ -4,8 +4,7 @@ import hydra
 import wandb
 from omegaconf import DictConfig, OmegaConf
 
-from src.engines import *
-from src.models import *
+from src.data import create_dataset, create_dataloader
 from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data
 from src.utils import resume
@@ -44,10 +43,7 @@ def main(cfg: DictConfig) -> None:
         train_engine = create_train_engine(cfg, fabric, model, tokenizer, loaders, criterion, optimizer, scheduler,
                                            (start_epoch, n_epochs))
 
-        df = train_engine()
-
-        _log = dict(Accuracy=df['Acc'].values[0])
-        wandb.log(_log)
+        train_engine()
 
 
 if __name__ == "__main__":

@@ -19,3 +19,4 @@ class LPTrainEngine(TrainEngine):
             self._save(epoch, train_metrics[self.cm])
             self._log(train_metrics, {}, epoch)
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)
+        return train_metrics

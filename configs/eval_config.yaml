@@ -12,7 +12,7 @@ checkpoint: null
 cache: False
 import_cfg: False
 
-wandb: True
+wandb: False
 gpu: 0
 
 accelerator: cuda

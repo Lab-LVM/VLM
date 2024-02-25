@@ -2,6 +2,7 @@ import gc
 import os
 
 import hydra
+import pandas as pd
 import torch
 import wandb
 from omegaconf import DictConfig
@@ -11,14 +12,13 @@ from src.data import create_dataset, create_dataloader
 from src.initialize import setup_fabric, ObjectFactory
 from src.misc import print_meta_data
 from src.utils import resume
-from src.utils.registry import create_train_engine
+from src.utils.registry import create_train_engine, create_task_engine
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
 
 @hydra.main(config_path="configs", config_name="train_config", version_base="1.3")
 def main(cfg: DictConfig) -> None:
-    cfg.wandb = False
     fabric = setup_fabric(cfg)
 
     factory = ObjectFactory(cfg, fabric)
@@ -42,6 +42,18 @@ def main(cfg: DictConfig) -> None:
                                        (start_epoch, n_epochs))
 
     train_engine()
+
+    # Evaluation
+    test_dataset = create_dataset(cfg.dataset, is_train=False, split=cfg.dataset.test, n_shot=cfg.n_shot)
+
+    engine = create_task_engine(cfg, fabric, model, tokenizer, train_dataset, test_dataset)
+    metrics = engine(n_shot=cfg.n_shot)
+    row = dict(ExpName=cfg.name, Data=test_dataset.name, **metrics)
+
+    with fabric.rank_zero_first():
+        print(f'{row}\n')
+        df = pd.DataFrame(row, index=[0])
+        df.to_csv(f'{cfg.name}_result.csv', index=False)
 
     if cfg.is_master:
         torch.cuda.empty_cache()

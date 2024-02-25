@@ -56,6 +56,7 @@ class TrainEngine:
             self._save(epoch, eval_metrics[self.cm])
             self._log(train_metrics, eval_metrics, epoch)
             self.fabric.call('on_epoch', self.cm, self.best_metric, self.best_epoch)
+        return train_metrics, eval_metrics
 
     def iterate(self, model, data, criterion):
         x, y, _ = map(lambda x: x.to(self.device, non_blocking=True) if isinstance(x, torch.Tensor) else x, data)

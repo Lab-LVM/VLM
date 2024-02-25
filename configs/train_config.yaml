@@ -11,7 +11,7 @@ n_shot: 0
 checkpoint: null
 cache: False
 
-wandb: True
+wandb: False
 gpu: 0
 
 accelerator: cuda
