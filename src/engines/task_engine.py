@@ -91,6 +91,9 @@ class ClassificationTaskEngine(TaskEngine):
             with self.fabric.autocast():
                 prob = self.model(x)
 
+            if hasattr(self.val_dataset, 'project_logits'):
+                prob = self.val_dataset.project_logits(prob)
+
             self.metric.update(prob, y)
 
         self.metric.prefix = 'linear_prob'
