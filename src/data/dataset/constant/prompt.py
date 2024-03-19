@@ -80,6 +80,7 @@ EUROSAT_PROMPT = [
     lambda name: f'a centered satellite photo of a {name}.',
     lambda name: f'a centered satellite photo of the {name}.',
 ]
+
 FGVC_PROMPT = [
     lambda name: f'a photo of a {name}, a type of aircraft.',
     lambda name: f'a photo of the {name}, a type of aircraft.',
@@ -88,10 +89,12 @@ FGVC_PROMPT = [
 FLOWERS102_PROMPT = [
     lambda name: f'a photo of a {name}, a type of flower.'
 ]
+
 FMOW_PROMPT = [
     lambda name: f'a photo of a {name}.',
     lambda name: f'{name} in the wild.',
 ]
+
 FOOD101_PROMPT = [
     lambda name: f'a photo of a {name}, a type of food.'
 ]
@@ -183,6 +186,7 @@ IWILDCAM_PROMPT = [
     lambda name: f'a photo of a {name}.',
     lambda name: f'{name} in the wild.',
 ]
+
 OXFORD_IIIT_PETS_PROMPT = [
     lambda name: f'a photo of a {name}, a type of pet.'
 ]
